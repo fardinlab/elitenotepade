@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { motion } from 'framer-motion';
-import { FileText } from 'lucide-react';
+import { FileText, Info } from 'lucide-react';
 import { useMultiTeamData } from '@/hooks/useMultiTeamData';
+import AboutSection from '@/components/AboutSection';
 import { useNotepads } from '@/hooks/useNotepads';
 import { MAX_MEMBERS } from '@/types/member';
 import { AppHeader } from '@/components/AppHeader';
@@ -54,7 +55,8 @@ const Index = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isRemoveMode, setIsRemoveMode] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; email: string } | null>(null);
-  const [showNotepads, setShowNotepads] = useState(false);
+const [showNotepads, setShowNotepads] = useState(false);
+  const [showAbout, setShowAbout] = useState(false);
 
   const handleAddMember = (member: { email: string; phone: string; telegram?: string; joinDate: string }) => {
     const success = addMember(member);
@@ -128,7 +130,19 @@ const Index = () => {
       <AppHeader onSettingsClick={() => setIsSettingsOpen(true)} />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
-        {showNotepads ? (
+        {showAbout ? (
+          <>
+            <motion.button
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              onClick={() => setShowAbout(false)}
+              className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
+            >
+              ← Back
+            </motion.button>
+            <AboutSection />
+          </>
+        ) : showNotepads ? (
           <NotepadSection
             notepads={notepads}
             activeNotepad={activeNotepad}
@@ -143,26 +157,47 @@ const Index = () => {
           />
         ) : (
           <>
-            {/* Create Blank Notepad Button */}
-            <motion.button
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              whileHover={{ scale: 1.01 }}
-              whileTap={{ scale: 0.99 }}
-              onClick={() => setShowNotepads(true)}
-              className="w-full p-4 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 hover:border-amber-500/50 transition-all flex items-center gap-3"
-            >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
-                <FileText className="w-5 h-5 text-white" />
-              </div>
-              <div className="text-left flex-1">
-                <h3 className="font-semibold text-foreground">Create Blank Notepad</h3>
-                <p className="text-xs text-muted-foreground">
-                  Save personal notes with rich text formatting
-                  {notepads.length > 0 && ` • ${notepads.length} note${notepads.length > 1 ? 's' : ''}`}
-                </p>
-              </div>
-            </motion.button>
+            {/* Top Action Buttons */}
+            <div className="grid grid-cols-2 gap-3">
+              {/* Create Blank Notepad Button */}
+              <motion.button
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                onClick={() => setShowNotepads(true)}
+                className="p-4 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 hover:border-amber-500/50 transition-all flex items-center gap-3"
+              >
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shrink-0">
+                  <FileText className="w-5 h-5 text-white" />
+                </div>
+                <div className="text-left flex-1 min-w-0">
+                  <h3 className="font-semibold text-foreground text-sm">Notepad</h3>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {notepads.length > 0 ? `${notepads.length} note${notepads.length > 1 ? 's' : ''}` : 'Create notes'}
+                  </p>
+                </div>
+              </motion.button>
+
+              {/* About Button */}
+              <motion.button
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.05 }}
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                onClick={() => setShowAbout(true)}
+                className="p-4 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 hover:border-purple-500/50 transition-all flex items-center gap-3"
+              >
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shrink-0">
+                  <Info className="w-5 h-5 text-white" />
+                </div>
+                <div className="text-left flex-1 min-w-0">
+                  <h3 className="font-semibold text-foreground text-sm">About</h3>
+                  <p className="text-xs text-muted-foreground truncate">Developer info</p>
+                </div>
+              </motion.button>
+            </div>
 
             {/* Global Search */}
             <GlobalSearch onSearch={searchMembers} onSelectTeam={handleSelectTeam} />
