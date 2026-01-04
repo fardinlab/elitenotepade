@@ -7,13 +7,15 @@ interface TeamListProps {
   teams: Team[];
   activeTeamId: string;
   onSelectTeam: (teamId: string) => void;
-  onCreateTeam: () => void;
+  onCreateTeam: (teamName: string) => void;
   onDeleteTeam: (teamId: string) => void;
 }
 
 export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDeleteTeam }: TeamListProps) {
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newTeamName, setNewTeamName] = useState('');
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -39,6 +41,20 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
     }
   };
 
+  const handleCreateClick = () => {
+    setNewTeamName('');
+    setShowCreateModal(true);
+  };
+
+  const confirmCreate = () => {
+    const trimmedName = newTeamName.trim();
+    if (trimmedName && trimmedName.length <= 50) {
+      onCreateTeam(trimmedName);
+      setShowCreateModal(false);
+      setNewTeamName('');
+    }
+  };
+
   return (
     <div className="space-y-3">
       {/* Action Buttons Row */}
@@ -46,7 +62,7 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          onClick={onCreateTeam}
+          onClick={handleCreateClick}
           className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors"
         >
           <Plus className="w-4 h-4" />
@@ -204,6 +220,76 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                   className="flex-1 px-4 py-2.5 rounded-xl bg-destructive text-destructive-foreground font-medium hover:bg-destructive/90 transition-colors"
                 >
                   Delete
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Create Team Modal */}
+      <AnimatePresence>
+        {showCreateModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            onClick={() => setShowCreateModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm bg-card border border-border rounded-2xl p-6 space-y-4"
+            >
+              <div className="text-center space-y-2">
+                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
+                  <Plus className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground">Create New Team</h3>
+                <p className="text-sm text-muted-foreground">
+                  Enter a name for your new team
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <input
+                  type="text"
+                  value={newTeamName}
+                  onChange={(e) => setNewTeamName(e.target.value.slice(0, 50))}
+                  placeholder="Enter team name..."
+                  autoFocus
+                  className="w-full px-4 py-3 rounded-xl bg-secondary border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newTeamName.trim()) {
+                      confirmCreate();
+                    }
+                  }}
+                />
+                <p className="text-xs text-muted-foreground text-right">
+                  {newTeamName.length}/50
+                </p>
+              </div>
+              
+              <div className="flex gap-3">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setShowCreateModal(false)}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-secondary text-foreground font-medium hover:bg-secondary/80 transition-colors"
+                >
+                  Cancel
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={confirmCreate}
+                  disabled={!newTeamName.trim()}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Create
                 </motion.button>
               </div>
             </motion.div>

@@ -3,9 +3,9 @@ import { AppData, Team, Member, MAX_MEMBERS } from '@/types/member';
 
 const STORAGE_KEY = 'elite_notepade_multi_data';
 
-const createDefaultTeam = (): Team => ({
+const createDefaultTeam = (teamName?: string): Team => ({
   id: Date.now().toString(),
-  teamName: 'My Elite Team',
+  teamName: teamName || 'My Elite Team',
   adminEmail: 'admin@example.com',
   members: [],
   createdAt: new Date().toISOString(),
@@ -103,8 +103,8 @@ export function useMultiTeamData() {
     setData((prev) => ({ ...prev, activeTeamId: teamId }));
   }, []);
 
-  const createNewTeam = useCallback(() => {
-    const newTeam = createDefaultTeam();
+  const createNewTeam = useCallback((teamName?: string) => {
+    const newTeam = createDefaultTeam(teamName);
     setData((prev) => ({
       ...prev,
       teams: [...prev.teams, newTeam],
