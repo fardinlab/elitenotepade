@@ -15,9 +15,18 @@ export interface Team {
   lastBackup?: string;
 }
 
+export interface Notepad {
+  id: string;
+  title: string;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AppData {
   teams: Team[];
   activeTeamId: string;
+  notepads: Notepad[];
 }
 
 export const MAX_MEMBERS = 8;
