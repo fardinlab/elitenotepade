@@ -19,7 +19,7 @@ export function ActionControls({
   maxMembers,
 }: ActionControlsProps) {
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40">
+    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -27,7 +27,7 @@ export function ActionControls({
       >
         <button
           onClick={onRemoveModeToggle}
-          className={`p-4 rounded-xl transition-all duration-300 ${
+          className={`p-4 rounded-xl transition-all duration-300 active:scale-95 touch-manipulation ${
             isRemoveMode
               ? 'bg-destructive text-destructive-foreground'
               : 'bg-secondary hover:bg-secondary/80 text-foreground'
@@ -42,7 +42,7 @@ export function ActionControls({
         {canAdd ? (
           <button
             onClick={onAddClick}
-            className="p-4 rounded-xl bg-gradient-to-r from-primary to-cyan-400 text-primary-foreground hover:opacity-90 transition-opacity glow-shadow"
+            className="p-4 rounded-xl bg-gradient-to-r from-primary to-cyan-400 text-primary-foreground hover:opacity-90 transition-opacity glow-shadow active:scale-95 touch-manipulation"
             aria-label="Add member"
           >
             <Plus className="w-6 h-6" />

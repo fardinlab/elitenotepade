@@ -110,7 +110,7 @@ export function MemberCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -100 }}
       transition={{ delay: index * 0.05 }}
-      className="glass-card rounded-xl p-4 card-shadow hover:border-primary/30 transition-all duration-300"
+      className="glass-card rounded-xl p-4 card-shadow hover:border-primary/30 transition-all duration-300 touch-manipulation"
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0 space-y-1">
@@ -325,7 +325,7 @@ export function MemberCard({
             <>
               <button
                 onClick={handleWhatsApp}
-                className="p-2.5 rounded-lg bg-success/20 text-success hover:bg-success/30 transition-colors"
+                className="p-2.5 rounded-lg bg-success/20 text-success hover:bg-success/30 transition-colors active:scale-95 touch-manipulation"
                 aria-label="WhatsApp"
               >
                 <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
@@ -335,7 +335,7 @@ export function MemberCard({
               <button
                 onClick={handleTelegram}
                 disabled={!member.telegram}
-                className={`p-2.5 rounded-lg transition-colors ${
+                className={`p-2.5 rounded-lg transition-colors active:scale-95 touch-manipulation ${
                   member.telegram 
                     ? 'bg-sky-500/20 text-sky-400 hover:bg-sky-500/30' 
                     : 'bg-muted/20 text-muted-foreground/40 cursor-not-allowed'
@@ -346,7 +346,7 @@ export function MemberCard({
               </button>
               <button
                 onClick={handleCall}
-                className="p-2.5 rounded-lg bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+                className="p-2.5 rounded-lg bg-primary/20 text-primary hover:bg-primary/30 transition-colors active:scale-95 touch-manipulation"
                 aria-label="Call"
               >
                 <Phone className="w-4 h-4" />

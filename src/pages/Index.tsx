@@ -142,7 +142,7 @@ const [showNotepads, setShowNotepads] = useState(false);
   }
 
   return (
-    <div className="min-h-screen pb-28">
+    <div className="min-h-screen min-h-[100dvh] pb-28" style={{ paddingBottom: 'max(7rem, calc(7rem + env(safe-area-inset-bottom)))' }}>
       <AppHeader onSettingsClick={() => setIsSettingsOpen(true)} />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
