@@ -26,7 +26,7 @@ export interface Notepad {
 export interface AppData {
   teams: Team[];
   activeTeamId: string;
-  notepads: Notepad[];
+  notepads?: Notepad[];
 }
 
 export const MAX_MEMBERS = 8;
