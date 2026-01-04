@@ -4,6 +4,8 @@ export interface Member {
   phone: string;
   telegram?: string;
   joinDate: string;
+  isPaid?: boolean;
+  paidAmount?: number;
 }
 
 export interface Team {
