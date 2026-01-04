@@ -14,7 +14,6 @@ const AboutSection = () => {
         </div>
         <div>
           <h2 className="text-xl font-bold text-foreground">Fardin Sagor</h2>
-          <p className="text-sm text-muted-foreground">Future Best Developer in Bangladesh</p>
         </div>
       </div>
 
