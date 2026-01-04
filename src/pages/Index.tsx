@@ -20,6 +20,7 @@ const Index = () => {
     updateAdminEmail,
     addMember,
     removeMember,
+    updateMemberDate,
     canAddMember,
     exportData,
     importData,
@@ -116,6 +117,7 @@ const Index = () => {
                     index={index}
                     isRemoveMode={isRemoveMode}
                     onRemove={() => handleRemoveMember(member.id, member.email)}
+                    onDateChange={updateMemberDate}
                   />
                 ))}
               </AnimatePresence>

@@ -68,6 +68,15 @@ export function useTeamData() {
     }));
   }, []);
 
+  const updateMemberDate = useCallback((id: string, joinDate: string) => {
+    setData((prev) => ({
+      ...prev,
+      members: prev.members.map((m) =>
+        m.id === id ? { ...m, joinDate } : m
+      ),
+    }));
+  }, []);
+
   const canAddMember = data.members.length + 1 < MAX_MEMBERS;
 
   const exportData = useCallback(() => {
@@ -105,6 +114,7 @@ export function useTeamData() {
     updateAdminEmail,
     addMember,
     removeMember,
+    updateMemberDate,
     canAddMember,
     exportData,
     importData,
