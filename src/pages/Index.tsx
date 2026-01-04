@@ -94,13 +94,24 @@ const [showNotepads, setShowNotepads] = useState(false);
     return success;
   };
 
-  const handleBackupToCloud = () => {
-    setLastBackup(new Date().toISOString());
-    toast.success('Backup completed to Google Drive');
+  const getBackupData = () => {
+    return {
+      teams: sortedTeams,
+      notepads: notepads,
+      exportedAt: new Date().toISOString(),
+    };
   };
 
-  const handleRestoreFromCloud = () => {
-    toast.info('Restore from Google Drive (demo mode)');
+  const handleRestoreData = (data: any) => {
+    if (data && typeof data === 'object') {
+      const jsonString = JSON.stringify(data);
+      const success = importData(jsonString);
+      if (success) {
+        toast.success('Data restored from Google Drive!');
+      } else {
+        toast.error('Failed to restore data');
+      }
+    }
   };
 
   const handleCreateNewTeam = () => {
@@ -272,11 +283,10 @@ const [showNotepads, setShowNotepads] = useState(false);
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-        lastBackup={activeTeam.lastBackup}
         onExport={exportData}
         onImport={handleImport}
-        onBackupToCloud={handleBackupToCloud}
-        onRestoreFromCloud={handleRestoreFromCloud}
+        getBackupData={getBackupData}
+        onRestoreData={handleRestoreData}
       />
 
       <DeleteConfirmModal
