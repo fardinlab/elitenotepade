@@ -80,14 +80,14 @@ export function AddMemberModal({ isOpen, onClose, onAdd }: AddMemberModalProps) 
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed inset-x-4 top-1/2 -translate-y-1/2 max-w-md mx-auto glass-card rounded-2xl p-6 z-50 card-shadow max-h-[90vh] overflow-y-auto"
+            className="fixed inset-x-4 bottom-4 top-auto sm:top-1/2 sm:bottom-auto sm:-translate-y-1/2 max-w-md mx-auto glass-card rounded-2xl p-4 sm:p-6 z-50 card-shadow max-h-[85vh] overflow-y-auto"
           >
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-4 sm:mb-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-xl bg-primary/20">
                   <UserPlus className="w-5 h-5 text-primary" />
                 </div>
-                <h2 className="font-display text-xl font-bold">Add Member</h2>
+                <h2 className="font-display text-lg sm:text-xl font-bold">Add Member</h2>
               </div>
               <button
                 onClick={handleClose}
@@ -97,9 +97,9 @@ export function AddMemberModal({ isOpen, onClose, onAdd }: AddMemberModalProps) 
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3 sm:space-y-4">
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1.5 sm:mb-2">
                   <Mail className="w-4 h-4" />
                   Email Address
                 </label>
@@ -111,7 +111,7 @@ export function AddMemberModal({ isOpen, onClose, onAdd }: AddMemberModalProps) 
                     if (errors.email) setErrors((prev) => ({ ...prev, email: undefined }));
                   }}
                   placeholder="customer@example.com"
-                  className="w-full bg-input rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full bg-input rounded-xl px-4 py-2.5 sm:py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
                 {errors.email && (
                   <p className="text-sm text-destructive mt-1">{errors.email}</p>
@@ -119,7 +119,7 @@ export function AddMemberModal({ isOpen, onClose, onAdd }: AddMemberModalProps) 
               </div>
 
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1.5 sm:mb-2">
                   <Phone className="w-4 h-4" />
                   Phone Number
                 </label>
@@ -131,7 +131,7 @@ export function AddMemberModal({ isOpen, onClose, onAdd }: AddMemberModalProps) 
                     if (errors.phone) setErrors((prev) => ({ ...prev, phone: undefined }));
                   }}
                   placeholder="+1234567890"
-                  className="w-full bg-input rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full bg-input rounded-xl px-4 py-2.5 sm:py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
                 {errors.phone && (
                   <p className="text-sm text-destructive mt-1">{errors.phone}</p>
@@ -139,7 +139,7 @@ export function AddMemberModal({ isOpen, onClose, onAdd }: AddMemberModalProps) 
               </div>
 
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1.5 sm:mb-2">
                   <Send className="w-4 h-4" />
                   Telegram Username
                   <span className="text-xs text-muted-foreground/60">(optional)</span>
@@ -149,26 +149,35 @@ export function AddMemberModal({ isOpen, onClose, onAdd }: AddMemberModalProps) 
                   value={telegram}
                   onChange={(e) => setTelegram(e.target.value)}
                   placeholder="@username"
-                  className="w-full bg-input rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full bg-input rounded-xl px-4 py-2.5 sm:py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
 
               <div>
-                <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
+                <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1.5 sm:mb-2">
                   <Calendar className="w-4 h-4" />
                   Join Date
                 </label>
-                <input
-                  type="date"
-                  value={joinDate}
-                  onChange={(e) => setJoinDate(e.target.value)}
-                  className="w-full bg-input rounded-xl px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                />
+                <div className="flex gap-2">
+                  <input
+                    type="date"
+                    value={joinDate}
+                    onChange={(e) => setJoinDate(e.target.value)}
+                    className="flex-1 bg-input rounded-xl px-4 py-2.5 sm:py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setJoinDate(new Date().toISOString().split('T')[0])}
+                    className="px-3 py-2.5 sm:py-3 rounded-xl bg-primary/20 text-primary text-sm font-medium hover:bg-primary/30 transition-colors whitespace-nowrap"
+                  >
+                    Added Now
+                  </button>
+                </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full py-3 rounded-xl bg-gradient-to-r from-primary to-cyan-400 text-primary-foreground font-semibold hover:opacity-90 transition-opacity glow-shadow"
+                className="w-full py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-primary to-cyan-400 text-primary-foreground font-semibold hover:opacity-90 transition-opacity glow-shadow"
               >
                 Add Member
               </button>
