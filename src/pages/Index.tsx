@@ -26,6 +26,8 @@ const Index = () => {
     addMember,
     removeMember,
     updateMemberDate,
+    updateMemberEmail,
+    updateMemberTelegram,
     canAddMember,
     isTeamFull,
     exportData,
@@ -146,6 +148,8 @@ const Index = () => {
                     isRemoveMode={isRemoveMode}
                     onRemove={() => handleRemoveMember(member.id, member.email)}
                     onDateChange={updateMemberDate}
+                    onEmailChange={updateMemberEmail}
+                    onTelegramChange={updateMemberTelegram}
                   />
                 ))}
               </AnimatePresence>
