@@ -1,34 +1,28 @@
-import { useState, useRef } from 'react';
+import { useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Settings, Cloud, Download, Upload, Clock, CheckCircle, AlertCircle } from 'lucide-react';
+import { X, Settings, Cloud, Download, Upload, CheckCircle, AlertCircle, LogOut, Loader2 } from 'lucide-react';
+import { useGoogleDrive } from '@/hooks/useGoogleDrive';
+import { toast } from 'sonner';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  lastBackup?: string;
   onExport: () => void;
   onImport: (json: string) => boolean;
-  onBackupToCloud: () => void;
-  onRestoreFromCloud: () => void;
+  getBackupData: () => object;
+  onRestoreData: (data: object) => void;
 }
 
 export function SettingsModal({
   isOpen,
   onClose,
-  lastBackup,
   onExport,
   onImport,
-  onBackupToCloud,
-  onRestoreFromCloud,
+  getBackupData,
+  onRestoreData,
 }: SettingsModalProps) {
-  const [isConnected, setIsConnected] = useState(false);
-  const [importStatus, setImportStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleGoogleConnect = () => {
-    // Mock Google OAuth connection
-    setIsConnected(true);
-  };
+  const { isConnected, email, isLoading, connect, disconnect, backup, restore } = useGoogleDrive();
 
   const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -37,10 +31,29 @@ export function SettingsModal({
       reader.onload = (event) => {
         const result = event.target?.result as string;
         const success = onImport(result);
-        setImportStatus(success ? 'success' : 'error');
-        setTimeout(() => setImportStatus('idle'), 3000);
+        if (success) {
+          toast.success('Import successful!');
+        } else {
+          toast.error('Invalid file format');
+        }
       };
       reader.readAsText(file);
+    }
+    // Reset file input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleBackupToCloud = async () => {
+    const data = getBackupData();
+    await backup(data);
+  };
+
+  const handleRestoreFromCloud = async () => {
+    const data = await restore();
+    if (data) {
+      onRestoreData(data);
     }
   };
 
@@ -103,18 +116,6 @@ export function SettingsModal({
                     className="hidden"
                   />
                 </div>
-                {importStatus === 'success' && (
-                  <div className="flex items-center gap-2 mt-2 text-sm text-success">
-                    <CheckCircle className="w-4 h-4" />
-                    Import successful!
-                  </div>
-                )}
-                {importStatus === 'error' && (
-                  <div className="flex items-center gap-2 mt-2 text-sm text-destructive">
-                    <AlertCircle className="w-4 h-4" />
-                    Invalid file format
-                  </div>
-                )}
               </div>
 
               {/* Google Drive Backup Section */}
@@ -124,9 +125,13 @@ export function SettingsModal({
                   Google Drive Backup
                 </h3>
 
-                {!isConnected ? (
+                {isLoading ? (
+                  <div className="flex items-center justify-center py-6">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  </div>
+                ) : !isConnected ? (
                   <button
-                    onClick={handleGoogleConnect}
+                    onClick={connect}
                     className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-gradient-to-r from-primary to-cyan-400 text-primary-foreground font-semibold hover:opacity-90 transition-opacity"
                   >
                     <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -151,32 +156,50 @@ export function SettingsModal({
                   </button>
                 ) : (
                   <div className="space-y-3">
-                    <div className="flex items-center gap-2 p-3 rounded-xl bg-success/10 border border-success/20">
-                      <CheckCircle className="w-4 h-4 text-success" />
-                      <span className="text-sm text-success">Google Account Connected</span>
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-success/10 border border-success/20">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-success" />
+                        <span className="text-sm text-success truncate max-w-[180px]">{email}</span>
+                      </div>
+                      <button
+                        onClick={disconnect}
+                        className="p-1.5 rounded-lg hover:bg-destructive/20 transition-colors text-muted-foreground hover:text-destructive"
+                        title="Disconnect"
+                      >
+                        <LogOut className="w-4 h-4" />
+                      </button>
                     </div>
 
                     <div className="flex gap-3">
                       <button
-                        onClick={onBackupToCloud}
-                        className="flex-1 py-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium"
+                        onClick={handleBackupToCloud}
+                        disabled={isLoading}
+                        className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium disabled:opacity-50"
                       >
+                        {isLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Upload className="w-4 h-4" />
+                        )}
                         Backup Now
                       </button>
                       <button
-                        onClick={onRestoreFromCloud}
-                        className="flex-1 py-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium"
+                        onClick={handleRestoreFromCloud}
+                        disabled={isLoading}
+                        className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors text-sm font-medium disabled:opacity-50"
                       >
+                        {isLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Download className="w-4 h-4" />
+                        )}
                         Restore
                       </button>
                     </div>
 
-                    {lastBackup && (
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Clock className="w-3 h-3" />
-                        Last backup: {new Date(lastBackup).toLocaleString()}
-                      </div>
-                    )}
+                    <p className="text-xs text-muted-foreground text-center">
+                      Backup saves to: elite-notepade-backup.json
+                    </p>
                   </div>
                 )}
               </div>
