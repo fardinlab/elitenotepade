@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
-import { useTeamData } from '@/hooks/useTeamData';
+import { useMultiTeamData } from '@/hooks/useMultiTeamData';
 import { MAX_MEMBERS } from '@/types/member';
 import { AppHeader } from '@/components/AppHeader';
 import { TeamInfo } from '@/components/TeamInfo';
@@ -10,23 +10,30 @@ import { AddMemberModal } from '@/components/AddMemberModal';
 import { SettingsModal } from '@/components/SettingsModal';
 import { ActionControls } from '@/components/ActionControls';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
+import { TeamList } from '@/components/TeamList';
+import { GlobalSearch } from '@/components/GlobalSearch';
 import { toast } from 'sonner';
 
 const Index = () => {
   const {
-    data,
+    activeTeam,
+    sortedTeams,
     isLoaded,
+    setActiveTeam,
+    createNewTeam,
     updateTeamName,
     updateAdminEmail,
     addMember,
     removeMember,
     updateMemberDate,
     canAddMember,
+    isTeamFull,
     exportData,
     importData,
     setLastBackup,
+    searchMembers,
     memberCount,
-  } = useTeamData();
+  } = useMultiTeamData();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -52,7 +59,7 @@ const Index = () => {
       removeMember(deleteConfirm.id);
       toast.success('Member removed');
       setDeleteConfirm(null);
-      if (data.members.length === 1) {
+      if (activeTeam && activeTeam.members.length === 1) {
         setIsRemoveMode(false);
       }
     }
@@ -69,17 +76,25 @@ const Index = () => {
   };
 
   const handleBackupToCloud = () => {
-    // Mock backup to Google Drive
     setLastBackup(new Date().toISOString());
     toast.success('Backup completed to Google Drive');
   };
 
   const handleRestoreFromCloud = () => {
-    // Mock restore from Google Drive
     toast.info('Restore from Google Drive (demo mode)');
   };
 
-  if (!isLoaded) {
+  const handleCreateNewTeam = () => {
+    createNewTeam();
+    toast.success('New team created!');
+  };
+
+  const handleSelectTeam = (teamId: string) => {
+    setActiveTeam(teamId);
+    setIsRemoveMode(false);
+  };
+
+  if (!isLoaded || !activeTeam) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
@@ -91,10 +106,23 @@ const Index = () => {
     <div className="min-h-screen pb-28">
       <AppHeader onSettingsClick={() => setIsSettingsOpen(true)} />
 
-      <main className="container mx-auto px-4 py-6 space-y-4">
+      <main className="container mx-auto px-4 py-6 space-y-6">
+        {/* Global Search */}
+        <GlobalSearch onSearch={searchMembers} onSelectTeam={handleSelectTeam} />
+
+        {/* Team List */}
+        <TeamList
+          teams={sortedTeams}
+          activeTeamId={activeTeam.id}
+          onSelectTeam={handleSelectTeam}
+          onCreateTeam={handleCreateNewTeam}
+          showCreateButton={isTeamFull}
+        />
+
+        {/* Active Team Info */}
         <TeamInfo
-          teamName={data.teamName}
-          adminEmail={data.adminEmail}
+          teamName={activeTeam.teamName}
+          adminEmail={activeTeam.adminEmail}
           memberCount={memberCount}
           onTeamNameChange={updateTeamName}
           onAdminEmailChange={updateAdminEmail}
@@ -102,15 +130,15 @@ const Index = () => {
 
         <div className="space-y-3">
           <h3 className="text-sm font-medium text-muted-foreground px-1">
-            Team Members ({data.members.length})
+            Team Members ({activeTeam.members.length})
           </h3>
 
-          {data.members.length === 0 ? (
+          {activeTeam.members.length === 0 ? (
             <EmptyState />
           ) : (
             <div className="space-y-3">
               <AnimatePresence mode="popLayout">
-                {data.members.map((member, index) => (
+                {activeTeam.members.map((member, index) => (
                   <MemberCard
                     key={member.id}
                     member={member}
@@ -144,7 +172,7 @@ const Index = () => {
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
-        lastBackup={data.lastBackup}
+        lastBackup={activeTeam.lastBackup}
         onExport={exportData}
         onImport={handleImport}
         onBackupToCloud={handleBackupToCloud}
