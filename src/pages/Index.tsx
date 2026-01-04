@@ -113,8 +113,8 @@ const [showNotepads, setShowNotepads] = useState(false);
     }
   };
 
-  const handleCreateNewTeam = () => {
-    createNewTeam();
+  const handleCreateNewTeam = (teamName: string) => {
+    createNewTeam(teamName);
     toast.success('New team created!');
   };
 
