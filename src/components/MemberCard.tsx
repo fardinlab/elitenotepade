@@ -1,5 +1,6 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Phone, Trash2, Calendar } from 'lucide-react';
+import { Phone, Trash2, Calendar, Pencil, Check, X } from 'lucide-react';
 import { Member } from '@/types/member';
 
 interface MemberCardProps {
@@ -7,9 +8,13 @@ interface MemberCardProps {
   index: number;
   isRemoveMode: boolean;
   onRemove: () => void;
+  onDateChange: (id: string, date: string) => void;
 }
 
-export function MemberCard({ member, index, isRemoveMode, onRemove }: MemberCardProps) {
+export function MemberCard({ member, index, isRemoveMode, onRemove, onDateChange }: MemberCardProps) {
+  const [isEditingDate, setIsEditingDate] = useState(false);
+  const [editDateValue, setEditDateValue] = useState(member.joinDate);
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', {
@@ -28,6 +33,18 @@ export function MemberCard({ member, index, isRemoveMode, onRemove }: MemberCard
     window.location.href = `tel:${member.phone}`;
   };
 
+  const handleSaveDate = () => {
+    if (editDateValue) {
+      onDateChange(member.id, editDateValue);
+      setIsEditingDate(false);
+    }
+  };
+
+  const handleCancelDate = () => {
+    setEditDateValue(member.joinDate);
+    setIsEditingDate(false);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -44,8 +61,43 @@ export function MemberCard({ member, index, isRemoveMode, onRemove }: MemberCard
 
         <div className="flex items-center gap-2 flex-shrink-0">
           <div className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground">
-            <Calendar className="w-3 h-3" />
-            <span>{formatDate(member.joinDate)}</span>
+            {isEditingDate ? (
+              <div className="flex items-center gap-1">
+                <input
+                  type="date"
+                  value={editDateValue}
+                  onChange={(e) => setEditDateValue(e.target.value)}
+                  className="bg-input rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+                  autoFocus
+                />
+                <button
+                  onClick={handleSaveDate}
+                  className="p-1 rounded bg-success/20 text-success hover:bg-success/30 transition-colors"
+                >
+                  <Check className="w-3 h-3" />
+                </button>
+                <button
+                  onClick={handleCancelDate}
+                  className="p-1 rounded bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ) : (
+              <>
+                <Calendar className="w-3 h-3" />
+                <span>{formatDate(member.joinDate)}</span>
+                {!isRemoveMode && (
+                  <button
+                    onClick={() => setIsEditingDate(true)}
+                    className="p-1 rounded hover:bg-secondary transition-colors"
+                    aria-label="Edit date"
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                )}
+              </>
+            )}
           </div>
 
           {isRemoveMode ? (
@@ -83,8 +135,44 @@ export function MemberCard({ member, index, isRemoveMode, onRemove }: MemberCard
 
       {/* Mobile date display */}
       <div className="sm:hidden flex items-center gap-1 text-xs text-muted-foreground mt-2 pt-2 border-t border-border">
-        <Calendar className="w-3 h-3" />
-        <span>Joined {formatDate(member.joinDate)}</span>
+        {isEditingDate ? (
+          <div className="flex items-center gap-2 flex-1">
+            <Calendar className="w-3 h-3" />
+            <input
+              type="date"
+              value={editDateValue}
+              onChange={(e) => setEditDateValue(e.target.value)}
+              className="flex-1 bg-input rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+              autoFocus
+            />
+            <button
+              onClick={handleSaveDate}
+              className="p-1 rounded bg-success/20 text-success hover:bg-success/30 transition-colors"
+            >
+              <Check className="w-3 h-3" />
+            </button>
+            <button
+              onClick={handleCancelDate}
+              className="p-1 rounded bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors"
+            >
+              <X className="w-3 h-3" />
+            </button>
+          </div>
+        ) : (
+          <>
+            <Calendar className="w-3 h-3" />
+            <span>Joined {formatDate(member.joinDate)}</span>
+            {!isRemoveMode && (
+              <button
+                onClick={() => setIsEditingDate(true)}
+                className="p-1 rounded hover:bg-secondary transition-colors ml-auto"
+                aria-label="Edit date"
+              >
+                <Pencil className="w-3 h-3" />
+              </button>
+            )}
+          </>
+        )}
       </div>
     </motion.div>
   );
