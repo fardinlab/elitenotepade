@@ -11,7 +11,6 @@ import { SettingsModal } from '@/components/SettingsModal';
 import { ActionControls } from '@/components/ActionControls';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { toast } from 'sonner';
-
 const Index = () => {
   const {
     data,
@@ -25,15 +24,20 @@ const Index = () => {
     exportData,
     importData,
     setLastBackup,
-    memberCount,
+    memberCount
   } = useTeamData();
-
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isRemoveMode, setIsRemoveMode] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; email: string } | null>(null);
-
-  const handleAddMember = (member: { email: string; phone: string; joinDate: string }) => {
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    id: string;
+    email: string;
+  } | null>(null);
+  const handleAddMember = (member: {
+    email: string;
+    phone: string;
+    joinDate: string;
+  }) => {
     const success = addMember(member);
     if (success) {
       toast.success('Member added successfully!');
@@ -42,11 +46,12 @@ const Index = () => {
     }
     return success;
   };
-
   const handleRemoveMember = (id: string, email: string) => {
-    setDeleteConfirm({ id, email });
+    setDeleteConfirm({
+      id,
+      email
+    });
   };
-
   const confirmRemove = () => {
     if (deleteConfirm) {
       removeMember(deleteConfirm.id);
@@ -57,7 +62,6 @@ const Index = () => {
       }
     }
   };
-
   const handleImport = (json: string) => {
     const success = importData(json);
     if (success) {
@@ -67,98 +71,20 @@ const Index = () => {
     }
     return success;
   };
-
   const handleBackupToCloud = () => {
     // Mock backup to Google Drive
     setLastBackup(new Date().toISOString());
     toast.success('Backup completed to Google Drive');
   };
-
   const handleRestoreFromCloud = () => {
     // Mock restore from Google Drive
     toast.info('Restore from Google Drive (demo mode)');
   };
-
   if (!isLoaded) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
+    return <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen pb-28">
-      <AppHeader onSettingsClick={() => setIsSettingsOpen(true)} />
-
-      <main className="container mx-auto px-4 py-6 space-y-4">
-        <TeamInfo
-          teamName={data.teamName}
-          adminEmail={data.adminEmail}
-          memberCount={memberCount}
-          onTeamNameChange={updateTeamName}
-          onAdminEmailChange={updateAdminEmail}
-        />
-
-        <div className="space-y-3">
-          <h3 className="text-sm font-medium text-muted-foreground px-1">
-            Team Members ({data.members.length})
-          </h3>
-
-          {data.members.length === 0 ? (
-            <EmptyState />
-          ) : (
-            <div className="space-y-3">
-              <AnimatePresence mode="popLayout">
-                {data.members.map((member, index) => (
-                  <MemberCard
-                    key={member.id}
-                    member={member}
-                    index={index}
-                    isRemoveMode={isRemoveMode}
-                    onRemove={() => handleRemoveMember(member.id, member.email)}
-                    onDateChange={updateMemberDate}
-                  />
-                ))}
-              </AnimatePresence>
-            </div>
-          )}
-        </div>
-      </main>
-
-      <ActionControls
-        canAdd={canAddMember}
-        isRemoveMode={isRemoveMode}
-        onAddClick={() => setIsAddModalOpen(true)}
-        onRemoveModeToggle={() => setIsRemoveMode(!isRemoveMode)}
-        memberCount={memberCount}
-        maxMembers={MAX_MEMBERS}
-      />
-
-      <AddMemberModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onAdd={handleAddMember}
-      />
-
-      <SettingsModal
-        isOpen={isSettingsOpen}
-        onClose={() => setIsSettingsOpen(false)}
-        lastBackup={data.lastBackup}
-        onExport={exportData}
-        onImport={handleImport}
-        onBackupToCloud={handleBackupToCloud}
-        onRestoreFromCloud={handleRestoreFromCloud}
-      />
-
-      <DeleteConfirmModal
-        isOpen={!!deleteConfirm}
-        memberEmail={deleteConfirm?.email || ''}
-        onConfirm={confirmRemove}
-        onCancel={() => setDeleteConfirm(null)}
-      />
-    </div>
-  );
+  return;
 };
-
 export default Index;
