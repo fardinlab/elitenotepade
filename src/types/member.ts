@@ -2,6 +2,7 @@ export interface Member {
   id: string;
   email: string;
   phone: string;
+  telegram?: string;
   joinDate: string;
 }
 

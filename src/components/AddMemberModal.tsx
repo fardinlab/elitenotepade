@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, UserPlus, Mail, Phone, Calendar } from 'lucide-react';
+import { X, UserPlus, Mail, Phone, Calendar, Send } from 'lucide-react';
 
 interface AddMemberModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (member: { email: string; phone: string; joinDate: string }) => boolean;
+  onAdd: (member: { email: string; phone: string; telegram?: string; joinDate: string }) => boolean;
 }
 
 export function AddMemberModal({ isOpen, onClose, onAdd }: AddMemberModalProps) {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+  const [telegram, setTelegram] = useState('');
   const [joinDate, setJoinDate] = useState(new Date().toISOString().split('T')[0]);
   const [errors, setErrors] = useState<{ email?: string; phone?: string }>({});
 
@@ -40,10 +41,16 @@ export function AddMemberModal({ isOpen, onClose, onAdd }: AddMemberModalProps) 
       return;
     }
 
-    const success = onAdd({ email, phone, joinDate });
+    const success = onAdd({ 
+      email, 
+      phone, 
+      telegram: telegram.trim() || undefined,
+      joinDate 
+    });
     if (success) {
       setEmail('');
       setPhone('');
+      setTelegram('');
       setJoinDate(new Date().toISOString().split('T')[0]);
       setErrors({});
       onClose();
@@ -53,6 +60,7 @@ export function AddMemberModal({ isOpen, onClose, onAdd }: AddMemberModalProps) 
   const handleClose = () => {
     setEmail('');
     setPhone('');
+    setTelegram('');
     setErrors({});
     onClose();
   };
@@ -72,7 +80,7 @@ export function AddMemberModal({ isOpen, onClose, onAdd }: AddMemberModalProps) 
             initial={{ opacity: 0, scale: 0.95, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            className="fixed inset-x-4 top-1/2 -translate-y-1/2 max-w-md mx-auto glass-card rounded-2xl p-6 z-50 card-shadow"
+            className="fixed inset-x-4 top-1/2 -translate-y-1/2 max-w-md mx-auto glass-card rounded-2xl p-6 z-50 card-shadow max-h-[90vh] overflow-y-auto"
           >
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-3">
@@ -128,6 +136,21 @@ export function AddMemberModal({ isOpen, onClose, onAdd }: AddMemberModalProps) 
                 {errors.phone && (
                   <p className="text-sm text-destructive mt-1">{errors.phone}</p>
                 )}
+              </div>
+
+              <div>
+                <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-2">
+                  <Send className="w-4 h-4" />
+                  Telegram Username
+                  <span className="text-xs text-muted-foreground/60">(optional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={telegram}
+                  onChange={(e) => setTelegram(e.target.value)}
+                  placeholder="@username"
+                  className="w-full bg-input rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                />
               </div>
 
               <div>

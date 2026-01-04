@@ -178,6 +178,38 @@ export function useMultiTeamData() {
     }));
   }, []);
 
+  const updateMemberEmail = useCallback((id: string, email: string) => {
+    setData((prev) => ({
+      ...prev,
+      teams: prev.teams.map((t) =>
+        t.id === prev.activeTeamId
+          ? {
+              ...t,
+              members: t.members.map((m) =>
+                m.id === id ? { ...m, email } : m
+              ),
+            }
+          : t
+      ),
+    }));
+  }, []);
+
+  const updateMemberTelegram = useCallback((id: string, telegram: string) => {
+    setData((prev) => ({
+      ...prev,
+      teams: prev.teams.map((t) =>
+        t.id === prev.activeTeamId
+          ? {
+              ...t,
+              members: t.members.map((m) =>
+                m.id === id ? { ...m, telegram: telegram || undefined } : m
+              ),
+            }
+          : t
+      ),
+    }));
+  }, []);
+
   const canAddMember = activeTeam ? activeTeam.members.length + 1 < MAX_MEMBERS : false;
   const isTeamFull = activeTeam ? activeTeam.members.length + 1 >= MAX_MEMBERS : false;
 
@@ -275,6 +307,8 @@ export function useMultiTeamData() {
     addMember,
     removeMember,
     updateMemberDate,
+    updateMemberEmail,
+    updateMemberTelegram,
     canAddMember,
     isTeamFull,
     exportData,
