@@ -210,6 +210,22 @@ export function useMultiTeamData() {
     }));
   }, []);
 
+  const updateMemberPayment = useCallback((id: string, isPaid: boolean, paidAmount?: number) => {
+    setData((prev) => ({
+      ...prev,
+      teams: prev.teams.map((t) =>
+        t.id === prev.activeTeamId
+          ? {
+              ...t,
+              members: t.members.map((m) =>
+                m.id === id ? { ...m, isPaid, paidAmount: isPaid ? paidAmount : undefined } : m
+              ),
+            }
+          : t
+      ),
+    }));
+  }, []);
+
   const canAddMember = activeTeam ? activeTeam.members.length + 1 < MAX_MEMBERS : false;
   const isTeamFull = activeTeam ? activeTeam.members.length + 1 >= MAX_MEMBERS : false;
 
@@ -309,6 +325,7 @@ export function useMultiTeamData() {
     updateMemberDate,
     updateMemberEmail,
     updateMemberTelegram,
+    updateMemberPayment,
     canAddMember,
     isTeamFull,
     exportData,

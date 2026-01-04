@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Phone, Trash2, Calendar, Pencil, Check, X, Send } from 'lucide-react';
+import { Phone, Trash2, Calendar, Pencil, Check, X, Send, DollarSign } from 'lucide-react';
 import { Member } from '@/types/member';
 
 interface MemberCardProps {
@@ -11,6 +11,7 @@ interface MemberCardProps {
   onDateChange: (id: string, date: string) => void;
   onEmailChange: (id: string, email: string) => void;
   onTelegramChange: (id: string, telegram: string) => void;
+  onPaymentChange: (id: string, isPaid: boolean, paidAmount?: number) => void;
 }
 
 export function MemberCard({ 
@@ -20,7 +21,8 @@ export function MemberCard({
   onRemove, 
   onDateChange,
   onEmailChange,
-  onTelegramChange 
+  onTelegramChange,
+  onPaymentChange
 }: MemberCardProps) {
   const [isEditingDate, setIsEditingDate] = useState(false);
   const [editDateValue, setEditDateValue] = useState(member.joinDate);
@@ -28,6 +30,8 @@ export function MemberCard({
   const [editEmailValue, setEditEmailValue] = useState(member.email);
   const [isEditingTelegram, setIsEditingTelegram] = useState(false);
   const [editTelegramValue, setEditTelegramValue] = useState(member.telegram || '');
+  const [isEditingPayment, setIsEditingPayment] = useState(false);
+  const [editPaidAmount, setEditPaidAmount] = useState(member.paidAmount?.toString() || '');
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -87,6 +91,17 @@ export function MemberCard({
   const handleCancelTelegram = () => {
     setEditTelegramValue(member.telegram || '');
     setIsEditingTelegram(false);
+  };
+
+  const handleSavePayment = (isPaid: boolean) => {
+    const amount = parseFloat(editPaidAmount) || 0;
+    onPaymentChange(member.id, isPaid, isPaid ? amount : undefined);
+    setIsEditingPayment(false);
+  };
+
+  const handleCancelPayment = () => {
+    setEditPaidAmount(member.paidAmount?.toString() || '');
+    setIsEditingPayment(false);
   };
 
   return (
@@ -189,6 +204,64 @@ export function MemberCard({
                   onClick={() => setIsEditingTelegram(true)}
                   className="p-1 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-secondary transition-all"
                   aria-label="Edit telegram"
+                >
+                  <Pencil className="w-3 h-3 text-muted-foreground" />
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Payment Status */}
+          {isEditingPayment ? (
+            <div className="flex items-center gap-2 flex-wrap">
+              <DollarSign className="w-3 h-3 text-muted-foreground" />
+              <input
+                type="number"
+                value={editPaidAmount}
+                onChange={(e) => setEditPaidAmount(e.target.value)}
+                placeholder="Amount"
+                className="w-20 bg-input rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+                autoFocus
+                min="0"
+                step="0.01"
+              />
+              <button
+                onClick={() => handleSavePayment(true)}
+                className="px-2 py-1 rounded text-xs bg-success/20 text-success hover:bg-success/30 transition-colors"
+              >
+                Paid
+              </button>
+              <button
+                onClick={() => handleSavePayment(false)}
+                className="px-2 py-1 rounded text-xs bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors"
+              >
+                Unpaid
+              </button>
+              <button
+                onClick={handleCancelPayment}
+                className="p-1 rounded bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 group">
+              {member.isPaid ? (
+                <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-success/20 text-success">
+                  <DollarSign className="w-3 h-3" />
+                  Paid {member.paidAmount ? `৳${member.paidAmount}` : ''}
+                </span>
+              ) : (
+                <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400">
+                  <DollarSign className="w-3 h-3" />
+                  Unpaid
+                </span>
+              )}
+              {!isRemoveMode && (
+                <button
+                  onClick={() => setIsEditingPayment(true)}
+                  className="p-1 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-secondary transition-all"
+                  aria-label="Edit payment status"
                 >
                   <Pencil className="w-3 h-3 text-muted-foreground" />
                 </button>
