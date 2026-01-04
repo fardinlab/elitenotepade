@@ -113,6 +113,27 @@ export function useMultiTeamData() {
     return newTeam;
   }, []);
 
+  const deleteTeam = useCallback((teamId: string) => {
+    setData((prev) => {
+      const remainingTeams = prev.teams.filter((t) => t.id !== teamId);
+      // If no teams left, create a default one
+      if (remainingTeams.length === 0) {
+        const newTeam = createDefaultTeam();
+        return {
+          teams: [newTeam],
+          activeTeamId: newTeam.id,
+        };
+      }
+      // If deleted team was active, switch to first team
+      const newActiveId = prev.activeTeamId === teamId ? remainingTeams[0].id : prev.activeTeamId;
+      return {
+        ...prev,
+        teams: remainingTeams,
+        activeTeamId: newActiveId,
+      };
+    });
+  }, []);
+
   const updateTeamName = useCallback((name: string) => {
     setData((prev) => ({
       ...prev,
@@ -318,6 +339,7 @@ export function useMultiTeamData() {
     isLoaded,
     setActiveTeam,
     createNewTeam,
+    deleteTeam,
     updateTeamName,
     updateAdminEmail,
     addMember,

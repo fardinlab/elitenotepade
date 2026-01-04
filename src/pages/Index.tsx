@@ -26,6 +26,7 @@ const Index = () => {
     isLoaded,
     setActiveTeam,
     createNewTeam,
+    deleteTeam,
     updateTeamName,
     updateAdminEmail,
     addMember,
@@ -35,10 +36,8 @@ const Index = () => {
     updateMemberTelegram,
     updateMemberPayment,
     canAddMember,
-    isTeamFull,
     exportData,
     importData,
-    setLastBackup,
     searchMembers,
     memberCount,
   } = useMultiTeamData();
@@ -117,6 +116,11 @@ const [showNotepads, setShowNotepads] = useState(false);
   const handleCreateNewTeam = () => {
     createNewTeam();
     toast.success('New team created!');
+  };
+
+  const handleDeleteTeam = (teamId: string) => {
+    deleteTeam(teamId);
+    toast.success('Team deleted!');
   };
 
   const handleSelectTeam = (teamId: string) => {
@@ -220,7 +224,7 @@ const [showNotepads, setShowNotepads] = useState(false);
               activeTeamId={activeTeam.id}
               onSelectTeam={handleSelectTeam}
               onCreateTeam={handleCreateNewTeam}
-              showCreateButton={isTeamFull}
+              onDeleteTeam={handleDeleteTeam}
             />
 
             {/* Active Team Info */}
