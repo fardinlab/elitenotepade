@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import { FileText } from 'lucide-react';
 import { useMultiTeamData } from '@/hooks/useMultiTeamData';
+import { useNotepads } from '@/hooks/useNotepads';
 import { MAX_MEMBERS } from '@/types/member';
 import { AppHeader } from '@/components/AppHeader';
 import { TeamInfo } from '@/components/TeamInfo';
@@ -12,6 +15,7 @@ import { ActionControls } from '@/components/ActionControls';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { TeamList } from '@/components/TeamList';
 import { GlobalSearch } from '@/components/GlobalSearch';
+import { NotepadSection } from '@/components/NotepadSection';
 import { toast } from 'sonner';
 
 const Index = () => {
@@ -37,12 +41,22 @@ const Index = () => {
     memberCount,
   } = useMultiTeamData();
 
+  const {
+    notepads,
+    activeNotepad,
+    setActiveNotepadId,
+    createNotepad,
+    updateNotepad,
+    deleteNotepad,
+  } = useNotepads();
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isRemoveMode, setIsRemoveMode] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; email: string } | null>(null);
+  const [showNotepads, setShowNotepads] = useState(false);
 
-  const handleAddMember = (member: { email: string; phone: string; joinDate: string }) => {
+  const handleAddMember = (member: { email: string; phone: string; telegram?: string; joinDate: string }) => {
     const success = addMember(member);
     if (success) {
       toast.success('Member added successfully!');
@@ -96,6 +110,11 @@ const Index = () => {
     setIsRemoveMode(false);
   };
 
+  const handleCreateNotepad = () => {
+    createNotepad();
+    toast.success('New notepad created!');
+  };
+
   if (!isLoaded || !activeTeam) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -109,63 +128,103 @@ const Index = () => {
       <AppHeader onSettingsClick={() => setIsSettingsOpen(true)} />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
-        {/* Global Search */}
-        <GlobalSearch onSearch={searchMembers} onSelectTeam={handleSelectTeam} />
+        {showNotepads ? (
+          <NotepadSection
+            notepads={notepads}
+            activeNotepad={activeNotepad}
+            onCreateNotepad={handleCreateNotepad}
+            onSelectNotepad={setActiveNotepadId}
+            onUpdateNotepad={updateNotepad}
+            onDeleteNotepad={deleteNotepad}
+            onClose={() => {
+              setShowNotepads(false);
+              setActiveNotepadId(null);
+            }}
+          />
+        ) : (
+          <>
+            {/* Create Blank Notepad Button */}
+            <motion.button
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+              onClick={() => setShowNotepads(true)}
+              className="w-full p-4 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 hover:border-amber-500/50 transition-all flex items-center gap-3"
+            >
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center">
+                <FileText className="w-5 h-5 text-white" />
+              </div>
+              <div className="text-left flex-1">
+                <h3 className="font-semibold text-foreground">Create Blank Notepad</h3>
+                <p className="text-xs text-muted-foreground">
+                  Save personal notes with rich text formatting
+                  {notepads.length > 0 && ` • ${notepads.length} note${notepads.length > 1 ? 's' : ''}`}
+                </p>
+              </div>
+            </motion.button>
 
-        {/* Team List */}
-        <TeamList
-          teams={sortedTeams}
-          activeTeamId={activeTeam.id}
-          onSelectTeam={handleSelectTeam}
-          onCreateTeam={handleCreateNewTeam}
-          showCreateButton={isTeamFull}
-        />
+            {/* Global Search */}
+            <GlobalSearch onSearch={searchMembers} onSelectTeam={handleSelectTeam} />
 
-        {/* Active Team Info */}
-        <TeamInfo
-          teamName={activeTeam.teamName}
-          adminEmail={activeTeam.adminEmail}
-          memberCount={memberCount}
-          onTeamNameChange={updateTeamName}
-          onAdminEmailChange={updateAdminEmail}
-        />
+            {/* Team List */}
+            <TeamList
+              teams={sortedTeams}
+              activeTeamId={activeTeam.id}
+              onSelectTeam={handleSelectTeam}
+              onCreateTeam={handleCreateNewTeam}
+              showCreateButton={isTeamFull}
+            />
 
-        <div className="space-y-3">
-          <h3 className="text-sm font-medium text-muted-foreground px-1">
-            Team Members ({activeTeam.members.length})
-          </h3>
+            {/* Active Team Info */}
+            <TeamInfo
+              teamName={activeTeam.teamName}
+              adminEmail={activeTeam.adminEmail}
+              memberCount={memberCount}
+              onTeamNameChange={updateTeamName}
+              onAdminEmailChange={updateAdminEmail}
+            />
 
-          {activeTeam.members.length === 0 ? (
-            <EmptyState />
-          ) : (
             <div className="space-y-3">
-              <AnimatePresence mode="popLayout">
-                {activeTeam.members.map((member, index) => (
-                  <MemberCard
-                    key={member.id}
-                    member={member}
-                    index={index}
-                    isRemoveMode={isRemoveMode}
-                    onRemove={() => handleRemoveMember(member.id, member.email)}
-                    onDateChange={updateMemberDate}
-                    onEmailChange={updateMemberEmail}
-                    onTelegramChange={updateMemberTelegram}
-                  />
-                ))}
-              </AnimatePresence>
+              <h3 className="text-sm font-medium text-muted-foreground px-1">
+                Team Members ({activeTeam.members.length})
+              </h3>
+
+              {activeTeam.members.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <div className="space-y-3">
+                  <AnimatePresence mode="popLayout">
+                    {activeTeam.members.map((member, index) => (
+                      <MemberCard
+                        key={member.id}
+                        member={member}
+                        index={index}
+                        isRemoveMode={isRemoveMode}
+                        onRemove={() => handleRemoveMember(member.id, member.email)}
+                        onDateChange={updateMemberDate}
+                        onEmailChange={updateMemberEmail}
+                        onTelegramChange={updateMemberTelegram}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </div>
+              )}
             </div>
-          )}
-        </div>
+          </>
+        )}
       </main>
 
-      <ActionControls
-        canAdd={canAddMember}
-        isRemoveMode={isRemoveMode}
-        onAddClick={() => setIsAddModalOpen(true)}
-        onRemoveModeToggle={() => setIsRemoveMode(!isRemoveMode)}
-        memberCount={memberCount}
-        maxMembers={MAX_MEMBERS}
-      />
+      {!showNotepads && (
+        <ActionControls
+          canAdd={canAddMember}
+          isRemoveMode={isRemoveMode}
+          onAddClick={() => setIsAddModalOpen(true)}
+          onRemoveModeToggle={() => setIsRemoveMode(!isRemoveMode)}
+          memberCount={memberCount}
+          maxMembers={MAX_MEMBERS}
+        />
+      )}
 
       <AddMemberModal
         isOpen={isAddModalOpen}
