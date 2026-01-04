@@ -44,6 +44,10 @@ export function useTeamData() {
     setData((prev) => ({ ...prev, teamName: name }));
   }, []);
 
+  const updateAdminEmail = useCallback((email: string) => {
+    setData((prev) => ({ ...prev, adminEmail: email }));
+  }, []);
+
   const addMember = useCallback((member: Omit<Member, 'id'>) => {
     // +1 for admin
     if (data.members.length + 1 >= MAX_MEMBERS) {
@@ -98,6 +102,7 @@ export function useTeamData() {
     data,
     isLoaded,
     updateTeamName,
+    updateAdminEmail,
     addMember,
     removeMember,
     canAddMember,

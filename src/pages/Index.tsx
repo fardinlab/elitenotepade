@@ -17,6 +17,7 @@ const Index = () => {
     data,
     isLoaded,
     updateTeamName,
+    updateAdminEmail,
     addMember,
     removeMember,
     canAddMember,
@@ -95,6 +96,7 @@ const Index = () => {
           adminEmail={data.adminEmail}
           memberCount={memberCount}
           onTeamNameChange={updateTeamName}
+          onAdminEmailChange={updateAdminEmail}
         />
 
         <div className="space-y-3">

@@ -8,22 +8,38 @@ interface TeamInfoProps {
   adminEmail: string;
   memberCount: number;
   onTeamNameChange: (name: string) => void;
+  onAdminEmailChange: (email: string) => void;
 }
 
-export function TeamInfo({ teamName, adminEmail, memberCount, onTeamNameChange }: TeamInfoProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editValue, setEditValue] = useState(teamName);
+export function TeamInfo({ teamName, adminEmail, memberCount, onTeamNameChange, onAdminEmailChange }: TeamInfoProps) {
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editNameValue, setEditNameValue] = useState(teamName);
+  const [isEditingEmail, setIsEditingEmail] = useState(false);
+  const [editEmailValue, setEditEmailValue] = useState(adminEmail);
 
-  const handleSave = () => {
-    if (editValue.trim()) {
-      onTeamNameChange(editValue.trim());
-      setIsEditing(false);
+  const handleSaveName = () => {
+    if (editNameValue.trim()) {
+      onTeamNameChange(editNameValue.trim());
+      setIsEditingName(false);
     }
   };
 
-  const handleCancel = () => {
-    setEditValue(teamName);
-    setIsEditing(false);
+  const handleCancelName = () => {
+    setEditNameValue(teamName);
+    setIsEditingName(false);
+  };
+
+  const handleSaveEmail = () => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (editEmailValue.trim() && emailRegex.test(editEmailValue.trim())) {
+      onAdminEmailChange(editEmailValue.trim());
+      setIsEditingEmail(false);
+    }
+  };
+
+  const handleCancelEmail = () => {
+    setEditEmailValue(adminEmail);
+    setIsEditingEmail(false);
   };
 
   return (
@@ -35,27 +51,27 @@ export function TeamInfo({ teamName, adminEmail, memberCount, onTeamNameChange }
     >
       {/* Team Name */}
       <div className="flex items-center gap-3 mb-4">
-        {isEditing ? (
+        {isEditingName ? (
           <div className="flex items-center gap-2 flex-1">
             <input
               type="text"
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
+              value={editNameValue}
+              onChange={(e) => setEditNameValue(e.target.value)}
               className="flex-1 bg-input rounded-lg px-3 py-2 text-lg font-display font-semibold focus:outline-none focus:ring-2 focus:ring-primary"
               autoFocus
               onKeyDown={(e) => {
-                if (e.key === 'Enter') handleSave();
-                if (e.key === 'Escape') handleCancel();
+                if (e.key === 'Enter') handleSaveName();
+                if (e.key === 'Escape') handleCancelName();
               }}
             />
             <button
-              onClick={handleSave}
+              onClick={handleSaveName}
               className="p-2 rounded-lg bg-success/20 text-success hover:bg-success/30 transition-colors"
             >
               <Check className="w-4 h-4" />
             </button>
             <button
-              onClick={handleCancel}
+              onClick={handleCancelName}
               className="p-2 rounded-lg bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors"
             >
               <X className="w-4 h-4" />
@@ -65,7 +81,7 @@ export function TeamInfo({ teamName, adminEmail, memberCount, onTeamNameChange }
           <>
             <h2 className="font-display text-xl font-bold text-foreground">{teamName}</h2>
             <button
-              onClick={() => setIsEditing(true)}
+              onClick={() => setIsEditingName(true)}
               className="p-1.5 rounded-lg hover:bg-secondary transition-colors"
               aria-label="Edit team name"
             >
@@ -77,8 +93,46 @@ export function TeamInfo({ teamName, adminEmail, memberCount, onTeamNameChange }
 
       {/* Admin Email */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-        <Mail className="w-4 h-4" />
-        <span>Admin: {adminEmail}</span>
+        {isEditingEmail ? (
+          <div className="flex items-center gap-2 flex-1">
+            <Mail className="w-4 h-4 flex-shrink-0" />
+            <input
+              type="email"
+              value={editEmailValue}
+              onChange={(e) => setEditEmailValue(e.target.value)}
+              className="flex-1 bg-input rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSaveEmail();
+                if (e.key === 'Escape') handleCancelEmail();
+              }}
+            />
+            <button
+              onClick={handleSaveEmail}
+              className="p-1.5 rounded-lg bg-success/20 text-success hover:bg-success/30 transition-colors"
+            >
+              <Check className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={handleCancelEmail}
+              className="p-1.5 rounded-lg bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : (
+          <>
+            <Mail className="w-4 h-4" />
+            <span>Admin: {adminEmail}</span>
+            <button
+              onClick={() => setIsEditingEmail(true)}
+              className="p-1 rounded-lg hover:bg-secondary transition-colors"
+              aria-label="Edit admin email"
+            >
+              <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+            </button>
+          </>
+        )}
       </div>
 
       {/* Member Count */}
