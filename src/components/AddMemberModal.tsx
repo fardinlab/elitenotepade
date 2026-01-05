@@ -5,7 +5,7 @@ import { X, UserPlus, Mail, Phone, Calendar, Send } from 'lucide-react';
 interface AddMemberModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (member: { email: string; phone: string; telegram?: string; joinDate: string }) => boolean;
+  onAdd: (member: { email: string; phone: string; telegram?: string; joinDate: string }) => boolean | Promise<boolean>;
 }
 
 export function AddMemberModal({ isOpen, onClose, onAdd }: AddMemberModalProps) {
@@ -25,7 +25,7 @@ export function AddMemberModal({ isOpen, onClose, onAdd }: AddMemberModalProps) 
     return re.test(phone);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const newErrors: { email?: string; phone?: string } = {};
 
@@ -41,7 +41,7 @@ export function AddMemberModal({ isOpen, onClose, onAdd }: AddMemberModalProps) 
       return;
     }
 
-    const success = onAdd({ 
+    const success = await onAdd({ 
       email, 
       phone, 
       telegram: telegram.trim() || undefined,
