@@ -264,6 +264,15 @@ export function useMultiTeamData() {
     }));
   }, []);
 
+  const updateTeamLogo = useCallback((teamId: string, logo: SubscriptionType) => {
+    setData((prev) => ({
+      ...prev,
+      teams: prev.teams.map((t) =>
+        t.id === teamId ? { ...t, logo } : t
+      ),
+    }));
+  }, []);
+
   const canAddMember = activeTeam ? activeTeam.members.length + 1 < MAX_MEMBERS : false;
   const isTeamFull = activeTeam ? activeTeam.members.length + 1 >= MAX_MEMBERS : false;
 
@@ -366,6 +375,7 @@ export function useMultiTeamData() {
     updateMemberTelegram,
     updateMemberPayment,
     updateMemberSubscriptions,
+    updateTeamLogo,
     canAddMember,
     isTeamFull,
     exportData,

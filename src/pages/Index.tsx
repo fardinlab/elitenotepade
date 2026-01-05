@@ -36,6 +36,7 @@ const Index = () => {
     updateMemberTelegram,
     updateMemberPayment,
     updateMemberSubscriptions,
+    updateTeamLogo,
     canAddMember,
     exportData,
     importData,
@@ -226,6 +227,7 @@ const Index = () => {
               onSelectTeam={handleSelectTeam}
               onCreateTeam={handleCreateNewTeam}
               onDeleteTeam={handleDeleteTeam}
+              onUpdateTeamLogo={updateTeamLogo}
             />
           </>
         )}
