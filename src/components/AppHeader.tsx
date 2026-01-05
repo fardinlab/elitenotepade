@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Settings } from 'lucide-react';
+import logo from '@/assets/logo.jpg';
 
 interface AppHeaderProps {
   onSettingsClick: () => void;
@@ -15,10 +16,8 @@ export function AppHeader({ onSettingsClick }: AppHeaderProps) {
     >
       <div className="container mx-auto flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-cyan-400 flex items-center justify-center glow-shadow">
-            <span className="font-display text-lg font-bold text-primary-foreground">E</span>
-          </div>
-          <h1 className="font-display text-xl font-bold gradient-text">Elite Notepade</h1>
+          <img src={logo} alt="Tech Subx BD" className="h-10 w-auto rounded-lg" />
+          <h1 className="font-display text-xl font-bold gradient-text">Tech Subx BD</h1>
         </div>
         <button
           onClick={onSettingsClick}
