@@ -1,19 +1,14 @@
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Settings, Cloud, Download, Upload, CheckCircle, LogOut, Loader2, User, Save } from 'lucide-react';
+import { X, Settings, Cloud, Download, Upload, CheckCircle, AlertCircle, LogOut, Loader2 } from 'lucide-react';
 import { useGoogleDrive } from '@/hooks/useGoogleDrive';
-import { useProfile } from '@/hooks/useProfile';
-import { useAuth } from '@/contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onExport: () => void;
-  onImport: (json: string) => boolean | Promise<boolean>;
+  onImport: (json: string) => boolean;
   getBackupData: () => object;
   onRestoreData: (data: object) => void;
 }
@@ -27,14 +22,7 @@ export function SettingsModal({
   onRestoreData,
 }: SettingsModalProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { isConnected, email: driveEmail, isLoading, connect, disconnect, backup, restore } = useGoogleDrive();
-  const { profile, loading: profileLoading, updateProfile } = useProfile();
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
-
-  const [editingName, setEditingName] = useState(false);
-  const [fullName, setFullName] = useState('');
-  const [savingName, setSavingName] = useState(false);
+  const { isConnected, email, isLoading, connect, disconnect, backup, restore } = useGoogleDrive();
 
   const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -51,6 +39,7 @@ export function SettingsModal({
       };
       reader.readAsText(file);
     }
+    // Reset file input
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -66,25 +55,6 @@ export function SettingsModal({
     if (data) {
       onRestoreData(data);
     }
-  };
-
-  const handleLogout = async () => {
-    await signOut();
-    onClose();
-    navigate('/auth');
-    toast.success('Logged out successfully');
-  };
-
-  const handleEditName = () => {
-    setFullName(profile?.full_name || '');
-    setEditingName(true);
-  };
-
-  const handleSaveName = async () => {
-    setSavingName(true);
-    await updateProfile({ full_name: fullName });
-    setSavingName(false);
-    setEditingName(false);
   };
 
   return (
@@ -120,85 +90,8 @@ export function SettingsModal({
             </div>
 
             <div className="space-y-6">
-              {/* Profile Section */}
-              <div>
-                <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                  <User className="w-4 h-4" />
-                  Profile
-                </h3>
-                {profileLoading ? (
-                  <div className="flex items-center justify-center py-4">
-                    <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {/* Email (read-only) */}
-                    <div className="space-y-1">
-                      <label className="text-xs text-muted-foreground">Email</label>
-                      <div className="p-3 rounded-xl bg-secondary/50 text-sm text-muted-foreground truncate">
-                        {user?.email || profile?.email || 'No email'}
-                      </div>
-                    </div>
-
-                    {/* Full Name (editable) */}
-                    <div className="space-y-1">
-                      <label className="text-xs text-muted-foreground">Full Name</label>
-                      {editingName ? (
-                        <div className="flex gap-2">
-                          <Input
-                            value={fullName}
-                            onChange={(e) => setFullName(e.target.value)}
-                            placeholder="Enter your name"
-                            className="flex-1"
-                          />
-                          <Button
-                            size="sm"
-                            onClick={handleSaveName}
-                            disabled={savingName}
-                            className="px-3"
-                          >
-                            {savingName ? (
-                              <Loader2 className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <Save className="w-4 h-4" />
-                            )}
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => setEditingName(false)}
-                            className="px-3"
-                          >
-                            <X className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <button
-                          onClick={handleEditName}
-                          className="w-full p-3 rounded-xl bg-secondary hover:bg-secondary/80 transition-colors text-sm text-left"
-                        >
-                          {profile?.full_name || 'Click to add name'}
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Avatar URL (optional - display if exists) */}
-                    {profile?.avatar_url && (
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={profile.avatar_url}
-                          alt="Avatar"
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                        <span className="text-sm text-muted-foreground">Profile Picture</span>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-
               {/* Local Backup Section */}
-              <div className="pt-4 border-t border-border">
+              <div>
                 <h3 className="text-sm font-semibold text-foreground mb-3">Local Backup</h3>
                 <div className="flex gap-3">
                   <button
@@ -266,7 +159,7 @@ export function SettingsModal({
                     <div className="flex items-center justify-between p-3 rounded-xl bg-success/10 border border-success/20">
                       <div className="flex items-center gap-2">
                         <CheckCircle className="w-4 h-4 text-success" />
-                        <span className="text-sm text-success truncate max-w-[180px]">{driveEmail}</span>
+                        <span className="text-sm text-success truncate max-w-[180px]">{email}</span>
                       </div>
                       <button
                         onClick={disconnect}
@@ -309,17 +202,6 @@ export function SettingsModal({
                     </p>
                   </div>
                 )}
-              </div>
-
-              {/* Logout Section */}
-              <div className="pt-4 border-t border-border">
-                <button
-                  onClick={handleLogout}
-                  className="w-full flex items-center justify-center gap-2 py-3 rounded-xl bg-destructive/10 hover:bg-destructive/20 text-destructive font-medium transition-colors"
-                >
-                  <LogOut className="w-4 h-4" />
-                  Logout
-                </button>
               </div>
             </div>
           </motion.div>
