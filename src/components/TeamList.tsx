@@ -1,7 +1,6 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Users, Calendar, ChevronRight, Trash2, X, Check } from 'lucide-react';
+import { Plus, Users, Calendar, ChevronDown, Trash2, X, Check } from 'lucide-react';
 import { Team, MAX_MEMBERS, SubscriptionType, SUBSCRIPTION_CONFIG } from '@/types/member';
 
 interface TeamListProps {
@@ -10,6 +9,7 @@ interface TeamListProps {
   onSelectTeam: (teamId: string) => void;
   onCreateTeam: (teamName: string, logo?: SubscriptionType) => void;
   onDeleteTeam: (teamId: string) => void;
+  memberSectionRef?: React.RefObject<HTMLDivElement>;
 }
 
 const LOGO_ICONS: Record<SubscriptionType, string> = {
@@ -20,13 +20,13 @@ const LOGO_ICONS: Record<SubscriptionType, string> = {
   canva: 'https://static.canva.com/static/images/favicon-1.ico',
 };
 
-export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDeleteTeam }: TeamListProps) {
-  const navigate = useNavigate();
+export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDeleteTeam, memberSectionRef }: TeamListProps) {
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
   const [selectedLogo, setSelectedLogo] = useState<SubscriptionType | null>(null);
+  const [expandedTeamId, setExpandedTeamId] = useState<string | null>(null);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -73,8 +73,18 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
       handleDeleteClick(team, { stopPropagation: () => {} } as React.MouseEvent);
     } else {
       onSelectTeam(team.id);
-      navigate(`/team/${team.id}`);
+      setExpandedTeamId(team.id);
     }
+  };
+
+  const handleExpandClick = (teamId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    onSelectTeam(teamId);
+    setExpandedTeamId(teamId);
+    // Scroll to member section after a short delay to allow state update
+    setTimeout(() => {
+      memberSectionRef?.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
   };
 
   return (
@@ -203,9 +213,18 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                     </div>
                   </div>
 
-                  <ChevronRight className={`w-5 h-5 transition-colors ${
-                    isDeleteMode ? 'text-destructive' : 'text-muted-foreground'
-                  }`} />
+                  {/* Expand/Scroll Icon - only show when this team is selected */}
+                  {isActive && !isDeleteMode && (
+                    <motion.button
+                      initial={{ opacity: 0, scale: 0.8 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      onClick={(e) => handleExpandClick(team.id, e)}
+                      className="p-2 rounded-lg bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+                      aria-label="View team members"
+                    >
+                      <ChevronDown className="w-5 h-5" />
+                    </motion.button>
+                  )}
                 </div>
               </button>
             </motion.div>

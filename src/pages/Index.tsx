@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { motion } from 'framer-motion';
 import { FileText, Info } from 'lucide-react';
@@ -56,8 +56,9 @@ const Index = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [isRemoveMode, setIsRemoveMode] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; email: string } | null>(null);
-const [showNotepads, setShowNotepads] = useState(false);
+  const [showNotepads, setShowNotepads] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
+  const memberSectionRef = useRef<HTMLDivElement>(null);
 
   const handleAddMember = (member: { email: string; phone: string; telegram?: string; joinDate: string }) => {
     const success = addMember(member);
@@ -226,44 +227,47 @@ const [showNotepads, setShowNotepads] = useState(false);
               onSelectTeam={handleSelectTeam}
               onCreateTeam={handleCreateNewTeam}
               onDeleteTeam={handleDeleteTeam}
+              memberSectionRef={memberSectionRef}
             />
 
             {/* Active Team Info */}
-            <TeamInfo
-              teamName={activeTeam.teamName}
-              adminEmail={activeTeam.adminEmail}
-              memberCount={memberCount}
-              onTeamNameChange={updateTeamName}
-              onAdminEmailChange={updateAdminEmail}
-            />
+            <div ref={memberSectionRef} className="space-y-6">
+              <TeamInfo
+                teamName={activeTeam.teamName}
+                adminEmail={activeTeam.adminEmail}
+                memberCount={memberCount}
+                onTeamNameChange={updateTeamName}
+                onAdminEmailChange={updateAdminEmail}
+              />
 
-            <div className="space-y-3">
-              <h3 className="text-sm font-medium text-muted-foreground px-1">
-                Team Members ({activeTeam.members.length})
-              </h3>
+              <div className="space-y-3">
+                <h3 className="text-sm font-medium text-muted-foreground px-1">
+                  Team Members ({activeTeam.members.length})
+                </h3>
 
-              {activeTeam.members.length === 0 ? (
-                <EmptyState />
-              ) : (
-                <div className="space-y-3">
-                  <AnimatePresence mode="popLayout">
-                    {activeTeam.members.map((member, index) => (
-                      <MemberCard
-                        key={member.id}
-                        member={member}
-                        index={index}
-                        isRemoveMode={isRemoveMode}
-                        onRemove={() => handleRemoveMember(member.id, member.email)}
-                        onDateChange={updateMemberDate}
-                        onEmailChange={updateMemberEmail}
-                        onTelegramChange={updateMemberTelegram}
-                        onPaymentChange={updateMemberPayment}
-                        onSubscriptionsChange={updateMemberSubscriptions}
-                      />
-                    ))}
-                  </AnimatePresence>
-                </div>
-              )}
+                {activeTeam.members.length === 0 ? (
+                  <EmptyState />
+                ) : (
+                  <div className="space-y-3">
+                    <AnimatePresence mode="popLayout">
+                      {activeTeam.members.map((member, index) => (
+                        <MemberCard
+                          key={member.id}
+                          member={member}
+                          index={index}
+                          isRemoveMode={isRemoveMode}
+                          onRemove={() => handleRemoveMember(member.id, member.email)}
+                          onDateChange={updateMemberDate}
+                          onEmailChange={updateMemberEmail}
+                          onTelegramChange={updateMemberTelegram}
+                          onPaymentChange={updateMemberPayment}
+                          onSubscriptionsChange={updateMemberSubscriptions}
+                        />
+                      ))}
+                    </AnimatePresence>
+                  </div>
+                )}
+              </div>
             </div>
           </>
         )}
