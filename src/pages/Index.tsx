@@ -35,6 +35,7 @@ const Index = () => {
     updateMemberEmail,
     updateMemberTelegram,
     updateMemberPayment,
+    updateMemberSubscriptions,
     canAddMember,
     exportData,
     importData,
@@ -257,6 +258,7 @@ const [showNotepads, setShowNotepads] = useState(false);
                         onEmailChange={updateMemberEmail}
                         onTelegramChange={updateMemberTelegram}
                         onPaymentChange={updateMemberPayment}
+                        onSubscriptionsChange={updateMemberSubscriptions}
                       />
                     ))}
                   </AnimatePresence>

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { AppData, Team, Member, MAX_MEMBERS } from '@/types/member';
+import { AppData, Team, Member, MAX_MEMBERS, SubscriptionType } from '@/types/member';
 
 const STORAGE_KEY = 'elite_notepade_multi_data';
 
@@ -247,6 +247,22 @@ export function useMultiTeamData() {
     }));
   }, []);
 
+  const updateMemberSubscriptions = useCallback((id: string, subscriptions: SubscriptionType[]) => {
+    setData((prev) => ({
+      ...prev,
+      teams: prev.teams.map((t) =>
+        t.id === prev.activeTeamId
+          ? {
+              ...t,
+              members: t.members.map((m) =>
+                m.id === id ? { ...m, subscriptions } : m
+              ),
+            }
+          : t
+      ),
+    }));
+  }, []);
+
   const canAddMember = activeTeam ? activeTeam.members.length + 1 < MAX_MEMBERS : false;
   const isTeamFull = activeTeam ? activeTeam.members.length + 1 >= MAX_MEMBERS : false;
 
@@ -348,6 +364,7 @@ export function useMultiTeamData() {
     updateMemberEmail,
     updateMemberTelegram,
     updateMemberPayment,
+    updateMemberSubscriptions,
     canAddMember,
     isTeamFull,
     exportData,
