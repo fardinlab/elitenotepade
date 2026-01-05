@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Users, Calendar, ChevronRight, Trash2, X, Check } from 'lucide-react';
+import { Plus, Users, Calendar, ChevronRight, Trash2, X, Check, ImagePlus } from 'lucide-react';
 import { Team, MAX_MEMBERS, SubscriptionType, SUBSCRIPTION_CONFIG } from '@/types/member';
+import { differenceInDays } from 'date-fns';
 
 interface TeamListProps {
   teams: Team[];
@@ -10,6 +11,7 @@ interface TeamListProps {
   onSelectTeam: (teamId: string) => void;
   onCreateTeam: (teamName: string, logo?: SubscriptionType) => void;
   onDeleteTeam: (teamId: string) => void;
+  onUpdateTeamLogo?: (teamId: string, logo: SubscriptionType) => void;
 }
 
 const LOGO_ICONS: Record<SubscriptionType, string> = {
@@ -20,13 +22,24 @@ const LOGO_ICONS: Record<SubscriptionType, string> = {
   canva: 'https://static.canva.com/static/images/favicon-1.ico',
 };
 
-export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDeleteTeam }: TeamListProps) {
+// Count members whose join date is 1+ month (30 days) ago
+const countMembersOverOneMonth = (team: Team): number => {
+  const now = new Date();
+  return team.members.filter(member => {
+    const joinDate = new Date(member.joinDate);
+    return differenceInDays(now, joinDate) >= 30;
+  }).length;
+};
+
+export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDeleteTeam, onUpdateTeamLogo }: TeamListProps) {
   const navigate = useNavigate();
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
   const [selectedLogo, setSelectedLogo] = useState<SubscriptionType | null>(null);
+  const [teamToAddLogo, setTeamToAddLogo] = useState<Team | null>(null);
+  const [logoForTeam, setLogoForTeam] = useState<SubscriptionType | null>(null);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -136,6 +149,7 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
           const memberCount = team.members.length + 1;
           const isFull = memberCount >= MAX_MEMBERS;
           const isActive = team.id === activeTeamId;
+          const membersOverMonth = countMembersOverOneMonth(team);
 
           return (
             <motion.div
@@ -157,7 +171,7 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
               >
                 <div className="flex items-center gap-3">
                   {/* Team Logo/Icon */}
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden ${
+                  <div className={`relative w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden ${
                     isDeleteMode 
                       ? 'bg-destructive/20 text-destructive' 
                       : team.logo
@@ -173,13 +187,33 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                         className="w-6 h-6 object-contain"
                       />
                     ) : (
-                      <Users className="w-5 h-5" />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setTeamToAddLogo(team);
+                          setLogoForTeam(null);
+                        }}
+                        className="w-full h-full flex items-center justify-center hover:bg-secondary/80 transition-colors"
+                      >
+                        <ImagePlus className="w-5 h-5" />
+                      </button>
                     )}
                   </div>
                   
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <h4 className="font-medium text-foreground truncate">{team.teamName}</h4>
+                      {/* Red dots for members over 1 month */}
+                      {membersOverMonth > 0 && !isDeleteMode && (
+                        <div className="flex items-center gap-0.5">
+                          {Array.from({ length: Math.min(membersOverMonth, 8) }).map((_, i) => (
+                            <span 
+                              key={i} 
+                              className="w-2 h-2 rounded-full bg-destructive"
+                            />
+                          ))}
+                        </div>
+                      )}
                       {isCurrentMonth(team.createdAt) && (
                         <span className="px-1.5 py-0.5 bg-primary/20 text-primary text-[10px] font-medium rounded">
                           NEW
@@ -365,6 +399,99 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                   className="flex-1 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation active:scale-95"
                 >
                   Create
+                </motion.button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Add Logo Modal */}
+      <AnimatePresence>
+        {teamToAddLogo && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm"
+            onClick={() => setTeamToAddLogo(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+              className="w-full max-w-sm bg-card border border-border rounded-2xl p-6 space-y-4"
+            >
+              <div className="text-center space-y-2">
+                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
+                  <ImagePlus className="w-6 h-6 text-primary" />
+                </div>
+                <h3 className="text-lg font-semibold text-foreground">Add Team Logo</h3>
+                <p className="text-sm text-muted-foreground">
+                  Select a logo for "<span className="font-medium text-foreground">{teamToAddLogo.teamName}</span>"
+                </p>
+              </div>
+
+              {/* Logo Selection */}
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-foreground text-center">Choose a Logo</p>
+                <div className="grid grid-cols-5 gap-2">
+                  {(Object.keys(SUBSCRIPTION_CONFIG) as SubscriptionType[]).map((type) => (
+                    <motion.button
+                      key={type}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => setLogoForTeam(logoForTeam === type ? null : type)}
+                      className={`relative w-12 h-12 rounded-xl flex items-center justify-center transition-all touch-manipulation ${
+                        logoForTeam === type
+                          ? 'bg-primary/20 border-2 border-primary'
+                          : 'bg-secondary border border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <img 
+                        src={LOGO_ICONS[type]} 
+                        alt={SUBSCRIPTION_CONFIG[type].name}
+                        className="w-6 h-6 object-contain"
+                      />
+                      {logoForTeam === type && (
+                        <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
+                          <Check className="w-2.5 h-2.5 text-primary-foreground" />
+                        </div>
+                      )}
+                    </motion.button>
+                  ))}
+                </div>
+                {logoForTeam && (
+                  <p className="text-xs text-primary text-center">
+                    {SUBSCRIPTION_CONFIG[logoForTeam].name} selected
+                  </p>
+                )}
+              </div>
+              
+              <div className="flex gap-3">
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => setTeamToAddLogo(null)}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-secondary text-foreground font-medium hover:bg-secondary/80 transition-colors touch-manipulation active:scale-95"
+                >
+                  Cancel
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => {
+                    if (logoForTeam && onUpdateTeamLogo) {
+                      onUpdateTeamLogo(teamToAddLogo.id, logoForTeam);
+                    }
+                    setTeamToAddLogo(null);
+                    setLogoForTeam(null);
+                  }}
+                  disabled={!logoForTeam}
+                  className="flex-1 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation active:scale-95"
+                >
+                  Save
                 </motion.button>
               </div>
             </motion.div>
