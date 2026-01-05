@@ -83,9 +83,13 @@ const Index = () => {
     setActiveTeam(teamId);
   };
 
-  const handleCreateNotepad = () => {
-    createNotepad();
-    toast.success('New notepad created!');
+  const handleCreateNotepad = async () => {
+    const notepad = await createNotepad();
+    if (notepad) {
+      toast.success('New notepad created!');
+    } else {
+      toast.error('Failed to create notepad');
+    }
   };
 
   if (!isLoaded) {
