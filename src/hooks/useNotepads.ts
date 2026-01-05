@@ -1,49 +1,95 @@
 import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 import { Notepad } from '@/types/member';
 
-const STORAGE_KEY = 'elite_notepade_notepads';
+interface DbNotepad {
+  id: string;
+  user_id: string;
+  title: string;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
+const mapDbNotepadToNotepad = (db: DbNotepad): Notepad => ({
+  id: db.id,
+  title: db.title,
+  content: db.content || '',
+  createdAt: db.created_at,
+  updatedAt: db.updated_at,
+});
 
 export function useNotepads() {
+  const { user } = useAuth();
   const [notepads, setNotepads] = useState<Notepad[]>([]);
   const [activeNotepadId, setActiveNotepadId] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        setNotepads(parsed.notepads || []);
-        setActiveNotepadId(parsed.activeNotepadId || null);
-      } catch {
-        setNotepads([]);
-      }
+  const fetchNotepads = useCallback(async () => {
+    if (!user) {
+      setNotepads([]);
+      setIsLoaded(true);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from('notepads')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('updated_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching notepads:', error);
+      setNotepads([]);
+    } else {
+      setNotepads((data || []).map(mapDbNotepadToNotepad));
     }
     setIsLoaded(true);
-  }, []);
+  }, [user]);
 
-  // Save to localStorage
   useEffect(() => {
-    if (isLoaded) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ notepads, activeNotepadId }));
-    }
-  }, [notepads, activeNotepadId, isLoaded]);
+    fetchNotepads();
+  }, [fetchNotepads]);
 
-  const createNotepad = useCallback(() => {
-    const newNotepad: Notepad = {
-      id: Date.now().toString(),
-      title: 'Untitled Note',
-      content: '',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
+  const createNotepad = useCallback(async () => {
+    if (!user) return null;
+
+    const { data, error } = await supabase
+      .from('notepads')
+      .insert({
+        user_id: user.id,
+        title: 'Untitled Note',
+        content: '',
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating notepad:', error);
+      return null;
+    }
+
+    const newNotepad = mapDbNotepadToNotepad(data);
     setNotepads((prev) => [newNotepad, ...prev]);
     setActiveNotepadId(newNotepad.id);
     return newNotepad;
-  }, []);
+  }, [user]);
 
-  const updateNotepad = useCallback((id: string, updates: Partial<Pick<Notepad, 'title' | 'content'>>) => {
+  const updateNotepad = useCallback(async (id: string, updates: Partial<Pick<Notepad, 'title' | 'content'>>) => {
+    const { error } = await supabase
+      .from('notepads')
+      .update({
+        ...updates,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating notepad:', error);
+      return;
+    }
+
     setNotepads((prev) =>
       prev.map((n) =>
         n.id === id
@@ -53,7 +99,17 @@ export function useNotepads() {
     );
   }, []);
 
-  const deleteNotepad = useCallback((id: string) => {
+  const deleteNotepad = useCallback(async (id: string) => {
+    const { error } = await supabase
+      .from('notepads')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting notepad:', error);
+      return;
+    }
+
     setNotepads((prev) => prev.filter((n) => n.id !== id));
     if (activeNotepadId === id) {
       setActiveNotepadId(null);
@@ -62,7 +118,7 @@ export function useNotepads() {
 
   const activeNotepad = notepads.find((n) => n.id === activeNotepadId) || null;
 
-  // Sort by updatedAt descending
+  // Already sorted by updated_at from query, but re-sort for local updates
   const sortedNotepads = [...notepads].sort(
     (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
   );
