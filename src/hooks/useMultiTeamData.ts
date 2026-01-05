@@ -3,12 +3,13 @@ import { AppData, Team, Member, MAX_MEMBERS, SubscriptionType } from '@/types/me
 
 const STORAGE_KEY = 'elite_notepade_multi_data';
 
-const createDefaultTeam = (teamName?: string): Team => ({
+const createDefaultTeam = (teamName?: string, logo?: SubscriptionType): Team => ({
   id: Date.now().toString(),
   teamName: teamName || 'My Elite Team',
   adminEmail: 'admin@example.com',
   members: [],
   createdAt: new Date().toISOString(),
+  logo,
 });
 
 const getDefaultData = (): AppData => {
@@ -103,8 +104,8 @@ export function useMultiTeamData() {
     setData((prev) => ({ ...prev, activeTeamId: teamId }));
   }, []);
 
-  const createNewTeam = useCallback((teamName?: string) => {
-    const newTeam = createDefaultTeam(teamName);
+  const createNewTeam = useCallback((teamName?: string, logo?: SubscriptionType) => {
+    const newTeam = createDefaultTeam(teamName, logo);
     setData((prev) => ({
       ...prev,
       teams: [...prev.teams, newTeam],

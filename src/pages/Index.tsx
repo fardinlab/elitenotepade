@@ -5,7 +5,7 @@ import { FileText, Info } from 'lucide-react';
 import { useMultiTeamData } from '@/hooks/useMultiTeamData';
 import AboutSection from '@/components/AboutSection';
 import { useNotepads } from '@/hooks/useNotepads';
-import { MAX_MEMBERS } from '@/types/member';
+import { MAX_MEMBERS, SubscriptionType } from '@/types/member';
 import { AppHeader } from '@/components/AppHeader';
 import { TeamInfo } from '@/components/TeamInfo';
 import { MemberCard } from '@/components/MemberCard';
@@ -114,8 +114,8 @@ const [showNotepads, setShowNotepads] = useState(false);
     }
   };
 
-  const handleCreateNewTeam = (teamName: string) => {
-    createNewTeam(teamName);
+  const handleCreateNewTeam = (teamName: string, logo?: SubscriptionType) => {
+    createNewTeam(teamName, logo);
     toast.success('New team created!');
   };
 

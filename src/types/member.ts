@@ -26,6 +26,7 @@ export interface Team {
   members: Member[];
   createdAt: string;
   lastBackup?: string;
+  logo?: SubscriptionType;
 }
 
 export interface Notepad {
