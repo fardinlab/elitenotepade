@@ -33,10 +33,43 @@ export function useSupabaseData() {
         return;
       }
 
+      // If this is a brand-new account, create a default team so the UI can load.
+      if (!teamsData || teamsData.length === 0) {
+        const { data: created, error: createError } = await supabase
+          .from('teams')
+          .insert({
+            user_id: user.id,
+            team_name: 'My Elite Team',
+            admin_email: user.email || 'admin@example.com',
+            logo: null,
+          })
+          .select()
+          .single();
+
+        if (createError || !created) {
+          console.error('Error creating default team:', createError);
+          return;
+        }
+
+        const mappedTeam: Team = {
+          id: created.id,
+          teamName: created.team_name,
+          adminEmail: created.admin_email,
+          createdAt: created.created_at,
+          lastBackup: created.last_backup,
+          logo: created.logo as SubscriptionType | undefined,
+          members: [],
+        };
+
+        setTeams([mappedTeam]);
+        setActiveTeamId(created.id);
+        return;
+      }
+
       // Fetch members for all teams
-      const teamIds = teamsData?.map(t => t.id) || [];
+      const teamIds = teamsData.map((t) => t.id);
       let membersData: any[] = [];
-      
+
       if (teamIds.length > 0) {
         const { data: members, error: membersError } = await supabase
           .from('members')
