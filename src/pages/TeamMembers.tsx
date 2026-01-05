@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
-import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { useMultiTeamData } from '@/hooks/useMultiTeamData';
 import { MAX_MEMBERS } from '@/types/member';
 import { TeamInfo } from '@/components/TeamInfo';
 import { MemberCard } from '@/components/MemberCard';
@@ -15,7 +15,7 @@ import { toast } from 'sonner';
 const TeamMembers = () => {
   const navigate = useNavigate();
   const { teamId } = useParams<{ teamId: string }>();
-  
+
   const {
     activeTeam,
     sortedTeams,
@@ -32,27 +32,27 @@ const TeamMembers = () => {
     updateMemberSubscriptions,
     canAddMember,
     memberCount,
-  } = useSupabaseData();
+  } = useMultiTeamData();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isRemoveMode, setIsRemoveMode] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; email: string } | null>(null);
 
   // Set active team based on URL param
-  const team = sortedTeams.find(t => t.id === teamId) || activeTeam;
+  const team = sortedTeams.find((t) => t.id === teamId) || activeTeam;
 
   // Sync active team with URL
   useEffect(() => {
     if (teamId && activeTeam?.id !== teamId) {
-      const targetTeam = sortedTeams.find(t => t.id === teamId);
+      const targetTeam = sortedTeams.find((t) => t.id === teamId);
       if (targetTeam) {
         setActiveTeam(teamId);
       }
     }
   }, [teamId, activeTeam?.id, sortedTeams, setActiveTeam]);
 
-  const handleAddMember = async (member: { email: string; phone: string; telegram?: string; joinDate: string }) => {
-    const success = await addMember(member);
+  const handleAddMember = (member: { email: string; phone: string; telegram?: string; joinDate: string }) => {
+    const success = addMember(member);
     if (success) {
       toast.success('Member added successfully!');
     } else {
@@ -65,9 +65,9 @@ const TeamMembers = () => {
     setDeleteConfirm({ id, email });
   };
 
-  const confirmRemove = async () => {
+  const confirmRemove = () => {
     if (deleteConfirm) {
-      await removeMember(deleteConfirm.id);
+      removeMember(deleteConfirm.id);
       toast.success('Member removed');
       setDeleteConfirm(null);
       if (team && team.members.length === 1) {
