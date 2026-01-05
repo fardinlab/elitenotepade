@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import { motion } from 'framer-motion';
 import { FileText, Info } from 'lucide-react';
-import { useMultiTeamData } from '@/hooks/useMultiTeamData';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
 import AboutSection from '@/components/AboutSection';
 import { useNotepads } from '@/hooks/useNotepads';
 import { MAX_MEMBERS, SubscriptionType } from '@/types/member';
@@ -42,7 +42,7 @@ const Index = () => {
     importData,
     searchMembers,
     memberCount,
-  } = useMultiTeamData();
+  } = useSupabaseData();
 
   const {
     notepads,
@@ -60,8 +60,8 @@ const Index = () => {
   const [showNotepads, setShowNotepads] = useState(false);
   const [showAbout, setShowAbout] = useState(false);
 
-  const handleAddMember = (member: { email: string; phone: string; telegram?: string; joinDate: string }) => {
-    const success = addMember(member);
+  const handleAddMember = async (member: { email: string; phone: string; telegram?: string; joinDate: string }) => {
+    const success = await addMember(member);
     if (success) {
       toast.success('Member added successfully!');
     } else {
@@ -74,9 +74,9 @@ const Index = () => {
     setDeleteConfirm({ id, email });
   };
 
-  const confirmRemove = () => {
+  const confirmRemove = async () => {
     if (deleteConfirm) {
-      removeMember(deleteConfirm.id);
+      await removeMember(deleteConfirm.id);
       toast.success('Member removed');
       setDeleteConfirm(null);
       if (activeTeam && activeTeam.members.length === 1) {
@@ -85,8 +85,8 @@ const Index = () => {
     }
   };
 
-  const handleImport = (json: string) => {
-    const success = importData(json);
+  const handleImport = async (json: string) => {
+    const success = await importData(json);
     if (success) {
       toast.success('Data imported successfully!');
     } else {
