@@ -16,8 +16,11 @@ export function AppHeader({ onSettingsClick }: AppHeaderProps) {
     >
       <div className="container mx-auto flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <img src={logo} alt="Tech Subx BD" className="h-10 w-auto rounded-lg" />
-          <h1 className="font-display text-xl font-bold gradient-text">Tech Subx BD</h1>
+          <img src={logo} alt="Elite NotePad" className="h-10 w-auto rounded-lg" />
+          <div className="flex flex-col">
+            <h1 className="font-display text-xl font-bold gradient-text leading-tight">Elite NotePad</h1>
+            <span className="text-xs text-muted-foreground">Powered by Fardin Sagor</span>
+          </div>
         </div>
         <button
           onClick={onSettingsClick}
