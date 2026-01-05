@@ -4,6 +4,7 @@ import { X, Settings, Cloud, Download, Upload, CheckCircle, LogOut, Loader2, Use
 import { useGoogleDrive } from '@/hooks/useGoogleDrive';
 import { useProfile } from '@/hooks/useProfile';
 import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { Input } from '@/components/ui/input';
@@ -29,7 +30,7 @@ export function SettingsModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { isConnected, email: driveEmail, isLoading, connect, disconnect, backup, restore } = useGoogleDrive();
   const { profile, loading: profileLoading, updateProfile } = useProfile();
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const [editingName, setEditingName] = useState(false);
@@ -69,7 +70,7 @@ export function SettingsModal({
   };
 
   const handleLogout = async () => {
-    await signOut();
+    await supabase.auth.signOut();
     onClose();
     navigate('/auth');
     toast.success('Logged out successfully');
@@ -182,17 +183,32 @@ export function SettingsModal({
                       )}
                     </div>
 
-                    {/* Avatar URL (optional - display if exists) */}
-                    {profile?.avatar_url && (
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={profile.avatar_url}
-                          alt="Avatar"
-                          className="w-10 h-10 rounded-full object-cover"
-                        />
-                        <span className="text-sm text-muted-foreground">Profile Picture</span>
-                      </div>
-                    )}
+                    {/* Avatar + Profile page */}
+                    <div className="space-y-2">
+                      {profile?.avatar_url && (
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={profile.avatar_url}
+                            alt="Profile avatar"
+                            className="w-10 h-10 rounded-full object-cover"
+                            loading="lazy"
+                          />
+                          <span className="text-sm text-muted-foreground">Profile Picture</span>
+                        </div>
+                      )}
+
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => {
+                          onClose();
+                          navigate('/profile');
+                        }}
+                        className="w-full"
+                      >
+                        Open Profile
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
