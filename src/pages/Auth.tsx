@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, Loader2, CheckCircle, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2, CheckCircle, ArrowLeft, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { z } from 'zod';
+import { toast } from 'sonner';
 import logo from '@/assets/logo.jpg';
 
 const emailSchema = z.string().email('Please enter a valid email address');
@@ -22,9 +24,11 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
   const [error, setError] = useState('');
   
-  const { user, signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
+  const { user, signIn, signUp, signInWithGoogle, resetPassword, verifyOtp, resendOtp } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -155,7 +159,52 @@ const Auth = () => {
     }
   };
 
-  // Verification sent view
+  const handleVerifyOtp = async () => {
+    if (otpCode.length !== 6) {
+      setError('Please enter the complete 6-digit code');
+      return;
+    }
+
+    setError('');
+    setLoading(true);
+
+    try {
+      const { error } = await verifyOtp(email, otpCode);
+      if (error) {
+        setError(getErrorMessage(error.message));
+      } else {
+        toast.success('Email verified successfully!');
+        setView('login');
+        setOtpCode('');
+        setPassword('');
+      }
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    setError('');
+    setResendLoading(true);
+
+    try {
+      const { error } = await resendOtp(email);
+      if (error) {
+        setError(getErrorMessage(error.message));
+      } else {
+        toast.success('Verification code resent! Check your inbox.');
+        setOtpCode('');
+      }
+    } catch (err) {
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setResendLoading(false);
+    }
+  };
+
+  // Verification OTP view
   if (view === 'verification') {
     return (
       <div className="min-h-screen flex items-center justify-center px-4">
@@ -164,24 +213,83 @@ const Auth = () => {
           animate={{ opacity: 1, y: 0 }}
           className="w-full max-w-md p-8 rounded-2xl glass-card text-center space-y-6"
         >
-          <div className="w-16 h-16 mx-auto rounded-full bg-success/20 flex items-center justify-center">
-            <CheckCircle className="w-8 h-8 text-success" />
+          <div className="w-16 h-16 mx-auto rounded-full bg-primary/20 flex items-center justify-center">
+            <Mail className="w-8 h-8 text-primary" />
           </div>
           <h2 className="text-2xl font-bold text-foreground">Verify Your Email</h2>
           <p className="text-muted-foreground">
-            We've sent a verification link to <span className="text-primary font-medium">{email}</span>
+            We've sent a 6-digit code to <span className="text-primary font-medium">{email}</span>
           </p>
-          <p className="text-sm text-muted-foreground">
-            Please check your inbox and click the link to verify your account. After verification, you can log in.
-          </p>
+
+          {/* Error Message */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-destructive text-sm"
+            >
+              {error}
+            </motion.div>
+          )}
+
+          {/* OTP Input */}
+          <div className="flex justify-center">
+            <InputOTP
+              value={otpCode}
+              onChange={setOtpCode}
+              maxLength={6}
+            >
+              <InputOTPGroup>
+                <InputOTPSlot index={0} />
+                <InputOTPSlot index={1} />
+                <InputOTPSlot index={2} />
+                <InputOTPSlot index={3} />
+                <InputOTPSlot index={4} />
+                <InputOTPSlot index={5} />
+              </InputOTPGroup>
+            </InputOTP>
+          </div>
+
           <Button
+            onClick={handleVerifyOtp}
+            disabled={loading || otpCode.length !== 6}
+            className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            {loading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              'Verify Email'
+            )}
+          </Button>
+
+          <div className="flex items-center justify-center gap-2">
+            <span className="text-sm text-muted-foreground">Didn't receive the code?</span>
+            <button
+              type="button"
+              onClick={handleResendOtp}
+              disabled={resendLoading}
+              className="text-sm text-primary hover:underline flex items-center gap-1"
+            >
+              {resendLoading ? (
+                <RefreshCw className="w-3 h-3 animate-spin" />
+              ) : (
+                'Resend code'
+              )}
+            </button>
+          </div>
+
+          <Button
+            variant="ghost"
             onClick={() => {
               setView('login');
               setEmail('');
               setPassword('');
+              setOtpCode('');
+              setError('');
             }}
-            className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+            className="w-full text-muted-foreground hover:text-foreground"
           >
+            <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Login
           </Button>
         </motion.div>
