@@ -1,12 +1,21 @@
 import { motion } from 'framer-motion';
-import { Settings } from 'lucide-react';
+import { Settings, LogOut } from 'lucide-react';
 import logo from '@/assets/logo.jpg';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 interface AppHeaderProps {
   onSettingsClick: () => void;
 }
 
 export function AppHeader({ onSettingsClick }: AppHeaderProps) {
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    toast.success('Logged out successfully');
+  };
+
   return (
     <motion.header
       initial={{ opacity: 0, y: -20 }}
@@ -22,13 +31,22 @@ export function AppHeader({ onSettingsClick }: AppHeaderProps) {
             <span className="text-xs text-muted-foreground">Powered by Fardin Sagor</span>
           </div>
         </div>
-        <button
-          onClick={onSettingsClick}
-          className="p-2.5 rounded-lg hover:bg-secondary transition-colors active:scale-95 touch-manipulation"
-          aria-label="Settings"
-        >
-          <Settings className="w-5 h-5 text-muted-foreground hover:text-foreground transition-colors" />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onSettingsClick}
+            className="p-2.5 rounded-lg hover:bg-secondary transition-colors active:scale-95 touch-manipulation"
+            aria-label="Settings"
+          >
+            <Settings className="w-5 h-5 text-muted-foreground hover:text-foreground transition-colors" />
+          </button>
+          <button
+            onClick={handleLogout}
+            className="p-2.5 rounded-lg hover:bg-destructive/20 transition-colors active:scale-95 touch-manipulation"
+            aria-label="Logout"
+          >
+            <LogOut className="w-5 h-5 text-muted-foreground hover:text-destructive transition-colors" />
+          </button>
+        </div>
       </div>
     </motion.header>
   );
