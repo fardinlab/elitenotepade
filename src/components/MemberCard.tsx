@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Phone, Trash2, Calendar, Pencil, Check, X, Send, DollarSign } from 'lucide-react';
+import { differenceInDays } from 'date-fns';
 import { Member, SubscriptionType } from '@/types/member';
 import { SubscriptionBadges } from './SubscriptionBadges';
 
@@ -107,13 +108,19 @@ export function MemberCard({
     setIsEditingPayment(false);
   };
 
+  const isOverOneMonth = differenceInDays(new Date(), new Date(member.joinDate)) >= 30;
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -100 }}
       transition={{ delay: index * 0.05 }}
-      className="glass-card rounded-xl p-4 card-shadow hover:border-primary/30 transition-all duration-300 touch-manipulation"
+      className={`rounded-xl p-4 card-shadow transition-all duration-300 touch-manipulation ${
+        isOverOneMonth 
+          ? 'bg-destructive/10 border border-destructive/50 hover:border-destructive/70' 
+          : 'glass-card hover:border-primary/30'
+      }`}
     >
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0 space-y-1">
