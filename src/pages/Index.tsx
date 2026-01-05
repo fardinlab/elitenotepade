@@ -4,12 +4,9 @@ import { motion } from 'framer-motion';
 import { FileText, User } from 'lucide-react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useNotepads } from '@/hooks/useNotepads';
-import { MAX_MEMBERS, SubscriptionType } from '@/types/member';
+import { SubscriptionType } from '@/types/member';
 import { AppHeader } from '@/components/AppHeader';
-import { AddMemberModal } from '@/components/AddMemberModal';
 import { SettingsModal } from '@/components/SettingsModal';
-import { ActionControls } from '@/components/ActionControls';
-import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { TeamList } from '@/components/TeamList';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { NotepadSection } from '@/components/NotepadSection';
@@ -25,13 +22,9 @@ const Index = () => {
     createNewTeam,
     deleteTeam,
     updateTeamLogo,
-    addMember,
-    removeMember,
-    canAddMember,
     exportData,
     importData,
     searchMembers,
-    memberCount,
   } = useSupabaseData();
 
   const {
@@ -43,36 +36,8 @@ const Index = () => {
     deleteNotepad,
   } = useNotepads();
 
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [isRemoveMode, setIsRemoveMode] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; email: string } | null>(null);
   const [showNotepads, setShowNotepads] = useState(false);
-
-  const handleAddMember = async (member: { email: string; phone: string; telegram?: string; joinDate: string }) => {
-    const success = await addMember(member);
-    if (success) {
-      toast.success('Member added successfully!');
-    } else {
-      toast.error(`Maximum ${MAX_MEMBERS} members allowed`);
-    }
-    return success;
-  };
-
-  const handleRemoveMember = (id: string, email: string) => {
-    setDeleteConfirm({ id, email });
-  };
-
-  const confirmRemove = async () => {
-    if (deleteConfirm) {
-      await removeMember(deleteConfirm.id);
-      toast.success('Member removed');
-      setDeleteConfirm(null);
-      if (activeTeam && activeTeam.members.length === 1) {
-        setIsRemoveMode(false);
-      }
-    }
-  };
 
   const handleImport = (json: string) => {
     const success = importData(json);
@@ -116,7 +81,6 @@ const Index = () => {
 
   const handleSelectTeam = (teamId: string) => {
     setActiveTeam(teamId);
-    setIsRemoveMode(false);
   };
 
   const handleCreateNotepad = () => {
@@ -133,7 +97,7 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen min-h-[100dvh] pb-28" style={{ paddingBottom: 'max(7rem, calc(7rem + env(safe-area-inset-bottom)))' }}>
+    <div className="min-h-screen min-h-[100dvh] pb-6">
       <AppHeader onSettingsClick={() => setIsSettingsOpen(true)} />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
@@ -210,23 +174,6 @@ const Index = () => {
         )}
       </main>
 
-      {!showNotepads && (
-        <ActionControls
-          canAdd={canAddMember}
-          isRemoveMode={isRemoveMode}
-          onAddClick={() => setIsAddModalOpen(true)}
-          onRemoveModeToggle={() => setIsRemoveMode(!isRemoveMode)}
-          memberCount={memberCount}
-          maxMembers={MAX_MEMBERS}
-        />
-      )}
-
-      <AddMemberModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onAdd={handleAddMember}
-      />
-
       <SettingsModal
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
@@ -234,13 +181,6 @@ const Index = () => {
         onImport={handleImport}
         getBackupData={getBackupData}
         onRestoreData={handleRestoreData}
-      />
-
-      <DeleteConfirmModal
-        isOpen={!!deleteConfirm}
-        memberEmail={deleteConfirm?.email || ''}
-        onConfirm={confirmRemove}
-        onCancel={() => setDeleteConfirm(null)}
       />
     </div>
   );
