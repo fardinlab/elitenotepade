@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
-import { useMultiTeamData } from '@/hooks/useMultiTeamData';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { MAX_MEMBERS } from '@/types/member';
 import { TeamInfo } from '@/components/TeamInfo';
 import { MemberCard } from '@/components/MemberCard';
@@ -32,25 +32,26 @@ const TeamMembers = () => {
     updateMemberSubscriptions,
     canAddMember,
     memberCount,
-  } = useMultiTeamData();
+  } = useSupabaseData();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isRemoveMode, setIsRemoveMode] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; email: string } | null>(null);
 
-  // Set active team based on URL param
+  // Sync active team with URL
+  useEffect(() => {
+    if (teamId && activeTeam?.id !== teamId) {
+      const targetTeam = sortedTeams.find(t => t.id === teamId);
+      if (targetTeam) {
+        setActiveTeam(teamId);
+      }
+    }
+  }, [teamId, activeTeam?.id, sortedTeams, setActiveTeam]);
+
   const team = sortedTeams.find(t => t.id === teamId) || activeTeam;
 
-  // Sync active team with URL
-  if (teamId && activeTeam?.id !== teamId) {
-    const targetTeam = sortedTeams.find(t => t.id === teamId);
-    if (targetTeam) {
-      setActiveTeam(teamId);
-    }
-  }
-
-  const handleAddMember = (member: { email: string; phone: string; telegram?: string; joinDate: string }) => {
-    const success = addMember(member);
+  const handleAddMember = async (member: { email: string; phone: string; telegram?: string; joinDate: string }) => {
+    const success = await addMember(member);
     if (success) {
       toast.success('Member added successfully!');
     } else {
@@ -63,9 +64,9 @@ const TeamMembers = () => {
     setDeleteConfirm({ id, email });
   };
 
-  const confirmRemove = () => {
+  const confirmRemove = async () => {
     if (deleteConfirm) {
-      removeMember(deleteConfirm.id);
+      await removeMember(deleteConfirm.id);
       toast.success('Member removed');
       setDeleteConfirm(null);
       if (team && team.members.length === 1) {

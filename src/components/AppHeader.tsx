@@ -1,19 +1,28 @@
 import { motion } from 'framer-motion';
-import { Settings, LogOut } from 'lucide-react';
+import { Settings, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import logo from '@/assets/logo.jpg';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+import { useProfile } from '@/hooks/useProfile';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 interface AppHeaderProps {
   onSettingsClick: () => void;
 }
 
 export function AppHeader({ onSettingsClick }: AppHeaderProps) {
-  const { signOut } = useAuth();
+  const navigate = useNavigate();
+  const { profile } = useProfile();
 
-  const handleLogout = async () => {
-    await signOut();
-    toast.success('Logged out successfully');
+  const getInitials = () => {
+    if (profile?.full_name) {
+      return profile.full_name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 2);
+    }
+    return 'U';
   };
 
   return (
@@ -40,11 +49,16 @@ export function AppHeader({ onSettingsClick }: AppHeaderProps) {
             <Settings className="w-5 h-5 text-muted-foreground hover:text-foreground transition-colors" />
           </button>
           <button
-            onClick={handleLogout}
-            className="p-2.5 rounded-lg hover:bg-destructive/20 transition-colors active:scale-95 touch-manipulation"
-            aria-label="Logout"
+            onClick={() => navigate('/profile')}
+            className="rounded-full hover:ring-2 hover:ring-primary/50 transition-all active:scale-95 touch-manipulation"
+            aria-label="Profile"
           >
-            <LogOut className="w-5 h-5 text-muted-foreground hover:text-destructive transition-colors" />
+            <Avatar className="w-9 h-9 border-2 border-primary/20">
+              <AvatarImage src={profile?.avatar_url || undefined} alt="Profile" />
+              <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                {getInitials()}
+              </AvatarFallback>
+            </Avatar>
           </button>
         </div>
       </div>

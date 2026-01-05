@@ -1,15 +1,11 @@
 import { useState } from 'react';
-import { AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FileText, Info } from 'lucide-react';
-import { useMultiTeamData } from '@/hooks/useMultiTeamData';
-import AboutSection from '@/components/AboutSection';
+import { FileText, User } from 'lucide-react';
+import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useNotepads } from '@/hooks/useNotepads';
 import { MAX_MEMBERS, SubscriptionType } from '@/types/member';
 import { AppHeader } from '@/components/AppHeader';
-import { TeamInfo } from '@/components/TeamInfo';
-import { MemberCard } from '@/components/MemberCard';
-import { EmptyState } from '@/components/EmptyState';
 import { AddMemberModal } from '@/components/AddMemberModal';
 import { SettingsModal } from '@/components/SettingsModal';
 import { ActionControls } from '@/components/ActionControls';
@@ -20,6 +16,7 @@ import { NotepadSection } from '@/components/NotepadSection';
 import { toast } from 'sonner';
 
 const Index = () => {
+  const navigate = useNavigate();
   const {
     activeTeam,
     sortedTeams,
@@ -27,22 +24,15 @@ const Index = () => {
     setActiveTeam,
     createNewTeam,
     deleteTeam,
-    updateTeamName,
-    updateAdminEmail,
+    updateTeamLogo,
     addMember,
     removeMember,
-    updateMemberDate,
-    updateMemberEmail,
-    updateMemberTelegram,
-    updateMemberPayment,
-    updateMemberSubscriptions,
-    updateTeamLogo,
     canAddMember,
     exportData,
     importData,
     searchMembers,
     memberCount,
-  } = useMultiTeamData();
+  } = useSupabaseData();
 
   const {
     notepads,
@@ -58,10 +48,9 @@ const Index = () => {
   const [isRemoveMode, setIsRemoveMode] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; email: string } | null>(null);
   const [showNotepads, setShowNotepads] = useState(false);
-  const [showAbout, setShowAbout] = useState(false);
 
-  const handleAddMember = (member: { email: string; phone: string; telegram?: string; joinDate: string }) => {
-    const success = addMember(member);
+  const handleAddMember = async (member: { email: string; phone: string; telegram?: string; joinDate: string }) => {
+    const success = await addMember(member);
     if (success) {
       toast.success('Member added successfully!');
     } else {
@@ -74,9 +63,9 @@ const Index = () => {
     setDeleteConfirm({ id, email });
   };
 
-  const confirmRemove = () => {
+  const confirmRemove = async () => {
     if (deleteConfirm) {
-      removeMember(deleteConfirm.id);
+      await removeMember(deleteConfirm.id);
       toast.success('Member removed');
       setDeleteConfirm(null);
       if (activeTeam && activeTeam.members.length === 1) {
@@ -115,13 +104,13 @@ const Index = () => {
     }
   };
 
-  const handleCreateNewTeam = (teamName: string, logo?: SubscriptionType) => {
-    createNewTeam(teamName, logo);
+  const handleCreateNewTeam = async (teamName: string, logo?: SubscriptionType) => {
+    await createNewTeam(teamName, logo);
     toast.success('New team created!');
   };
 
-  const handleDeleteTeam = (teamId: string) => {
-    deleteTeam(teamId);
+  const handleDeleteTeam = async (teamId: string) => {
+    await deleteTeam(teamId);
     toast.success('Team deleted!');
   };
 
@@ -135,7 +124,7 @@ const Index = () => {
     toast.success('New notepad created!');
   };
 
-  if (!isLoaded || !activeTeam) {
+  if (!isLoaded) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
@@ -148,19 +137,7 @@ const Index = () => {
       <AppHeader onSettingsClick={() => setIsSettingsOpen(true)} />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
-        {showAbout ? (
-          <>
-            <motion.button
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              onClick={() => setShowAbout(false)}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1"
-            >
-              ← Back
-            </motion.button>
-            <AboutSection />
-          </>
-        ) : showNotepads ? (
+        {showNotepads ? (
           <NotepadSection
             notepads={notepads}
             activeNotepad={activeNotepad}
@@ -197,22 +174,22 @@ const Index = () => {
                 </div>
               </motion.button>
 
-              {/* About Button */}
+              {/* Profile Button */}
               <motion.button
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.05 }}
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
-                onClick={() => setShowAbout(true)}
+                onClick={() => navigate('/profile')}
                 className="p-4 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 hover:border-purple-500/50 transition-all flex items-center gap-3"
               >
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shrink-0">
-                  <Info className="w-5 h-5 text-white" />
+                  <User className="w-5 h-5 text-white" />
                 </div>
                 <div className="text-left flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground text-sm">About</h3>
-                  <p className="text-xs text-muted-foreground truncate">Developer info</p>
+                  <h3 className="font-semibold text-foreground text-sm">Profile</h3>
+                  <p className="text-xs text-muted-foreground truncate">View & edit profile</p>
                 </div>
               </motion.button>
             </div>
@@ -223,7 +200,7 @@ const Index = () => {
             {/* Team List */}
             <TeamList
               teams={sortedTeams}
-              activeTeamId={activeTeam.id}
+              activeTeamId={activeTeam?.id || ''}
               onSelectTeam={handleSelectTeam}
               onCreateTeam={handleCreateNewTeam}
               onDeleteTeam={handleDeleteTeam}
