@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Phone, Trash2, Calendar, Pencil, Check, X, Send, DollarSign } from 'lucide-react';
-import { Member } from '@/types/member';
+import { Member, SubscriptionType } from '@/types/member';
+import { SubscriptionBadges } from './SubscriptionBadges';
 
 interface MemberCardProps {
   member: Member;
@@ -12,6 +13,7 @@ interface MemberCardProps {
   onEmailChange: (id: string, email: string) => void;
   onTelegramChange: (id: string, telegram: string) => void;
   onPaymentChange: (id: string, isPaid: boolean, paidAmount?: number) => void;
+  onSubscriptionsChange: (id: string, subscriptions: SubscriptionType[]) => void;
 }
 
 export function MemberCard({ 
@@ -22,7 +24,8 @@ export function MemberCard({
   onDateChange,
   onEmailChange,
   onTelegramChange,
-  onPaymentChange
+  onPaymentChange,
+  onSubscriptionsChange
 }: MemberCardProps) {
   const [isEditingDate, setIsEditingDate] = useState(false);
   const [editDateValue, setEditDateValue] = useState(member.joinDate);
@@ -143,16 +146,23 @@ export function MemberCard({
             </div>
           ) : (
             <div className="flex items-center gap-2 group">
-              <p className="font-medium text-foreground truncate">{member.email}</p>
-              {!isRemoveMode && (
-                <button
-                  onClick={() => setIsEditingEmail(true)}
-                  className="p-1 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-secondary transition-all"
-                  aria-label="Edit email"
-                >
-                  <Pencil className="w-3 h-3 text-muted-foreground" />
-                </button>
-              )}
+              <div className="flex items-center gap-2 min-w-0">
+                <p className="font-medium text-foreground truncate">{member.email}</p>
+                {!isRemoveMode && (
+                  <button
+                    onClick={() => setIsEditingEmail(true)}
+                    className="p-1 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-secondary transition-all flex-shrink-0"
+                    aria-label="Edit email"
+                  >
+                    <Pencil className="w-3 h-3 text-muted-foreground" />
+                  </button>
+                )}
+              </div>
+              <SubscriptionBadges
+                subscriptions={member.subscriptions || []}
+                onUpdate={(subs) => onSubscriptionsChange(member.id, subs)}
+                isEditable={!isRemoveMode}
+              />
             </div>
           )}
 
