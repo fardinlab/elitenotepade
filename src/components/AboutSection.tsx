@@ -1,5 +1,6 @@
-import { User, Phone, Send, Globe, Facebook } from "lucide-react";
+import { Phone, Send, Globe, Facebook } from "lucide-react";
 import { motion } from "framer-motion";
+import fardinPhoto from "@/assets/fardin-sagor.jpg";
 
 const AboutSection = () => {
   return (
@@ -9,9 +10,11 @@ const AboutSection = () => {
       className="bg-card/50 backdrop-blur-sm rounded-2xl p-6 border border-border/50"
     >
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center">
-          <User className="w-6 h-6 text-primary-foreground" />
-        </div>
+        <img 
+          src={fardinPhoto} 
+          alt="Fardin Sagor" 
+          className="w-12 h-12 rounded-full object-cover border-2 border-primary/50"
+        />
         <div>
           <h2 className="text-xl font-bold text-foreground">Fardin Sagor</h2>
         </div>
