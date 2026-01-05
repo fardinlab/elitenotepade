@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Users, Calendar, ChevronDown, ChevronRight, Trash2, X, Check } from 'lucide-react';
+import { Plus, Users, Calendar, ChevronRight, Trash2, X, Check } from 'lucide-react';
 import { Team, MAX_MEMBERS, SubscriptionType, SUBSCRIPTION_CONFIG } from '@/types/member';
 
 interface TeamListProps {
@@ -20,12 +21,12 @@ const LOGO_ICONS: Record<SubscriptionType, string> = {
 };
 
 export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDeleteTeam }: TeamListProps) {
+  const navigate = useNavigate();
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
   const [selectedLogo, setSelectedLogo] = useState<SubscriptionType | null>(null);
-  const [expandedTeamId, setExpandedTeamId] = useState<string | null>(null);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -71,12 +72,8 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
     if (isDeleteMode) {
       handleDeleteClick(team, { stopPropagation: () => {} } as React.MouseEvent);
     } else {
-      if (expandedTeamId === team.id) {
-        setExpandedTeamId(null);
-      } else {
-        setExpandedTeamId(team.id);
-        onSelectTeam(team.id);
-      }
+      onSelectTeam(team.id);
+      navigate(`/team/${team.id}`);
     }
   };
 
@@ -137,8 +134,8 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
       <div className="space-y-2">
         {teams.map((team, index) => {
           const memberCount = team.members.length + 1;
-          const isExpanded = expandedTeamId === team.id;
           const isFull = memberCount >= MAX_MEMBERS;
+          const isActive = team.id === activeTeamId;
 
           return (
             <motion.div
@@ -149,8 +146,8 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
               className={`rounded-xl border transition-all overflow-hidden ${
                 isDeleteMode
                   ? 'bg-destructive/5 border-destructive/30 hover:bg-destructive/10 hover:border-destructive/50'
-                  : isExpanded
-                    ? 'bg-primary/10 border-primary/50 shadow-lg shadow-primary/10'
+                  : isActive
+                    ? 'bg-primary/10 border-primary/50'
                     : 'bg-card border-border hover:border-primary/30 hover:bg-secondary/30'
               }`}
             >
@@ -165,9 +162,7 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                       ? 'bg-destructive/20 text-destructive' 
                       : team.logo
                         ? 'bg-white'
-                        : isExpanded 
-                          ? 'bg-primary text-primary-foreground' 
-                          : 'bg-secondary text-muted-foreground'
+                        : 'bg-secondary text-muted-foreground'
                   }`}>
                     {isDeleteMode ? (
                       <Trash2 className="w-5 h-5" />
@@ -208,67 +203,11 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                     </div>
                   </div>
 
-                  {isExpanded ? (
-                    <ChevronDown className={`w-5 h-5 transition-colors ${
-                      isDeleteMode ? 'text-destructive' : 'text-primary'
-                    }`} />
-                  ) : (
-                    <ChevronRight className={`w-5 h-5 transition-colors ${
-                      isDeleteMode ? 'text-destructive' : 'text-muted-foreground'
-                    }`} />
-                  )}
+                  <ChevronRight className={`w-5 h-5 transition-colors ${
+                    isDeleteMode ? 'text-destructive' : 'text-muted-foreground'
+                  }`} />
                 </div>
               </button>
-
-              {/* Expanded Member List */}
-              <AnimatePresence>
-                {isExpanded && !isDeleteMode && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    className="overflow-hidden"
-                  >
-                    <div className="px-4 pb-4 space-y-2 border-t border-border/50 pt-3">
-                      {/* Admin */}
-                      <div className="flex items-center gap-2 text-sm">
-                        <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
-                          <span className="text-[10px] font-bold text-primary">A</span>
-                        </div>
-                        <span className="text-foreground truncate">{team.adminEmail}</span>
-                        <span className="text-[10px] px-1.5 py-0.5 bg-primary/20 text-primary rounded">Admin</span>
-                      </div>
-                      
-                      {/* Members */}
-                      {team.members.length === 0 ? (
-                        <p className="text-xs text-muted-foreground pl-8">No members yet</p>
-                      ) : (
-                        team.members.map((member, mIndex) => (
-                          <div key={member.id} className="flex items-center gap-2 text-sm">
-                            <div className="w-6 h-6 rounded-full bg-secondary flex items-center justify-center">
-                              <span className="text-[10px] font-medium text-muted-foreground">{mIndex + 1}</span>
-                            </div>
-                            <span className="text-foreground truncate flex-1">{member.email}</span>
-                            {member.subscriptions && member.subscriptions.length > 0 && (
-                              <div className="flex gap-1">
-                                {member.subscriptions.map(sub => (
-                                  <img 
-                                    key={sub}
-                                    src={LOGO_ICONS[sub]}
-                                    alt={SUBSCRIPTION_CONFIG[sub].name}
-                                    className="w-4 h-4 object-contain"
-                                  />
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
             </motion.div>
           );
         })}
