@@ -180,11 +180,7 @@ export function MemberCard({
                   </button>
                 )}
               </div>
-              <SubscriptionBadges
-                subscriptions={member.subscriptions || []}
-                onUpdate={(subs) => onSubscriptionsChange(member.id, subs)}
-                isEditable={!isRemoveMode}
-              />
+              <SubscriptionBadges subscriptions={member.subscriptions || []} />
             </div>
           )}
 

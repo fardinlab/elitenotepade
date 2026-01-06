@@ -1,12 +1,8 @@
-import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, X, Check } from 'lucide-react';
 import { SubscriptionType, SUBSCRIPTION_CONFIG } from '@/types/member';
 
 interface SubscriptionBadgesProps {
   subscriptions: SubscriptionType[];
-  onUpdate: (subscriptions: SubscriptionType[]) => void;
-  isEditable?: boolean;
 }
 
 const SubscriptionIcon = ({ type, size = 16 }: { type: SubscriptionType; size?: number }) => {
@@ -44,67 +40,7 @@ const SubscriptionIcon = ({ type, size = 16 }: { type: SubscriptionType; size?: 
   return icons[type];
 };
 
-export function SubscriptionBadges({ subscriptions, onUpdate, isEditable = true }: SubscriptionBadgesProps) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [selected, setSelected] = useState<SubscriptionType[]>(subscriptions);
-
-  const allTypes: SubscriptionType[] = ['chatgpt', 'gemini', 'perplexity', 'canva'];
-
-  const handleToggle = (type: SubscriptionType) => {
-    setSelected(prev => 
-      prev.includes(type) 
-        ? prev.filter(t => t !== type)
-        : [...prev, type]
-    );
-  };
-
-  const handleSave = () => {
-    onUpdate(selected);
-    setIsEditing(false);
-  };
-
-  const handleCancel = () => {
-    setSelected(subscriptions);
-    setIsEditing(false);
-  };
-
-  if (isEditing) {
-    return (
-      <motion.div 
-        initial={{ opacity: 0, height: 0 }}
-        animate={{ opacity: 1, height: 'auto' }}
-        className="flex flex-wrap items-center gap-2 mt-1"
-      >
-        {allTypes.map(type => (
-          <button
-            key={type}
-            onClick={() => handleToggle(type)}
-            className={`flex items-center gap-1.5 px-2 py-1 rounded-full text-xs transition-all touch-manipulation ${
-              selected.includes(type)
-                ? 'bg-primary/20 ring-1 ring-primary/50'
-                : 'bg-muted/30 hover:bg-muted/50'
-            }`}
-          >
-            <SubscriptionIcon type={type} size={14} />
-            <span className="text-foreground/80">{SUBSCRIPTION_CONFIG[type].name}</span>
-          </button>
-        ))}
-        <button
-          onClick={handleSave}
-          className="p-1.5 rounded-full bg-success/20 text-success hover:bg-success/30 transition-colors"
-        >
-          <Check className="w-3.5 h-3.5" />
-        </button>
-        <button
-          onClick={handleCancel}
-          className="p-1.5 rounded-full bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors"
-        >
-          <X className="w-3.5 h-3.5" />
-        </button>
-      </motion.div>
-    );
-  }
-
+export function SubscriptionBadges({ subscriptions }: SubscriptionBadgesProps) {
   return (
     <div className="flex items-center gap-1.5 mt-0.5">
       <AnimatePresence mode="popLayout">
@@ -121,15 +57,6 @@ export function SubscriptionBadges({ subscriptions, onUpdate, isEditable = true 
           </motion.div>
         ))}
       </AnimatePresence>
-      {isEditable && (
-        <button
-          onClick={() => setIsEditing(true)}
-          className="flex items-center justify-center w-5 h-5 rounded-full bg-muted/30 hover:bg-muted/50 transition-colors touch-manipulation"
-          title="Edit subscriptions"
-        >
-          <Plus className="w-3 h-3 text-muted-foreground" />
-        </button>
-      )}
     </div>
   );
 }
