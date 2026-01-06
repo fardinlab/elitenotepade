@@ -5,7 +5,7 @@ import { X, UserPlus, Mail, Phone, Calendar, Send } from 'lucide-react';
 interface AddMemberModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onAdd: (member: { email: string; phone: string; telegram?: string; joinDate: string }) => boolean | Promise<boolean>;
+  onAdd: (member: { email: string; phone?: string; telegram?: string; joinDate: string }) => boolean | Promise<boolean>;
 }
 
 export function AddMemberModal({ isOpen, onClose, onAdd }: AddMemberModalProps) {
@@ -32,7 +32,7 @@ export function AddMemberModal({ isOpen, onClose, onAdd }: AddMemberModalProps) 
     if (!validateEmail(email)) {
       newErrors.email = 'Please enter a valid email address';
     }
-    if (!validatePhone(phone)) {
+    if (phone && !validatePhone(phone)) {
       newErrors.phone = 'Please enter a valid phone number';
     }
 
@@ -43,7 +43,7 @@ export function AddMemberModal({ isOpen, onClose, onAdd }: AddMemberModalProps) 
 
     const success = await onAdd({ 
       email, 
-      phone, 
+      phone: phone.trim() || undefined, 
       telegram: telegram.trim() || undefined,
       joinDate 
     });
@@ -122,6 +122,7 @@ export function AddMemberModal({ isOpen, onClose, onAdd }: AddMemberModalProps) 
                 <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1.5 sm:mb-2">
                   <Phone className="w-4 h-4" />
                   Phone Number
+                  <span className="text-xs text-muted-foreground/60">(optional)</span>
                 </label>
                 <input
                   type="tel"

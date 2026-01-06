@@ -246,7 +246,7 @@ export function useSupabaseData() {
         team_id: activeTeamId,
         user_id: user.id,
         email: member.email,
-        phone: member.phone,
+        phone: member.phone || '',
         telegram: member.telegram || null,
         join_date: member.joinDate,
         is_paid: member.isPaid || false,
