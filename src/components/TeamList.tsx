@@ -173,13 +173,13 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                   <div className={`relative w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden ${
                     isDeleteMode 
                       ? 'bg-destructive/20 text-destructive' 
-                      : team.logo
+                    : team.logo && LOGO_ICONS[team.logo]
                         ? 'bg-white'
                         : 'bg-secondary text-muted-foreground'
                   }`}>
                     {isDeleteMode ? (
                       <Trash2 className="w-5 h-5" />
-                    ) : team.logo ? (
+                    ) : team.logo && LOGO_ICONS[team.logo] && SUBSCRIPTION_CONFIG[team.logo] ? (
                       <img 
                         src={LOGO_ICONS[team.logo]} 
                         alt={SUBSCRIPTION_CONFIG[team.logo].name}
