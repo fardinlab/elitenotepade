@@ -27,6 +27,7 @@ const TeamMembers = () => {
     removeMember,
     updateMemberDate,
     updateMemberEmail,
+    updateMemberPhone,
     updateMemberTelegram,
     updateMemberPayment,
     updateMemberSubscriptions,
@@ -133,6 +134,7 @@ const TeamMembers = () => {
                     onRemove={() => handleRemoveMember(member.id, member.email)}
                     onDateChange={updateMemberDate}
                     onEmailChange={updateMemberEmail}
+                    onPhoneChange={updateMemberPhone}
                     onTelegramChange={updateMemberTelegram}
                     onPaymentChange={updateMemberPayment}
                     onSubscriptionsChange={updateMemberSubscriptions}
