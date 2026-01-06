@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Phone, Trash2, Calendar, Pencil, Check, X, Send, DollarSign, AlertCircle } from 'lucide-react';
+import { Phone, Trash2, Calendar, Pencil, Check, X, Send, DollarSign, AlertCircle, Copy } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import { Member, SubscriptionType } from '@/types/member';
 import { SubscriptionBadges } from './SubscriptionBadges';
@@ -170,6 +170,13 @@ export function MemberCard({
             <div className="flex items-center gap-2 group">
               <div className="flex items-center gap-2 min-w-0">
                 <p className="font-medium text-foreground break-all">{member.email}</p>
+                <button
+                  onClick={() => navigator.clipboard.writeText(member.email)}
+                  className="p-1 rounded-lg hover:bg-secondary transition-all flex-shrink-0"
+                  aria-label="Copy email"
+                >
+                  <Copy className="w-3 h-3 text-muted-foreground" />
+                </button>
                 {!isRemoveMode && (
                   <button
                     onClick={() => setIsEditingEmail(true)}
