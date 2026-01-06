@@ -482,7 +482,12 @@ export function MemberCard({
             <div className="flex flex-col gap-1">
               <button
                 onClick={handleWhatsApp}
-                className="p-1.5 rounded-md bg-success/20 text-success hover:bg-success/30 transition-colors active:scale-95 touch-manipulation"
+                disabled={!member.phone}
+                className={`p-1.5 rounded-md transition-colors active:scale-95 touch-manipulation ${
+                  member.phone 
+                    ? 'bg-success/20 text-success hover:bg-success/30' 
+                    : 'bg-muted/20 text-muted-foreground/40 cursor-not-allowed'
+                }`}
                 aria-label="WhatsApp"
               >
                 <svg className="w-3 h-3" viewBox="0 0 24 24" fill="currentColor">
@@ -503,7 +508,12 @@ export function MemberCard({
               </button>
               <button
                 onClick={handleCall}
-                className="p-1.5 rounded-md bg-primary/20 text-primary hover:bg-primary/30 transition-colors active:scale-95 touch-manipulation"
+                disabled={!member.phone}
+                className={`p-1.5 rounded-md transition-colors active:scale-95 touch-manipulation ${
+                  member.phone 
+                    ? 'bg-primary/20 text-primary hover:bg-primary/30' 
+                    : 'bg-muted/20 text-muted-foreground/40 cursor-not-allowed'
+                }`}
                 aria-label="Call"
               >
                 <Phone className="w-3 h-3" />
