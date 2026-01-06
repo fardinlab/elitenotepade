@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Phone, Trash2, Calendar, Pencil, Check, X, Send, DollarSign } from 'lucide-react';
+import { Phone, Trash2, Calendar, Pencil, Check, X, Send, DollarSign, AlertCircle } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
 import { Member, SubscriptionType } from '@/types/member';
 import { SubscriptionBadges } from './SubscriptionBadges';
@@ -15,6 +15,7 @@ interface MemberCardProps {
   onTelegramChange: (id: string, telegram: string) => void;
   onPaymentChange: (id: string, isPaid: boolean, paidAmount?: number) => void;
   onSubscriptionsChange: (id: string, subscriptions: SubscriptionType[]) => void;
+  onPendingAmountChange: (id: string, pendingAmount?: number) => void;
 }
 
 export function MemberCard({ 
@@ -26,7 +27,8 @@ export function MemberCard({
   onEmailChange,
   onTelegramChange,
   onPaymentChange,
-  onSubscriptionsChange
+  onSubscriptionsChange,
+  onPendingAmountChange
 }: MemberCardProps) {
   const [isEditingDate, setIsEditingDate] = useState(false);
   const [editDateValue, setEditDateValue] = useState(member.joinDate);
@@ -36,6 +38,8 @@ export function MemberCard({
   const [editTelegramValue, setEditTelegramValue] = useState(member.telegram || '');
   const [isEditingPayment, setIsEditingPayment] = useState(false);
   const [editPaidAmount, setEditPaidAmount] = useState(member.paidAmount?.toString() || '');
+  const [isEditingPending, setIsEditingPending] = useState(false);
+  const [editPendingAmount, setEditPendingAmount] = useState(member.pendingAmount?.toString() || '');
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -106,6 +110,17 @@ export function MemberCard({
   const handleCancelPayment = () => {
     setEditPaidAmount(member.paidAmount?.toString() || '');
     setIsEditingPayment(false);
+  };
+
+  const handleSavePending = () => {
+    const amount = parseFloat(editPendingAmount) || 0;
+    onPendingAmountChange(member.id, amount > 0 ? amount : undefined);
+    setIsEditingPending(false);
+  };
+
+  const handleCancelPending = () => {
+    setEditPendingAmount(member.pendingAmount?.toString() || '');
+    setIsEditingPending(false);
   };
 
   const isOverOneMonth = differenceInDays(new Date(), new Date(member.joinDate)) >= 30;
@@ -279,6 +294,65 @@ export function MemberCard({
                   onClick={() => setIsEditingPayment(true)}
                   className="p-1 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-secondary transition-all"
                   aria-label="Edit payment status"
+                >
+                  <Pencil className="w-3 h-3 text-muted-foreground" />
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Pending Amount (Due) */}
+          {isEditingPending ? (
+            <div className="flex items-center gap-2 flex-wrap">
+              <AlertCircle className="w-3 h-3 text-orange-400" />
+              <input
+                type="number"
+                value={editPendingAmount}
+                onChange={(e) => setEditPendingAmount(e.target.value)}
+                placeholder="Due amount"
+                className="w-20 bg-input rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
+                autoFocus
+                min="0"
+                step="0.01"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSavePending();
+                  if (e.key === 'Escape') handleCancelPending();
+                }}
+              />
+              <button
+                onClick={handleSavePending}
+                className="p-1 rounded bg-success/20 text-success hover:bg-success/30 transition-colors"
+              >
+                <Check className="w-3 h-3" />
+              </button>
+              <button
+                onClick={handleCancelPending}
+                className="p-1 rounded bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 group">
+              {member.pendingAmount && member.pendingAmount > 0 ? (
+                <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400">
+                  <AlertCircle className="w-3 h-3" />
+                  Due ৳{member.pendingAmount}
+                </span>
+              ) : (
+                <button
+                  onClick={() => setIsEditingPending(true)}
+                  className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-muted/30 text-muted-foreground hover:bg-muted/50 transition-colors"
+                >
+                  <AlertCircle className="w-3 h-3" />
+                  Due
+                </button>
+              )}
+              {!isRemoveMode && member.pendingAmount && member.pendingAmount > 0 && (
+                <button
+                  onClick={() => setIsEditingPending(true)}
+                  className="p-1 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-secondary transition-all"
+                  aria-label="Edit pending amount"
                 >
                   <Pencil className="w-3 h-3 text-muted-foreground" />
                 </button>

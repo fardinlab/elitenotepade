@@ -30,6 +30,7 @@ const TeamMembers = () => {
     updateMemberTelegram,
     updateMemberPayment,
     updateMemberSubscriptions,
+    updateMemberPendingAmount,
     canAddMember,
     memberCount,
   } = useSupabaseData();
@@ -135,6 +136,7 @@ const TeamMembers = () => {
                     onTelegramChange={updateMemberTelegram}
                     onPaymentChange={updateMemberPayment}
                     onSubscriptionsChange={updateMemberSubscriptions}
+                    onPendingAmountChange={updateMemberPendingAmount}
                   />
                 ))}
               </AnimatePresence>
