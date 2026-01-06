@@ -169,7 +169,7 @@ export function MemberCard({
           ) : (
             <div className="flex items-center gap-2 group">
               <div className="flex items-center gap-2 min-w-0">
-                <p className="font-medium text-foreground truncate">{member.email}</p>
+                <p className="font-medium text-foreground break-all">{member.email}</p>
                 {!isRemoveMode && (
                   <button
                     onClick={() => setIsEditingEmail(true)}
