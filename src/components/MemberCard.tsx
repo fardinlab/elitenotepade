@@ -185,7 +185,7 @@ export function MemberCard({
           ) : (
             <div className="flex items-center gap-2 group">
               <div className="flex items-center gap-2 min-w-0">
-                <p className="font-medium text-foreground break-all">{member.email}</p>
+                <p className="text-sm font-medium text-foreground break-all">{member.email}</p>
                 <button
                   onClick={() => navigator.clipboard.writeText(member.email)}
                   className="p-1 rounded-lg hover:bg-secondary transition-all flex-shrink-0"
