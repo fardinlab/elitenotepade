@@ -12,6 +12,7 @@ interface MemberCardProps {
   onRemove: () => void;
   onDateChange: (id: string, date: string) => void;
   onEmailChange: (id: string, email: string) => void;
+  onPhoneChange: (id: string, phone: string) => void;
   onTelegramChange: (id: string, telegram: string) => void;
   onPaymentChange: (id: string, isPaid: boolean, paidAmount?: number) => void;
   onSubscriptionsChange: (id: string, subscriptions: SubscriptionType[]) => void;
@@ -25,6 +26,7 @@ export function MemberCard({
   onRemove, 
   onDateChange,
   onEmailChange,
+  onPhoneChange,
   onTelegramChange,
   onPaymentChange,
   onSubscriptionsChange,
@@ -34,6 +36,8 @@ export function MemberCard({
   const [editDateValue, setEditDateValue] = useState(member.joinDate);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [editEmailValue, setEditEmailValue] = useState(member.email);
+  const [isEditingPhone, setIsEditingPhone] = useState(false);
+  const [editPhoneValue, setEditPhoneValue] = useState(member.phone);
   const [isEditingTelegram, setIsEditingTelegram] = useState(false);
   const [editTelegramValue, setEditTelegramValue] = useState(member.telegram || '');
   const [isEditingPayment, setIsEditingPayment] = useState(false);
@@ -89,6 +93,18 @@ export function MemberCard({
   const handleCancelEmail = () => {
     setEditEmailValue(member.email);
     setIsEditingEmail(false);
+  };
+
+  const handleSavePhone = () => {
+    if (editPhoneValue.trim()) {
+      onPhoneChange(member.id, editPhoneValue.trim());
+      setIsEditingPhone(false);
+    }
+  };
+
+  const handleCancelPhone = () => {
+    setEditPhoneValue(member.phone);
+    setIsEditingPhone(false);
   };
 
   const handleSaveTelegram = () => {
@@ -191,7 +207,54 @@ export function MemberCard({
             </div>
           )}
 
-          <p className="text-sm text-muted-foreground truncate">{member.phone}</p>
+          {/* Phone - Editable */}
+          {isEditingPhone ? (
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={editPhoneValue}
+                onChange={(e) => setEditPhoneValue(e.target.value)}
+                className="flex-1 bg-input rounded-lg px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSavePhone();
+                  if (e.key === 'Escape') handleCancelPhone();
+                }}
+              />
+              <button
+                onClick={handleSavePhone}
+                className="p-1 rounded bg-success/20 text-success hover:bg-success/30 transition-colors"
+              >
+                <Check className="w-3 h-3" />
+              </button>
+              <button
+                onClick={handleCancelPhone}
+                className="p-1 rounded bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2 group">
+              <p className="text-sm text-muted-foreground">{member.phone}</p>
+              <button
+                onClick={() => navigator.clipboard.writeText(member.phone)}
+                className="p-1 rounded-lg hover:bg-secondary transition-all flex-shrink-0"
+                aria-label="Copy phone"
+              >
+                <Copy className="w-3 h-3 text-muted-foreground" />
+              </button>
+              {!isRemoveMode && (
+                <button
+                  onClick={() => setIsEditingPhone(true)}
+                  className="p-1 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-secondary transition-all flex-shrink-0"
+                  aria-label="Edit phone"
+                >
+                  <Pencil className="w-3 h-3 text-muted-foreground" />
+                </button>
+              )}
+            </div>
+          )}
 
           {/* Telegram - Editable */}
           {isEditingTelegram ? (

@@ -335,6 +335,29 @@ export function useSupabaseData() {
     );
   }, [activeTeamId]);
 
+  const updateMemberPhone = useCallback(async (id: string, phone: string) => {
+    const { error } = await supabase
+      .from('members')
+      .update({ phone })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating member phone:', error);
+      return;
+    }
+
+    setTeams((prev) =>
+      prev.map((t) =>
+        t.id === activeTeamId
+          ? {
+              ...t,
+              members: t.members.map((m) => (m.id === id ? { ...m, phone } : m)),
+            }
+          : t
+      )
+    );
+  }, [activeTeamId]);
+
   const updateMemberTelegram = useCallback(async (id: string, telegram: string) => {
     const { error } = await supabase
       .from('members')
@@ -512,6 +535,7 @@ export function useSupabaseData() {
     removeMember,
     updateMemberDate,
     updateMemberEmail,
+    updateMemberPhone,
     updateMemberTelegram,
     updateMemberPayment,
     updateMemberSubscriptions,
