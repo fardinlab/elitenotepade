@@ -31,6 +31,10 @@ const countMembersOverOneMonth = (team: Team): number => {
   }).length;
 };
 
+const hasPendingDue = (team: Team): boolean => {
+  return team.members.some(member => (member.pendingAmount || 0) > 0);
+};
+
 export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDeleteTeam, onUpdateTeamLogo }: TeamListProps) {
   const navigate = useNavigate();
   const [isDeleteMode, setIsDeleteMode] = useState(false);
@@ -203,15 +207,26 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <h4 className="font-medium text-foreground truncate">{team.teamName}</h4>
-                      {/* Red dots for members over 1 month */}
-                      {membersOverMonth > 0 && !isDeleteMode && (
-                        <div className="flex items-center gap-0.5">
-                          {Array.from({ length: Math.min(membersOverMonth, 8) }).map((_, i) => (
-                            <span 
-                              key={i} 
-                              className="w-2 h-2 rounded-full bg-destructive"
-                            />
-                          ))}
+                      {/* Dot indicators */}
+                      {!isDeleteMode && (membersOverMonth > 0 || hasPendingDue(team)) && (
+                        <div className="flex flex-col gap-0.5">
+                          {/* Red dots for members over 1 month */}
+                          {membersOverMonth > 0 && (
+                            <div className="flex items-center gap-0.5">
+                              {Array.from({ length: Math.min(membersOverMonth, 8) }).map((_, i) => (
+                                <span 
+                                  key={i} 
+                                  className="w-2 h-2 rounded-full bg-destructive"
+                                />
+                              ))}
+                            </div>
+                          )}
+                          {/* Yellow dot for pending due */}
+                          {hasPendingDue(team) && (
+                            <div className="flex items-center">
+                              <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                            </div>
+                          )}
                         </div>
                       )}
                       {isCurrentMonth(team.createdAt) && (
