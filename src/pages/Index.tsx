@@ -10,6 +10,7 @@ import { SettingsModal } from '@/components/SettingsModal';
 import { TeamList } from '@/components/TeamList';
 import { GlobalSearch } from '@/components/GlobalSearch';
 import { NotepadSection } from '@/components/NotepadSection';
+import { EarningsDashboard } from '@/components/EarningsDashboard';
 import { toast } from 'sonner';
 
 const Index = () => {
@@ -161,6 +162,9 @@ const Index = () => {
                 </div>
               </motion.button>
             </div>
+
+            {/* Earnings Dashboard */}
+            <EarningsDashboard teams={sortedTeams} />
 
             {/* Global Search */}
             <GlobalSearch onSearch={searchMembers} onSelectTeam={handleSelectTeam} />
