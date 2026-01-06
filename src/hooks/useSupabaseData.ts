@@ -23,6 +23,7 @@ interface DbMember {
   join_date: string;
   is_paid: boolean;
   paid_amount: number | null;
+  pending_amount: number | null;
   subscriptions: string[] | null;
   created_at: string;
 }
@@ -45,6 +46,7 @@ const mapDbMemberToMember = (dbMember: DbMember): Member => ({
   joinDate: dbMember.join_date,
   isPaid: dbMember.is_paid,
   paidAmount: dbMember.paid_amount || undefined,
+  pendingAmount: dbMember.pending_amount || undefined,
   subscriptions: (dbMember.subscriptions as SubscriptionType[]) || undefined,
 });
 
@@ -413,6 +415,31 @@ export function useSupabaseData() {
     );
   }, [activeTeamId]);
 
+  const updateMemberPendingAmount = useCallback(async (id: string, pendingAmount?: number) => {
+    const { error } = await supabase
+      .from('members')
+      .update({ pending_amount: pendingAmount || null })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating member pending amount:', error);
+      return;
+    }
+
+    setTeams((prev) =>
+      prev.map((t) =>
+        t.id === activeTeamId
+          ? {
+              ...t,
+              members: t.members.map((m) =>
+                m.id === id ? { ...m, pendingAmount } : m
+              ),
+            }
+          : t
+      )
+    );
+  }, [activeTeamId]);
+
   const searchMembers = useCallback((query: string) => {
     if (!query.trim()) return [];
 
@@ -488,6 +515,7 @@ export function useSupabaseData() {
     updateMemberTelegram,
     updateMemberPayment,
     updateMemberSubscriptions,
+    updateMemberPendingAmount,
     updateTeamLogo,
     canAddMember,
     isTeamFull,

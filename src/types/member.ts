@@ -16,6 +16,7 @@ export interface Member {
   joinDate: string;
   isPaid?: boolean;
   paidAmount?: number;
+  pendingAmount?: number;
   subscriptions?: SubscriptionType[];
 }
 
