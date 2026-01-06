@@ -68,39 +68,39 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.1 }}
-      className="grid grid-cols-3 gap-3"
+      className="grid grid-cols-3 gap-2"
     >
       {/* Current Month Earnings */}
-      <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-500/20 to-green-500/20 border border-emerald-500/30">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-green-500 flex items-center justify-center">
-            <DollarSign className="w-4 h-4 text-white" />
+      <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500/20 to-green-500/20 border border-emerald-500/30">
+        <div className="flex items-center gap-1.5 mb-1.5">
+          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-emerald-500 to-green-500 flex items-center justify-center">
+            <DollarSign className="w-3.5 h-3.5 text-white" />
           </div>
         </div>
-        <p className="text-xs text-muted-foreground mb-1">{currentMonthName}</p>
-        <p className="text-lg font-bold text-foreground">{formatCurrency(earnings.currentMonth)}</p>
+        <p className="text-[10px] text-muted-foreground mb-0.5">{currentMonthName}</p>
+        <p className="text-sm font-bold text-foreground">{formatCurrency(earnings.currentMonth)}</p>
       </div>
 
       {/* Total Due */}
-      <div className="p-4 rounded-xl bg-gradient-to-br from-red-500/20 to-rose-500/20 border border-red-500/30">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-red-500 to-rose-500 flex items-center justify-center">
-            <Clock className="w-4 h-4 text-white" />
+      <div className="p-3 rounded-xl bg-gradient-to-br from-red-500/20 to-rose-500/20 border border-red-500/30">
+        <div className="flex items-center gap-1.5 mb-1.5">
+          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-red-500 to-rose-500 flex items-center justify-center">
+            <Clock className="w-3.5 h-3.5 text-white" />
           </div>
         </div>
-        <p className="text-xs text-muted-foreground mb-1">Total Due</p>
-        <p className="text-lg font-bold text-foreground">{formatCurrency(earnings.totalDue)}</p>
+        <p className="text-[10px] text-muted-foreground mb-0.5">Total Due</p>
+        <p className="text-sm font-bold text-foreground">{formatCurrency(earnings.totalDue)}</p>
       </div>
 
       {/* Last 3 Months */}
-      <div className="p-4 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/30">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-            <TrendingUp className="w-4 h-4 text-white" />
+      <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/30">
+        <div className="flex items-center gap-1.5 mb-1.5">
+          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+            <TrendingUp className="w-3.5 h-3.5 text-white" />
           </div>
         </div>
-        <p className="text-xs text-muted-foreground mb-1">Last 3 Months</p>
-        <p className="text-lg font-bold text-foreground">{formatCurrency(earnings.last3Months)}</p>
+        <p className="text-[10px] text-muted-foreground mb-0.5">Last 3 Months</p>
+        <p className="text-sm font-bold text-foreground">{formatCurrency(earnings.last3Months)}</p>
       </div>
     </motion.div>
   );
