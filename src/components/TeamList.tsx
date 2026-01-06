@@ -31,8 +31,8 @@ const countMembersOverOneMonth = (team: Team): number => {
   }).length;
 };
 
-const hasPendingDue = (team: Team): boolean => {
-  return team.members.some(member => (member.pendingAmount || 0) > 0);
+const countMembersWithPendingDue = (team: Team): number => {
+  return team.members.filter(member => (member.pendingAmount || 0) > 0).length;
 };
 
 export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDeleteTeam, onUpdateTeamLogo }: TeamListProps) {
@@ -208,7 +208,7 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                     <div className="flex items-center gap-2">
                       <h4 className="font-medium text-foreground truncate">{team.teamName}</h4>
                       {/* Dot indicators */}
-                      {!isDeleteMode && (membersOverMonth > 0 || hasPendingDue(team)) && (
+                      {!isDeleteMode && (membersOverMonth > 0 || countMembersWithPendingDue(team) > 0) && (
                         <div className="flex flex-col gap-0.5">
                           {/* Red dots for members over 1 month */}
                           {membersOverMonth > 0 && (
@@ -221,10 +221,15 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                               ))}
                             </div>
                           )}
-                          {/* Yellow dot for pending due */}
-                          {hasPendingDue(team) && (
-                            <div className="flex items-center">
-                              <span className="w-2 h-2 rounded-full bg-yellow-500" />
+                          {/* Yellow dots for members with pending due */}
+                          {countMembersWithPendingDue(team) > 0 && (
+                            <div className="flex items-center gap-0.5">
+                              {Array.from({ length: Math.min(countMembersWithPendingDue(team), 8) }).map((_, i) => (
+                                <span 
+                                  key={i} 
+                                  className="w-2 h-2 rounded-full bg-yellow-500"
+                                />
+                              ))}
                             </div>
                           )}
                         </div>
