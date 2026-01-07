@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, Plus, Trash2, X, Mail, Phone, Send, Calendar, UserPlus, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, X, Mail, Phone, Send, Calendar, UserPlus, MessageCircle, Check, AlertCircle } from 'lucide-react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -22,11 +22,15 @@ const YearlyTeamMembers = () => {
     updateTeamName,
     addMember,
     removeMember,
+    updateMemberPayment,
+    updateMemberPendingAmount,
   } = useSupabaseData();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isRemoveMode, setIsRemoveMode] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; email: string } | null>(null);
+  const [paymentModal, setPaymentModal] = useState<{ memberId: string; type: 'paid' | 'due' } | null>(null);
+  const [paymentAmount, setPaymentAmount] = useState('');
 
   // Form state for add member
   const [email, setEmail] = useState('');
@@ -250,11 +254,57 @@ const YearlyTeamMembers = () => {
                             Joined: {format(new Date(member.joinDate), 'd MMM yyyy')}
                           </span>
                         </div>
+                        
+                        {/* Payment Status Display */}
+                        <div className="flex items-center gap-2 pt-1">
+                          {member.isPaid && member.paidAmount && (
+                            <span className="px-2 py-0.5 bg-green-500/20 text-green-500 text-xs font-medium rounded">
+                              Paid: ৳{member.paidAmount}
+                            </span>
+                          )}
+                          {(member.pendingAmount || 0) > 0 && (
+                            <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-500 text-xs font-medium rounded">
+                              Due: ৳{member.pendingAmount}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       
                       {/* Action Buttons */}
                       {!isRemoveMode ? (
                         <div className="flex flex-col gap-1.5 shrink-0">
+                          {/* Paid Button */}
+                          <button
+                            onClick={() => {
+                              setPaymentAmount(member.paidAmount?.toString() || '');
+                              setPaymentModal({ memberId: member.id, type: 'paid' });
+                            }}
+                            className={`p-2 rounded-lg transition-colors ${
+                              member.isPaid 
+                                ? 'bg-green-500/30 text-green-500' 
+                                : 'bg-green-500/20 text-green-500 hover:bg-green-500/30'
+                            }`}
+                            title="Mark as Paid"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                          
+                          {/* Due Button */}
+                          <button
+                            onClick={() => {
+                              setPaymentAmount(member.pendingAmount?.toString() || '');
+                              setPaymentModal({ memberId: member.id, type: 'due' });
+                            }}
+                            className={`p-2 rounded-lg transition-colors ${
+                              (member.pendingAmount || 0) > 0
+                                ? 'bg-yellow-500/30 text-yellow-500' 
+                                : 'bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30'
+                            }`}
+                            title="Set Due Amount"
+                          >
+                            <AlertCircle className="w-4 h-4" />
+                          </button>
+                          
                           {/* WhatsApp Button */}
                           <button
                             onClick={() => {
@@ -525,6 +575,129 @@ const YearlyTeamMembers = () => {
                 >
                   Remove
                 </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
+      {/* Payment Modal */}
+      <AnimatePresence>
+        {paymentModal && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50"
+              onClick={() => {
+                setPaymentModal(null);
+                setPaymentAmount('');
+              }}
+            />
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="fixed inset-x-4 bottom-4 top-auto sm:top-1/2 sm:bottom-auto sm:-translate-y-1/2 max-w-sm mx-auto glass-card rounded-2xl p-6 z-50 card-shadow"
+            >
+              <div className="text-center space-y-3 mb-4">
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto ${
+                  paymentModal.type === 'paid' ? 'bg-green-500/20' : 'bg-yellow-500/20'
+                }`}>
+                  {paymentModal.type === 'paid' ? (
+                    <Check className="w-6 h-6 text-green-500" />
+                  ) : (
+                    <AlertCircle className="w-6 h-6 text-yellow-500" />
+                  )}
+                </div>
+                <h3 className="font-display text-lg font-bold text-foreground">
+                  {paymentModal.type === 'paid' ? 'Mark as Paid' : 'Set Due Amount'}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {paymentModal.type === 'paid' 
+                    ? 'Enter the amount received from this member' 
+                    : 'Enter the pending due amount'}
+                </p>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium text-muted-foreground mb-2 block">
+                    Amount (৳)
+                  </label>
+                  <input
+                    type="number"
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(e.target.value)}
+                    placeholder="Enter amount..."
+                    autoFocus
+                    className={`w-full bg-input rounded-xl px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 ${
+                      paymentModal.type === 'paid' ? 'focus:ring-green-500' : 'focus:ring-yellow-500'
+                    }`}
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setPaymentModal(null);
+                      setPaymentAmount('');
+                    }}
+                    className="flex-1 py-2.5 rounded-xl bg-secondary text-foreground font-medium hover:bg-secondary/80 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const amount = parseFloat(paymentAmount) || 0;
+                      if (paymentModal.type === 'paid') {
+                        await updateMemberPayment(paymentModal.memberId, true, amount);
+                        toast.success(`Payment of ৳${amount} recorded!`);
+                      } else {
+                        await updateMemberPendingAmount(paymentModal.memberId, amount);
+                        toast.success(`Due amount of ৳${amount} set!`);
+                      }
+                      setPaymentModal(null);
+                      setPaymentAmount('');
+                    }}
+                    className={`flex-1 py-2.5 rounded-xl font-medium transition-colors ${
+                      paymentModal.type === 'paid'
+                        ? 'bg-green-500 text-white hover:bg-green-600'
+                        : 'bg-yellow-500 text-white hover:bg-yellow-600'
+                    }`}
+                  >
+                    {paymentModal.type === 'paid' ? 'Mark Paid' : 'Set Due'}
+                  </button>
+                </div>
+
+                {paymentModal.type === 'paid' && (
+                  <button
+                    onClick={async () => {
+                      await updateMemberPayment(paymentModal.memberId, false);
+                      toast.success('Payment status cleared');
+                      setPaymentModal(null);
+                      setPaymentAmount('');
+                    }}
+                    className="w-full py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Clear payment status
+                  </button>
+                )}
+
+                {paymentModal.type === 'due' && (
+                  <button
+                    onClick={async () => {
+                      await updateMemberPendingAmount(paymentModal.memberId, 0);
+                      toast.success('Due amount cleared');
+                      setPaymentModal(null);
+                      setPaymentAmount('');
+                    }}
+                    className="w-full py-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Clear due amount
+                  </button>
+                )}
               </div>
             </motion.div>
           </>
