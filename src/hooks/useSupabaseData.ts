@@ -259,17 +259,18 @@ export function useSupabaseData() {
     );
   }, []);
 
-  const addMember = useCallback(async (member: Omit<Member, 'id'>) => {
-    if (!user || !activeTeamId) return false;
+  const addMember = useCallback(async (member: Omit<Member, 'id'>, targetTeamId?: string) => {
+    const teamIdToUse = targetTeamId || activeTeamId;
+    if (!user || !teamIdToUse) return false;
 
-    const team = teams.find((t) => t.id === activeTeamId);
+    const team = teams.find((t) => t.id === teamIdToUse);
     // No limit for yearly teams
     if (!team || (!team.isYearlyTeam && team.members.length + 1 >= MAX_MEMBERS)) return false;
 
     const { data, error } = await supabase
       .from('members')
       .insert({
-        team_id: activeTeamId,
+        team_id: teamIdToUse,
         user_id: user.id,
         email: member.email,
         phone: member.phone || '',
@@ -292,7 +293,7 @@ export function useSupabaseData() {
     const newMember = mapDbMemberToMember(data);
     setTeams((prev) =>
       prev.map((t) =>
-        t.id === activeTeamId ? { ...t, members: [...t.members, newMember] } : t
+        t.id === teamIdToUse ? { ...t, members: [...t.members, newMember] } : t
       )
     );
     return true;
