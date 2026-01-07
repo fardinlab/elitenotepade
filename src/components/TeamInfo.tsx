@@ -1,17 +1,19 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Pencil, Check, X, Mail, Users } from 'lucide-react';
+import { Pencil, Check, X, Mail, Users, Calendar } from 'lucide-react';
 import { MAX_MEMBERS } from '@/types/member';
+import { format } from 'date-fns';
 
 interface TeamInfoProps {
   teamName: string;
   adminEmail: string;
   memberCount: number;
+  createdAt: string;
   onTeamNameChange: (name: string) => void;
   onAdminEmailChange: (email: string) => void;
 }
 
-export function TeamInfo({ teamName, adminEmail, memberCount, onTeamNameChange, onAdminEmailChange }: TeamInfoProps) {
+export function TeamInfo({ teamName, adminEmail, memberCount, createdAt, onTeamNameChange, onAdminEmailChange }: TeamInfoProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState(teamName);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
@@ -89,6 +91,12 @@ export function TeamInfo({ teamName, adminEmail, memberCount, onTeamNameChange, 
             </button>
           </>
         )}
+      </div>
+
+      {/* Creation Date */}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+        <Calendar className="w-4 h-4" />
+        <span>Created: {format(new Date(createdAt), 'd MMMM yyyy')}</span>
       </div>
 
       {/* Admin Email */}
