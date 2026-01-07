@@ -23,6 +23,7 @@ const TeamMembers = () => {
     setActiveTeam,
     updateTeamName,
     updateAdminEmail,
+    updateTeamCreatedAt,
     addMember,
     removeMember,
     updateMemberDate,
@@ -114,6 +115,7 @@ const TeamMembers = () => {
           createdAt={team.createdAt}
           onTeamNameChange={updateTeamName}
           onAdminEmailChange={updateAdminEmail}
+          onCreatedAtChange={updateTeamCreatedAt}
         />
 
         <div className="space-y-3">

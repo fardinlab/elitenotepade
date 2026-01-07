@@ -218,6 +218,24 @@ export function useSupabaseData() {
     );
   }, [activeTeamId]);
 
+  const updateTeamCreatedAt = useCallback(async (createdAt: string) => {
+    if (!activeTeamId) return;
+
+    const { error } = await supabase
+      .from('teams')
+      .update({ created_at: createdAt })
+      .eq('id', activeTeamId);
+
+    if (error) {
+      console.error('Error updating team created at:', error);
+      return;
+    }
+
+    setTeams((prev) =>
+      prev.map((t) => (t.id === activeTeamId ? { ...t, createdAt } : t))
+    );
+  }, [activeTeamId]);
+
   const updateTeamLogo = useCallback(async (teamId: string, logo: SubscriptionType) => {
     const { error } = await supabase
       .from('teams')
@@ -531,6 +549,7 @@ export function useSupabaseData() {
     deleteTeam,
     updateTeamName,
     updateAdminEmail,
+    updateTeamCreatedAt,
     addMember,
     removeMember,
     updateMemberDate,
