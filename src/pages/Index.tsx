@@ -80,9 +80,9 @@ const Index = () => {
     toast.success('Team deleted!');
   };
 
-  const handleSelectTeam = (teamId: string) => {
+  const handleSelectTeam = (teamId: string, memberId?: string) => {
     setActiveTeam(teamId);
-    navigate(`/team/${teamId}`);
+    navigate(`/team/${teamId}`, { state: { highlightMemberId: memberId } });
   };
 
   const handleCreateNotepad = async () => {

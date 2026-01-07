@@ -11,7 +11,7 @@ interface SearchResult {
 
 interface GlobalSearchProps {
   onSearch: (query: string) => SearchResult[];
-  onSelectTeam: (teamId: string) => void;
+  onSelectTeam: (teamId: string, memberId?: string) => void;
 }
 
 export function GlobalSearch({ onSearch, onSelectTeam }: GlobalSearchProps) {
@@ -31,8 +31,8 @@ export function GlobalSearch({ onSearch, onSelectTeam }: GlobalSearchProps) {
     }
   };
 
-  const handleSelectResult = (teamId: string) => {
-    onSelectTeam(teamId);
+  const handleSelectResult = (teamId: string, memberId: string) => {
+    onSelectTeam(teamId, memberId);
     setQuery('');
     setResults([]);
     setIsOpen(false);
@@ -76,7 +76,7 @@ export function GlobalSearch({ onSearch, onSelectTeam }: GlobalSearchProps) {
             {results.map((result, index) => (
               <button
                 key={`${result.team.id}-${result.member.id}-${index}`}
-                onClick={() => handleSelectResult(result.team.id)}
+                onClick={() => handleSelectResult(result.team.id, result.member.id)}
                 className="w-full px-4 py-3 hover:bg-secondary/50 active:bg-secondary/70 transition-colors text-left border-b border-border last:border-0"
               >
                 <div className="flex items-center gap-3">

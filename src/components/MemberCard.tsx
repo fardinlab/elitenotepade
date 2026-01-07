@@ -9,6 +9,7 @@ interface MemberCardProps {
   member: Member;
   index: number;
   isRemoveMode: boolean;
+  isHighlighted?: boolean;
   onRemove: () => void;
   onDateChange: (id: string, date: string) => void;
   onEmailChange: (id: string, email: string) => void;
@@ -22,7 +23,8 @@ interface MemberCardProps {
 export function MemberCard({ 
   member, 
   index, 
-  isRemoveMode, 
+  isRemoveMode,
+  isHighlighted = false,
   onRemove, 
   onDateChange,
   onEmailChange,
@@ -148,9 +150,11 @@ export function MemberCard({
       exit={{ opacity: 0, x: -100 }}
       transition={{ delay: index * 0.05 }}
       className={`rounded-xl p-4 card-shadow transition-all duration-300 touch-manipulation ${
-        isOverOneMonth 
-          ? 'bg-destructive/10 border border-destructive/50 hover:border-destructive/70' 
-          : 'glass-card hover:border-primary/30'
+        isHighlighted
+          ? 'bg-emerald-500/20 border-2 border-emerald-500 ring-2 ring-emerald-500/50'
+          : isOverOneMonth 
+            ? 'bg-destructive/10 border border-destructive/50 hover:border-destructive/70' 
+            : 'glass-card hover:border-primary/30'
       }`}
     >
       <div className="flex items-start justify-between gap-4">
