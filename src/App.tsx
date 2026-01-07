@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import TeamMembers from "./pages/TeamMembers";
+import DueMembers from "./pages/DueMembers";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -35,6 +36,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <TeamMembers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/due-members"
+              element={
+                <ProtectedRoute>
+                  <DueMembers />
                 </ProtectedRoute>
               }
             />
