@@ -260,13 +260,20 @@ export function useSupabaseData() {
   }, []);
 
   const addMember = useCallback(
-    async (member: Omit<Member, 'id'>, targetTeamId?: string) => {
+    async (
+      member: Omit<Member, 'id'>,
+      targetTeamId?: string
+    ): Promise<{ ok: boolean; error?: string; code?: string }> => {
       const teamIdToUse = targetTeamId || activeTeamId;
-      if (!user || !teamIdToUse) return false;
+      if (!user || !teamIdToUse) return { ok: false, error: 'Not authenticated' };
 
       const team = teams.find((t) => t.id === teamIdToUse);
+      if (!team) return { ok: false, error: 'Team not found' };
+
       // No limit for yearly teams
-      if (!team || (!team.isYearlyTeam && team.members.length + 1 >= MAX_MEMBERS)) return false;
+      if (!team.isYearlyTeam && team.members.length + 1 >= MAX_MEMBERS) {
+        return { ok: false, error: `Maximum ${MAX_MEMBERS} members allowed` };
+      }
 
       const baseInsert = {
         team_id: teamIdToUse,
@@ -298,14 +305,14 @@ export function useSupabaseData() {
 
       if (error) {
         console.error('Error adding member:', error);
-        return false;
+        return { ok: false, error: error.message, code: error.code };
       }
 
       // In some RLS setups, the insert can succeed but the returning row is not selectable.
       // In that case, refresh from DB to keep UI in sync.
       if (!data) {
         await fetchData();
-        return true;
+        return { ok: true };
       }
 
       const newMember = mapDbMemberToMember(data);
@@ -314,7 +321,7 @@ export function useSupabaseData() {
           t.id === teamIdToUse ? { ...t, members: [...t.members, newMember] } : t
         )
       );
-      return true;
+      return { ok: true };
     },
     [user, activeTeamId, teams, fetchData]
   );

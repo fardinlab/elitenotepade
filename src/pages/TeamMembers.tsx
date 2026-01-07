@@ -83,13 +83,15 @@ const TeamMembers = () => {
   }, [highlightMemberId, team]);
 
   const handleAddMember = async (member: { email: string; phone: string; telegram?: string; joinDate: string }) => {
-    const success = await addMember(member);
-    if (success) {
+    const result = await addMember(member);
+    if (result.ok) {
       toast.success('Member added successfully!');
-    } else {
-      toast.error(`Maximum ${MAX_MEMBERS} members allowed`);
+      return true;
     }
-    return success;
+
+    toast.error(result.error || `Maximum ${MAX_MEMBERS} members allowed`);
+    if (result.code) toast.error(`Code: ${result.code}`);
+    return false;
   };
 
   const handleRemoveMember = (id: string, email: string) => {
