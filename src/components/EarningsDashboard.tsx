@@ -1,15 +1,95 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { DollarSign, Clock, TrendingUp, Users } from 'lucide-react';
 import { Team } from '@/types/member';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface EarningsDashboardProps {
   teams: Team[];
 }
 
+interface PaymentSummary {
+  member_id: string;
+  total_paid: number;
+  total_amount: number;
+}
+
 export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const [paymentSummaries, setPaymentSummaries] = useState<PaymentSummary[]>([]);
+
+  // Fetch payment summaries for all yearly team members
+  useEffect(() => {
+    const fetchPaymentSummaries = async () => {
+      if (!user) return;
+
+      // Get all member IDs from yearly teams
+      const yearlyMembers = teams
+        .filter(team => team.isYearlyTeam)
+        .flatMap(team => team.members);
+
+      if (yearlyMembers.length === 0) {
+        setPaymentSummaries([]);
+        return;
+      }
+
+      const memberIds = yearlyMembers.map(m => m.id);
+
+      // Fetch payments and member total_amounts in parallel
+      const [paymentsResult, membersResult] = await Promise.all([
+        supabase
+          .from('member_payments')
+          .select('member_id, amount, status')
+          .eq('user_id', user.id)
+          .in('member_id', memberIds)
+          .eq('status', 'paid'),
+        supabase
+          .from('members')
+          .select('id, total_amount')
+          .in('id', memberIds)
+      ]);
+
+      if (paymentsResult.error) {
+        console.error('Error fetching payments:', paymentsResult.error);
+        return;
+      }
+
+      if (membersResult.error) {
+        console.error('Error fetching members:', membersResult.error);
+        return;
+      }
+
+      // Create a map of member total_amounts
+      const memberTotalAmounts: Record<string, number> = {};
+      (membersResult.data || []).forEach(member => {
+        memberTotalAmounts[member.id] = member.total_amount || 0;
+      });
+
+      // Aggregate paid amounts by member
+      const paidSummaries: Record<string, number> = {};
+      (paymentsResult.data || []).forEach(payment => {
+        if (!paidSummaries[payment.member_id]) {
+          paidSummaries[payment.member_id] = 0;
+        }
+        paidSummaries[payment.member_id] += payment.amount;
+      });
+
+      // Build summaries with total_amount
+      const allMemberIds = [...new Set([...Object.keys(memberTotalAmounts), ...Object.keys(paidSummaries)])];
+      setPaymentSummaries(
+        allMemberIds.map(member_id => ({
+          member_id,
+          total_paid: paidSummaries[member_id] || 0,
+          total_amount: memberTotalAmounts[member_id] || 0,
+        }))
+      );
+    };
+
+    fetchPaymentSummaries();
+  }, [user, teams]);
   
   const earnings = useMemo(() => {
     const now = new Date();
@@ -19,16 +99,31 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
     let currentMonthEarnings = 0;
     let totalDue = 0;
     let last3MonthsEarnings = 0;
+    let totalPaid = 0;
 
     // Get all members from all teams
     const allMembers = teams.flatMap(team => team.members);
+    const yearlyMembers = teams.filter(team => team.isYearlyTeam).flatMap(team => team.members);
 
-    allMembers.forEach(member => {
+    // Calculate Total Paid and Total Due for yearly team members
+    yearlyMembers.forEach(member => {
+      const summary = paymentSummaries.find(s => s.member_id === member.id);
+      const memberTotalPaid = summary?.total_paid || 0;
+      const memberTotalAmount = summary?.total_amount || 0;
+      const memberTotalDue = Math.max(0, memberTotalAmount - memberTotalPaid);
+      
+      totalPaid += memberTotalPaid;
+      totalDue += memberTotalDue;
+    });
+
+    // Calculate current month and last 3 months earnings from regular teams
+    const regularMembers = teams.filter(team => !team.isYearlyTeam).flatMap(team => team.members);
+    regularMembers.forEach(member => {
       const joinDate = new Date(member.joinDate);
       const memberMonth = joinDate.getMonth();
       const memberYear = joinDate.getFullYear();
 
-      // Add to total due
+      // Add to total due from pending amount
       if (member.pendingAmount) {
         totalDue += member.pendingAmount;
       }
@@ -48,13 +143,17 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
       }
     });
 
+    // Add yearly team total paid to earnings
+    currentMonthEarnings += totalPaid;
+    last3MonthsEarnings += totalPaid;
+
     return {
       currentMonth: currentMonthEarnings,
       totalDue,
       last3Months: last3MonthsEarnings,
       totalMembers: allMembers.length,
     };
-  }, [teams]);
+  }, [teams, paymentSummaries]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
