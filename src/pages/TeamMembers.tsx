@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useState, useEffect, useRef } from 'react';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
@@ -14,7 +14,11 @@ import { toast } from 'sonner';
 
 const TeamMembers = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { teamId } = useParams<{ teamId: string }>();
+  const highlightMemberId = (location.state as { highlightMemberId?: string })?.highlightMemberId;
+  const [highlightedMemberId, setHighlightedMemberId] = useState<string | null>(null);
+  const memberRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   
   const {
     activeTeam,
@@ -52,6 +56,31 @@ const TeamMembers = () => {
   }, [teamId, activeTeam?.id, sortedTeams, setActiveTeam]);
 
   const team = sortedTeams.find(t => t.id === teamId) || activeTeam;
+
+  // Handle scroll and highlight for searched member
+  useEffect(() => {
+    if (highlightMemberId && team) {
+      setHighlightedMemberId(highlightMemberId);
+      
+      // Wait for render then scroll
+      setTimeout(() => {
+        const memberElement = memberRefs.current[highlightMemberId];
+        if (memberElement) {
+          memberElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 100);
+
+      // Remove highlight after 3 seconds
+      const timer = setTimeout(() => {
+        setHighlightedMemberId(null);
+      }, 3000);
+
+      // Clear the location state to prevent re-highlighting on navigation
+      window.history.replaceState({}, document.title);
+
+      return () => clearTimeout(timer);
+    }
+  }, [highlightMemberId, team]);
 
   const handleAddMember = async (member: { email: string; phone: string; telegram?: string; joinDate: string }) => {
     const success = await addMember(member);
@@ -129,20 +158,25 @@ const TeamMembers = () => {
             <div className="space-y-3">
               <AnimatePresence mode="popLayout">
                 {team.members.map((member, index) => (
-                  <MemberCard
+                  <div
                     key={member.id}
-                    member={member}
-                    index={index}
-                    isRemoveMode={isRemoveMode}
-                    onRemove={() => handleRemoveMember(member.id, member.email)}
-                    onDateChange={updateMemberDate}
-                    onEmailChange={updateMemberEmail}
-                    onPhoneChange={updateMemberPhone}
-                    onTelegramChange={updateMemberTelegram}
-                    onPaymentChange={updateMemberPayment}
-                    onSubscriptionsChange={updateMemberSubscriptions}
-                    onPendingAmountChange={updateMemberPendingAmount}
-                  />
+                    ref={(el) => { memberRefs.current[member.id] = el; }}
+                  >
+                    <MemberCard
+                      member={member}
+                      index={index}
+                      isRemoveMode={isRemoveMode}
+                      isHighlighted={highlightedMemberId === member.id}
+                      onRemove={() => handleRemoveMember(member.id, member.email)}
+                      onDateChange={updateMemberDate}
+                      onEmailChange={updateMemberEmail}
+                      onPhoneChange={updateMemberPhone}
+                      onTelegramChange={updateMemberTelegram}
+                      onPaymentChange={updateMemberPayment}
+                      onSubscriptionsChange={updateMemberSubscriptions}
+                      onPendingAmountChange={updateMemberPendingAmount}
+                    />
+                  </div>
                 ))}
               </AnimatePresence>
             </div>
