@@ -151,7 +151,7 @@ export function MemberCard({
       transition={{ delay: index * 0.05 }}
       className={`rounded-xl p-4 card-shadow transition-all duration-300 touch-manipulation ${
         isHighlighted
-          ? 'bg-emerald-500/20 border-2 border-emerald-500 ring-2 ring-emerald-500/50'
+          ? 'bg-blue-500/20 border-2 border-blue-500 ring-2 ring-blue-500/50'
           : isOverOneMonth 
             ? 'bg-destructive/10 border border-destructive/50 hover:border-destructive/70' 
             : 'glass-card hover:border-primary/30'
