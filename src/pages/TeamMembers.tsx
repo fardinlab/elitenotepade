@@ -111,6 +111,7 @@ const TeamMembers = () => {
           teamName={team.teamName}
           adminEmail={team.adminEmail}
           memberCount={memberCount}
+          createdAt={team.createdAt}
           onTeamNameChange={updateTeamName}
           onAdminEmailChange={updateAdminEmail}
         />
