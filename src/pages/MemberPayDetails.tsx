@@ -36,6 +36,7 @@ const MemberPayDetails = () => {
   
   const [member, setMember] = useState<MemberData | null>(null);
   const [payments, setPayments] = useState<MemberPayment[]>([]);
+  const [allPayments, setAllPayments] = useState<MemberPayment[]>([]);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [loading, setLoading] = useState(true);
   const [editingMonth, setEditingMonth] = useState<number | null>(null);
@@ -90,15 +91,31 @@ const MemberPayDetails = () => {
     setPayments(data || []);
   }, [user, memberId, selectedYear]);
 
+  const fetchAllPayments = useCallback(async () => {
+    if (!user || !memberId) return;
+
+    const { data, error } = await supabase
+      .from('member_payments')
+      .select('*')
+      .eq('member_id', memberId)
+      .eq('user_id', user.id);
+
+    if (error) {
+      console.error('Error fetching all payments:', error);
+      return;
+    }
+
+    setAllPayments(data || []);
+  }, [user, memberId]);
+
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await fetchMember();
-      await fetchPayments();
+      await Promise.all([fetchMember(), fetchPayments(), fetchAllPayments()]);
       setLoading(false);
     };
     loadData();
-  }, [fetchMember, fetchPayments]);
+  }, [fetchMember, fetchPayments, fetchAllPayments]);
 
   const getPaymentForMonth = (month: number) => {
     return payments.find(p => p.month === month);
@@ -131,6 +148,7 @@ const MemberPayDetails = () => {
       }
 
       setPayments(prev => prev.filter(p => p.id !== existingPayment.id));
+      setAllPayments(prev => prev.filter(p => p.id !== existingPayment.id));
       toast.success('Payment removed');
     } else {
       // Update status
@@ -146,6 +164,7 @@ const MemberPayDetails = () => {
       }
 
       setPayments(prev => prev.map(p => p.id === existingPayment.id ? { ...p, status } : p));
+      setAllPayments(prev => prev.map(p => p.id === existingPayment.id ? { ...p, status } : p));
       toast.success(`Marked as ${status}`);
     }
   };
@@ -186,6 +205,16 @@ const MemberPayDetails = () => {
       return [...prev, data];
     });
 
+    setAllPayments(prev => {
+      const existing = prev.findIndex(p => p.year === selectedYear && p.month === editingMonth);
+      if (existing >= 0) {
+        const newPayments = [...prev];
+        newPayments[existing] = data;
+        return newPayments;
+      }
+      return [...prev, data];
+    });
+
     toast.success(`Marked as ${status}`);
     setEditingMonth(null);
     setEditAmount('');
@@ -213,13 +242,11 @@ const MemberPayDetails = () => {
     toast.success('Total amount updated');
   };
 
-  const totalPaid = payments
+  const totalPaid = allPayments
     .filter(p => p.status === 'paid')
     .reduce((sum, p) => sum + p.amount, 0);
 
-  const totalDue = payments
-    .filter(p => p.status === 'due')
-    .reduce((sum, p) => sum + p.amount, 0);
+  const totalDue = Math.max(0, (member?.total_amount || 0) - totalPaid);
 
   if (loading) {
     return (
