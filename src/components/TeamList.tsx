@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Users, Calendar, ChevronRight, Trash2, X, Check, ImagePlus } from 'lucide-react';
+import { Plus, Users, Calendar, ChevronRight, Trash2, X, Check, ImagePlus, Pencil } from 'lucide-react';
 import { Team, MAX_MEMBERS, SubscriptionType, SUBSCRIPTION_CONFIG } from '@/types/member';
 import { differenceInDays } from 'date-fns';
 
@@ -253,6 +253,7 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                       <span className="text-xs text-muted-foreground flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
                         {formatDate(team.createdAt)}
+                        <Pencil className="w-3 h-3 ml-0.5" />
                       </span>
                     </div>
                   </div>
