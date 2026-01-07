@@ -160,15 +160,15 @@ const YearlyTeamMembers = () => {
     }
   }, [team, fetchPaymentSummaries]);
 
-  // Check if a member should be red highlighted (current month not paid AND join date day has passed)
+  // Check if a member should be red highlighted (current month not paid AND join date day has passed or is today)
   const isMemberOverdue = useCallback((member: { id: string; joinDate: string }) => {
     const now = new Date();
     const currentDay = now.getDate();
     const joinDateDay = new Date(member.joinDate).getDate();
     const isPaid = memberCurrentMonthPaid[member.id] || false;
     
-    // Red indicator if: current month is NOT paid AND join date day has passed
-    return !isPaid && currentDay > joinDateDay;
+    // Red indicator if: current month is NOT paid AND current day >= join date day
+    return !isPaid && currentDay >= joinDateDay;
   }, [memberCurrentMonthPaid]);
 
   // Handle scroll and highlight for searched member
