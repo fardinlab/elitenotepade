@@ -357,7 +357,7 @@ const YearlyTeamMembers = () => {
                     transition={{ delay: index * 0.03 }}
                     className={`glass-card rounded-xl p-4 card-shadow transition-all ${
                       highlightedMemberId === member.id 
-                        ? 'ring-2 ring-primary bg-primary/10' 
+                        ? 'ring-2 ring-green-500 bg-green-500/20' 
                         : ''
                     } ${isRemoveMode ? 'border-destructive/50' : ''}`}
                   >
