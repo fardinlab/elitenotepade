@@ -460,7 +460,7 @@ const Auth = () => {
           variant="outline"
           onClick={handleGoogleSignIn}
           disabled={googleLoading}
-          className="w-full bg-secondary border-border hover:bg-secondary/80"
+          className="w-full bg-background border-border hover:bg-muted"
         >
           {googleLoading ? (
             <Loader2 className="w-4 h-4 animate-spin" />
