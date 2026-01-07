@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import TeamMembers from "./pages/TeamMembers";
 import YearlyTeamMembers from "./pages/YearlyTeamMembers";
 import DueMembers from "./pages/DueMembers";
+import MemberPayDetails from "./pages/MemberPayDetails";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -53,6 +54,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <DueMembers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/member-pay-details/:memberId"
+              element={
+                <ProtectedRoute>
+                  <MemberPayDetails />
                 </ProtectedRoute>
               }
             />
