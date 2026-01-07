@@ -77,22 +77,24 @@ export function GlobalSearch({ onSearch, onSelectTeam }: GlobalSearchProps) {
               <button
                 key={`${result.team.id}-${result.member.id}-${index}`}
                 onClick={() => handleSelectResult(result.team.id)}
-                className="w-full px-4 py-3 hover:bg-secondary/50 transition-colors text-left border-b border-border last:border-0"
+                className="w-full px-4 py-3 hover:bg-secondary/50 active:bg-secondary/70 transition-colors text-left border-b border-border last:border-0"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
-                    <Users className="w-4 h-4 text-primary" />
+                  <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
+                    <Users className="w-5 h-5 text-primary" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-foreground truncate">
+                    <p className="text-sm font-medium text-foreground">
                       {result.member.email}
                       {result.isAdmin && (
                         <span className="ml-2 text-xs text-primary">(Admin)</span>
                       )}
                     </p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      Team: {result.team.teamName}
-                      {result.member.phone && ` • ${result.member.phone}`}
+                    {result.member.phone && (
+                      <p className="text-xs text-muted-foreground">{result.member.phone}</p>
+                    )}
+                    <p className="text-xs text-primary font-medium mt-0.5">
+                      Team: {result.team.teamName} →
                     </p>
                   </div>
                 </div>
