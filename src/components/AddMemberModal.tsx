@@ -159,21 +159,12 @@ export function AddMemberModal({ isOpen, onClose, onAdd }: AddMemberModalProps) 
                   <Calendar className="w-4 h-4" />
                   Join Date
                 </label>
-                <div className="flex gap-2">
-                  <input
-                    type="date"
-                    value={joinDate}
-                    onChange={(e) => setJoinDate(e.target.value)}
-                    className="flex-1 bg-input rounded-xl px-4 py-2.5 sm:py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setJoinDate(new Date().toISOString().split('T')[0])}
-                    className="px-3 py-2.5 sm:py-3 rounded-xl bg-primary/20 text-primary text-sm font-medium hover:bg-primary/30 transition-colors whitespace-nowrap"
-                  >
-                    Added Now
-                  </button>
-                </div>
+                <input
+                  type="date"
+                  value={joinDate}
+                  onChange={(e) => setJoinDate(e.target.value)}
+                  className="w-full bg-input rounded-xl px-4 py-2.5 sm:py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                />
               </div>
 
               <button
