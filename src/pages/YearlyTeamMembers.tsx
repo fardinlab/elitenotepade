@@ -499,20 +499,6 @@ const YearlyTeamMembers = () => {
                             </>
                           )}
                         </div>
-                        
-                        {/* Payment Status Display */}
-                        <div className="flex items-center gap-2 pt-1">
-                          {member.isPaid && member.paidAmount && (
-                            <span className="px-2 py-0.5 bg-green-500/20 text-green-500 text-xs font-medium rounded">
-                              Paid: ৳{member.paidAmount}
-                            </span>
-                          )}
-                          {(member.pendingAmount || 0) > 0 && (
-                            <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-500 text-xs font-medium rounded">
-                              Due: ৳{member.pendingAmount}
-                            </span>
-                          )}
-                        </div>
                       </div>
                       
                       {/* Action Buttons */}
