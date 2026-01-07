@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, Plus, Trash2, X, Mail, Phone, Send, Calendar, UserPlus } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, X, Mail, Phone, Send, Calendar, UserPlus, MessageCircle } from 'lucide-react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -226,11 +226,11 @@ const YearlyTeamMembers = () => {
                         : ''
                     } ${isRemoveMode ? 'border-destructive/50' : ''}`}
                   >
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0 space-y-1">
                         <div className="flex items-center gap-2">
                           <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
-                          <span className="text-sm font-medium text-foreground truncate">{member.email}</span>
+                          <span className="text-sm font-medium text-foreground break-all">{member.email}</span>
                         </div>
                         {member.phone && (
                           <div className="flex items-center gap-2">
@@ -252,7 +252,66 @@ const YearlyTeamMembers = () => {
                         </div>
                       </div>
                       
-                      {isRemoveMode && (
+                      {/* Action Buttons */}
+                      {!isRemoveMode ? (
+                        <div className="flex flex-col gap-1.5 shrink-0">
+                          {/* WhatsApp Button */}
+                          <button
+                            onClick={() => {
+                              if (member.phone) {
+                                const cleanPhone = member.phone.replace(/[^0-9+]/g, '');
+                                window.open(`https://wa.me/${cleanPhone}`, '_blank');
+                              }
+                            }}
+                            disabled={!member.phone}
+                            className={`p-2 rounded-lg transition-colors ${
+                              member.phone 
+                                ? 'bg-green-500/20 text-green-500 hover:bg-green-500/30' 
+                                : 'bg-muted text-muted-foreground/40 cursor-not-allowed'
+                            }`}
+                            title={member.phone ? 'WhatsApp' : 'No phone number'}
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                          </button>
+                          
+                          {/* Telegram Button */}
+                          <button
+                            onClick={() => {
+                              if (member.telegram) {
+                                const username = member.telegram.replace('@', '');
+                                window.open(`https://t.me/${username}`, '_blank');
+                              }
+                            }}
+                            disabled={!member.telegram}
+                            className={`p-2 rounded-lg transition-colors ${
+                              member.telegram 
+                                ? 'bg-blue-500/20 text-blue-500 hover:bg-blue-500/30' 
+                                : 'bg-muted text-muted-foreground/40 cursor-not-allowed'
+                            }`}
+                            title={member.telegram ? 'Telegram' : 'No Telegram username'}
+                          >
+                            <Send className="w-4 h-4" />
+                          </button>
+                          
+                          {/* Call Button */}
+                          <button
+                            onClick={() => {
+                              if (member.phone) {
+                                window.open(`tel:${member.phone}`, '_self');
+                              }
+                            }}
+                            disabled={!member.phone}
+                            className={`p-2 rounded-lg transition-colors ${
+                              member.phone 
+                                ? 'bg-primary/20 text-primary hover:bg-primary/30' 
+                                : 'bg-muted text-muted-foreground/40 cursor-not-allowed'
+                            }`}
+                            title={member.phone ? 'Call' : 'No phone number'}
+                          >
+                            <Phone className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ) : (
                         <motion.button
                           initial={{ scale: 0 }}
                           animate={{ scale: 1 }}
