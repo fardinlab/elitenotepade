@@ -21,6 +21,8 @@ interface DbMember {
   email: string;
   phone: string;
   telegram: string | null;
+  two_fa: string | null;
+  password: string | null;
   join_date: string;
   is_paid: boolean;
   paid_amount: number | null;
@@ -45,6 +47,8 @@ const mapDbMemberToMember = (dbMember: DbMember): Member => ({
   email: dbMember.email,
   phone: dbMember.phone,
   telegram: dbMember.telegram || undefined,
+  twoFA: dbMember.two_fa || undefined,
+  password: dbMember.password || undefined,
   joinDate: dbMember.join_date,
   isPaid: dbMember.is_paid,
   paidAmount: dbMember.paid_amount || undefined,
@@ -270,6 +274,8 @@ export function useSupabaseData() {
         email: member.email,
         phone: member.phone || '',
         telegram: member.telegram || null,
+        two_fa: member.twoFA || null,
+        password: member.password || null,
         join_date: member.joinDate,
         is_paid: member.isPaid || false,
         paid_amount: member.paidAmount || null,
@@ -485,6 +491,56 @@ export function useSupabaseData() {
     );
   }, [activeTeamId]);
 
+  const updateMemberTwoFA = useCallback(async (id: string, twoFA: string) => {
+    const { error } = await supabase
+      .from('members')
+      .update({ two_fa: twoFA || null })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating member 2FA:', error);
+      return;
+    }
+
+    setTeams((prev) =>
+      prev.map((t) =>
+        t.id === activeTeamId
+          ? {
+              ...t,
+              members: t.members.map((m) =>
+                m.id === id ? { ...m, twoFA: twoFA || undefined } : m
+              ),
+            }
+          : t
+      )
+    );
+  }, [activeTeamId]);
+
+  const updateMemberPassword = useCallback(async (id: string, password: string) => {
+    const { error } = await supabase
+      .from('members')
+      .update({ password: password || null })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating member password:', error);
+      return;
+    }
+
+    setTeams((prev) =>
+      prev.map((t) =>
+        t.id === activeTeamId
+          ? {
+              ...t,
+              members: t.members.map((m) =>
+                m.id === id ? { ...m, password: password || undefined } : m
+              ),
+            }
+          : t
+      )
+    );
+  }, [activeTeamId]);
+
   const searchMembers = useCallback((query: string) => {
     if (!query.trim()) return [];
 
@@ -560,6 +616,8 @@ export function useSupabaseData() {
     updateMemberEmail,
     updateMemberPhone,
     updateMemberTelegram,
+    updateMemberTwoFA,
+    updateMemberPassword,
     updateMemberPayment,
     updateMemberSubscriptions,
     updateMemberPendingAmount,

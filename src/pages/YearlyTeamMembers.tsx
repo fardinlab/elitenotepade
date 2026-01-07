@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, Plus, Trash2, X, Mail, Phone, Send, Calendar, UserPlus, MessageCircle, Check, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, X, Mail, Phone, Send, Calendar, UserPlus, MessageCircle, Check, AlertCircle, Pencil, Shield, Lock } from 'lucide-react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -24,6 +24,12 @@ const YearlyTeamMembers = () => {
     removeMember,
     updateMemberPayment,
     updateMemberPendingAmount,
+    updateMemberEmail,
+    updateMemberPhone,
+    updateMemberTelegram,
+    updateMemberTwoFA,
+    updateMemberPassword,
+    updateMemberDate,
   } = useSupabaseData();
 
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -31,11 +37,17 @@ const YearlyTeamMembers = () => {
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; email: string } | null>(null);
   const [paymentModal, setPaymentModal] = useState<{ memberId: string; type: 'paid' | 'due' } | null>(null);
   const [paymentAmount, setPaymentAmount] = useState('');
+  
+  // Inline editing state
+  const [editingField, setEditingField] = useState<{ memberId: string; field: string } | null>(null);
+  const [editValue, setEditValue] = useState('');
 
   // Form state for add member
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [telegram, setTelegram] = useState('');
+  const [twoFA, setTwoFA] = useState('');
+  const [password, setPassword] = useState('');
   const [joinDate, setJoinDate] = useState(new Date().toISOString().split('T')[0]);
   const [errors, setErrors] = useState<{ email?: string; phone?: string }>({});
 
@@ -103,6 +115,8 @@ const YearlyTeamMembers = () => {
       email,
       phone: phone.trim() || '',
       telegram: telegram.trim() || undefined,
+      twoFA: twoFA.trim() || undefined,
+      password: password.trim() || undefined,
       joinDate,
     });
 
@@ -111,6 +125,8 @@ const YearlyTeamMembers = () => {
       setEmail('');
       setPhone('');
       setTelegram('');
+      setTwoFA('');
+      setPassword('');
       setJoinDate(new Date().toISOString().split('T')[0]);
       setErrors({});
       setIsAddModalOpen(false);
@@ -138,8 +154,51 @@ const YearlyTeamMembers = () => {
     setEmail('');
     setPhone('');
     setTelegram('');
+    setTwoFA('');
+    setPassword('');
     setErrors({});
     setIsAddModalOpen(false);
+  };
+
+  const startEditing = (memberId: string, field: string, currentValue: string) => {
+    setEditingField({ memberId, field });
+    setEditValue(currentValue);
+  };
+
+  const saveEdit = async () => {
+    if (!editingField) return;
+    
+    const { memberId, field } = editingField;
+    
+    switch (field) {
+      case 'email':
+        await updateMemberEmail(memberId, editValue);
+        break;
+      case 'phone':
+        await updateMemberPhone(memberId, editValue);
+        break;
+      case 'telegram':
+        await updateMemberTelegram(memberId, editValue);
+        break;
+      case 'twoFA':
+        await updateMemberTwoFA(memberId, editValue);
+        break;
+      case 'password':
+        await updateMemberPassword(memberId, editValue);
+        break;
+      case 'joinDate':
+        await updateMemberDate(memberId, editValue);
+        break;
+    }
+    
+    toast.success('Updated successfully!');
+    setEditingField(null);
+    setEditValue('');
+  };
+
+  const cancelEdit = () => {
+    setEditingField(null);
+    setEditValue('');
   };
 
   if (!isLoaded || !team) {
@@ -231,28 +290,214 @@ const YearlyTeamMembers = () => {
                     } ${isRemoveMode ? 'border-destructive/50' : ''}`}
                   >
                     <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0 space-y-1">
-                        <div className="flex items-center gap-2">
+                      <div className="flex-1 min-w-0 space-y-1.5 group/card">
+                        {/* Email */}
+                        <div className="flex items-center gap-2 group/field">
                           <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
-                          <span className="text-sm font-medium text-foreground break-all">{member.email}</span>
+                          <span className="text-xs text-muted-foreground">Email:</span>
+                          {editingField?.memberId === member.id && editingField.field === 'email' ? (
+                            <div className="flex items-center gap-1 flex-1">
+                              <input
+                                type="email"
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                className="flex-1 text-sm bg-input rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary"
+                                autoFocus
+                                onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
+                              />
+                              <button onClick={saveEdit} className="p-1 text-green-500 hover:bg-green-500/20 rounded">
+                                <Check className="w-3 h-3" />
+                              </button>
+                              <button onClick={cancelEdit} className="p-1 text-destructive hover:bg-destructive/20 rounded">
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <span className="text-sm font-medium text-foreground break-all">{member.email}</span>
+                              <button
+                                onClick={() => startEditing(member.id, 'email', member.email)}
+                                className="p-1 rounded hover:bg-secondary opacity-0 group-hover/field:opacity-100 transition-opacity"
+                              >
+                                <Pencil className="w-3 h-3 text-muted-foreground" />
+                              </button>
+                            </>
+                          )}
                         </div>
-                        {member.phone && (
-                          <div className="flex items-center gap-2">
-                            <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
-                            <span className="text-xs text-muted-foreground">{member.phone}</span>
-                          </div>
-                        )}
-                        {member.telegram && (
-                          <div className="flex items-center gap-2">
-                            <Send className="w-4 h-4 text-muted-foreground shrink-0" />
-                            <span className="text-xs text-muted-foreground">{member.telegram}</span>
-                          </div>
-                        )}
-                        <div className="flex items-center gap-2">
+
+                        {/* 2FA */}
+                        <div className="flex items-center gap-2 group/field">
+                          <Shield className="w-4 h-4 text-muted-foreground shrink-0" />
+                          <span className="text-xs text-muted-foreground">2FA:</span>
+                          {editingField?.memberId === member.id && editingField.field === 'twoFA' ? (
+                            <div className="flex items-center gap-1 flex-1">
+                              <input
+                                type="text"
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                className="flex-1 text-xs bg-input rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary"
+                                autoFocus
+                                onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
+                              />
+                              <button onClick={saveEdit} className="p-1 text-green-500 hover:bg-green-500/20 rounded">
+                                <Check className="w-3 h-3" />
+                              </button>
+                              <button onClick={cancelEdit} className="p-1 text-destructive hover:bg-destructive/20 rounded">
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <span className="text-xs text-muted-foreground">{member.twoFA || '—'}</span>
+                              <span className="text-[10px] text-muted-foreground/50">(Optional)</span>
+                              <button
+                                onClick={() => startEditing(member.id, 'twoFA', member.twoFA || '')}
+                                className="p-1 rounded hover:bg-secondary opacity-0 group-hover/field:opacity-100 transition-opacity"
+                              >
+                                <Pencil className="w-3 h-3 text-muted-foreground" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Password */}
+                        <div className="flex items-center gap-2 group/field">
+                          <Lock className="w-4 h-4 text-muted-foreground shrink-0" />
+                          <span className="text-xs text-muted-foreground">Password:</span>
+                          {editingField?.memberId === member.id && editingField.field === 'password' ? (
+                            <div className="flex items-center gap-1 flex-1">
+                              <input
+                                type="text"
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                className="flex-1 text-xs bg-input rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary"
+                                autoFocus
+                                onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
+                              />
+                              <button onClick={saveEdit} className="p-1 text-green-500 hover:bg-green-500/20 rounded">
+                                <Check className="w-3 h-3" />
+                              </button>
+                              <button onClick={cancelEdit} className="p-1 text-destructive hover:bg-destructive/20 rounded">
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <span className="text-xs text-muted-foreground">{member.password || '—'}</span>
+                              <span className="text-[10px] text-muted-foreground/50">(Optional)</span>
+                              <button
+                                onClick={() => startEditing(member.id, 'password', member.password || '')}
+                                className="p-1 rounded hover:bg-secondary opacity-0 group-hover/field:opacity-100 transition-opacity"
+                              >
+                                <Pencil className="w-3 h-3 text-muted-foreground" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Phone */}
+                        <div className="flex items-center gap-2 group/field">
+                          <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
+                          <span className="text-xs text-muted-foreground">Phone:</span>
+                          {editingField?.memberId === member.id && editingField.field === 'phone' ? (
+                            <div className="flex items-center gap-1 flex-1">
+                              <input
+                                type="tel"
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                className="flex-1 text-xs bg-input rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary"
+                                autoFocus
+                                onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
+                              />
+                              <button onClick={saveEdit} className="p-1 text-green-500 hover:bg-green-500/20 rounded">
+                                <Check className="w-3 h-3" />
+                              </button>
+                              <button onClick={cancelEdit} className="p-1 text-destructive hover:bg-destructive/20 rounded">
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <span className="text-xs text-muted-foreground">{member.phone || '—'}</span>
+                              <button
+                                onClick={() => startEditing(member.id, 'phone', member.phone || '')}
+                                className="p-1 rounded hover:bg-secondary opacity-0 group-hover/field:opacity-100 transition-opacity"
+                              >
+                                <Pencil className="w-3 h-3 text-muted-foreground" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Telegram */}
+                        <div className="flex items-center gap-2 group/field">
+                          <Send className="w-4 h-4 text-muted-foreground shrink-0" />
+                          <span className="text-xs text-muted-foreground">Telegram:</span>
+                          {editingField?.memberId === member.id && editingField.field === 'telegram' ? (
+                            <div className="flex items-center gap-1 flex-1">
+                              <input
+                                type="text"
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                className="flex-1 text-xs bg-input rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary"
+                                autoFocus
+                                placeholder="@username"
+                                onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
+                              />
+                              <button onClick={saveEdit} className="p-1 text-green-500 hover:bg-green-500/20 rounded">
+                                <Check className="w-3 h-3" />
+                              </button>
+                              <button onClick={cancelEdit} className="p-1 text-destructive hover:bg-destructive/20 rounded">
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <span className="text-xs text-muted-foreground">{member.telegram || '—'}</span>
+                              <button
+                                onClick={() => startEditing(member.id, 'telegram', member.telegram || '')}
+                                className="p-1 rounded hover:bg-secondary opacity-0 group-hover/field:opacity-100 transition-opacity"
+                              >
+                                <Pencil className="w-3 h-3 text-muted-foreground" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Join Date */}
+                        <div className="flex items-center gap-2 group/field">
                           <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
-                          <span className="text-xs text-muted-foreground">
-                            Joined: {format(new Date(member.joinDate), 'd MMM yyyy')}
-                          </span>
+                          <span className="text-xs text-muted-foreground">Join Date:</span>
+                          {editingField?.memberId === member.id && editingField.field === 'joinDate' ? (
+                            <div className="flex items-center gap-1 flex-1">
+                              <input
+                                type="date"
+                                value={editValue}
+                                onChange={(e) => setEditValue(e.target.value)}
+                                className="flex-1 text-xs bg-input rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary"
+                                autoFocus
+                                onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
+                              />
+                              <button onClick={saveEdit} className="p-1 text-green-500 hover:bg-green-500/20 rounded">
+                                <Check className="w-3 h-3" />
+                              </button>
+                              <button onClick={cancelEdit} className="p-1 text-destructive hover:bg-destructive/20 rounded">
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <span className="text-xs text-muted-foreground">
+                                {format(new Date(member.joinDate), 'd MMM yyyy')}
+                              </span>
+                              <button
+                                onClick={() => startEditing(member.id, 'joinDate', member.joinDate)}
+                                className="p-1 rounded hover:bg-secondary opacity-0 group-hover/field:opacity-100 transition-opacity"
+                              >
+                                <Pencil className="w-3 h-3 text-muted-foreground" />
+                              </button>
+                            </>
+                          )}
                         </div>
                         
                         {/* Payment Status Display */}
@@ -462,6 +707,36 @@ const YearlyTeamMembers = () => {
                   {errors.email && (
                     <p className="text-sm text-destructive mt-1">{errors.email}</p>
                   )}
+                </div>
+
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1.5 sm:mb-2">
+                    <Shield className="w-4 h-4" />
+                    2FA
+                    <span className="text-xs text-muted-foreground/60">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={twoFA}
+                    onChange={(e) => setTwoFA(e.target.value)}
+                    placeholder="2FA code or backup"
+                    className="w-full bg-input rounded-xl px-4 py-2.5 sm:py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="flex items-center gap-2 text-sm font-medium text-muted-foreground mb-1.5 sm:mb-2">
+                    <Lock className="w-4 h-4" />
+                    Password
+                    <span className="text-xs text-muted-foreground/60">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Account password"
+                    className="w-full bg-input rounded-xl px-4 py-2.5 sm:py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  />
                 </div>
 
                 <div>
