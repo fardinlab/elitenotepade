@@ -42,6 +42,7 @@ const YearlyTeamMembers = () => {
   const [paymentModal, setPaymentModal] = useState<{ memberId: string; type: 'paid' | 'due' } | null>(null);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [memberPaymentSummaries, setMemberPaymentSummaries] = useState<Record<string, { totalPaid: number; totalDue: number }>>({});
+  const [memberCurrentMonthPaid, setMemberCurrentMonthPaid] = useState<Record<string, boolean>>({});
   
   // Inline editing state
   const [editingField, setEditingField] = useState<{ memberId: string; field: string } | null>(null);
@@ -68,15 +69,19 @@ const YearlyTeamMembers = () => {
 
   const team = sortedTeams.find(t => t.id === teamId) || activeTeam;
 
-  // Fetch payment summaries for all members in the team
+  // Fetch payment summaries and current month payment status for all members in the team
   const fetchPaymentSummaries = useCallback(async () => {
     if (!user || !team) return;
 
     const memberIds = team.members.map(m => m.id);
     if (memberIds.length === 0) return;
 
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1;
+
     // Fetch payments and member total_amounts in parallel
-    const [paymentsResult, membersResult] = await Promise.all([
+    const [paymentsResult, membersResult, currentMonthPaymentsResult] = await Promise.all([
       supabase
         .from('member_payments')
         .select('member_id, status, amount')
@@ -86,7 +91,14 @@ const YearlyTeamMembers = () => {
         .from('members')
         .select('id, total_amount')
         .eq('user_id', user.id)
-        .in('id', memberIds)
+        .in('id', memberIds),
+      supabase
+        .from('member_payments')
+        .select('member_id, status')
+        .eq('user_id', user.id)
+        .eq('year', currentYear)
+        .eq('month', currentMonth)
+        .in('member_id', memberIds)
     ]);
 
     if (paymentsResult.error) {
@@ -96,6 +108,7 @@ const YearlyTeamMembers = () => {
 
     const payments = paymentsResult.data || [];
     const membersData = membersResult.data || [];
+    const currentMonthPayments = currentMonthPaymentsResult.data || [];
 
     // Create a map of member total_amounts
     const totalAmounts: Record<string, number> = {};
@@ -127,6 +140,18 @@ const YearlyTeamMembers = () => {
     });
 
     setMemberPaymentSummaries(summaries);
+
+    // Build current month paid status map
+    const currentMonthPaidMap: Record<string, boolean> = {};
+    memberIds.forEach(id => {
+      currentMonthPaidMap[id] = false;
+    });
+    currentMonthPayments.forEach(p => {
+      if (p.status === 'paid') {
+        currentMonthPaidMap[p.member_id] = true;
+      }
+    });
+    setMemberCurrentMonthPaid(currentMonthPaidMap);
   }, [user, team]);
 
   useEffect(() => {
@@ -134,6 +159,17 @@ const YearlyTeamMembers = () => {
       fetchPaymentSummaries();
     }
   }, [team, fetchPaymentSummaries]);
+
+  // Check if a member should be red highlighted (current month not paid AND join date day has passed)
+  const isMemberOverdue = useCallback((member: { id: string; joinDate: string }) => {
+    const now = new Date();
+    const currentDay = now.getDate();
+    const joinDateDay = new Date(member.joinDate).getDate();
+    const isPaid = memberCurrentMonthPaid[member.id] || false;
+    
+    // Red indicator if: current month is NOT paid AND join date day has passed
+    return !isPaid && currentDay > joinDateDay;
+  }, [memberCurrentMonthPaid]);
 
   // Handle scroll and highlight for searched member
   useEffect(() => {
@@ -352,7 +388,9 @@ const YearlyTeamMembers = () => {
           ) : (
             <div className="space-y-2">
               <AnimatePresence mode="popLayout">
-                {team.members.map((member, index) => (
+                {team.members.map((member, index) => {
+                  const isOverdue = isMemberOverdue(member);
+                  return (
                   <motion.div
                     key={member.id}
                     ref={(el) => { memberRefs.current[member.id] = el; }}
@@ -363,7 +401,9 @@ const YearlyTeamMembers = () => {
                     className={`glass-card rounded-xl p-4 card-shadow transition-all ${
                       highlightedMemberId === member.id 
                         ? 'ring-2 ring-blue-500 bg-blue-500/20' 
-                        : ''
+                        : isOverdue 
+                          ? 'ring-2 ring-destructive bg-destructive/20' 
+                          : ''
                     } ${isRemoveMode ? 'border-destructive/50' : ''}`}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -674,7 +714,8 @@ const YearlyTeamMembers = () => {
                       )}
                     </div>
                   </motion.div>
-                ))}
+                  );
+                })}
               </AnimatePresence>
             </div>
           )}
