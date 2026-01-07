@@ -334,12 +334,6 @@ export function MemberCard({
                 Paid
               </button>
               <button
-                onClick={() => handleSavePayment(false)}
-                className="px-2 py-1 rounded text-xs bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 transition-colors"
-              >
-                Unpaid
-              </button>
-              <button
                 onClick={handleCancelPayment}
                 className="p-1 rounded bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors"
               >
