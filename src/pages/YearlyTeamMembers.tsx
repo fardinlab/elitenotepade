@@ -518,38 +518,6 @@ const YearlyTeamMembers = () => {
                       {/* Action Buttons */}
                       {!isRemoveMode ? (
                         <div className="flex flex-col gap-1.5 shrink-0">
-                          {/* Paid Button */}
-                          <button
-                            onClick={() => {
-                              setPaymentAmount(member.paidAmount?.toString() || '');
-                              setPaymentModal({ memberId: member.id, type: 'paid' });
-                            }}
-                            className={`p-2 rounded-lg transition-colors ${
-                              member.isPaid 
-                                ? 'bg-green-500/30 text-green-500' 
-                                : 'bg-green-500/20 text-green-500 hover:bg-green-500/30'
-                            }`}
-                            title="Mark as Paid"
-                          >
-                            <Check className="w-4 h-4" />
-                          </button>
-                          
-                          {/* Due Button */}
-                          <button
-                            onClick={() => {
-                              setPaymentAmount(member.pendingAmount?.toString() || '');
-                              setPaymentModal({ memberId: member.id, type: 'due' });
-                            }}
-                            className={`p-2 rounded-lg transition-colors ${
-                              (member.pendingAmount || 0) > 0
-                                ? 'bg-yellow-500/30 text-yellow-500' 
-                                : 'bg-yellow-500/20 text-yellow-500 hover:bg-yellow-500/30'
-                            }`}
-                            title="Set Due Amount"
-                          >
-                            <AlertCircle className="w-4 h-4" />
-                          </button>
-                          
                           {/* WhatsApp Button */}
                           <button
                             onClick={() => {
