@@ -253,7 +253,6 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                       <span className="text-xs text-muted-foreground flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
                         {formatDate(team.createdAt)}
-                        <Pencil className="w-3 h-3 ml-0.5" />
                       </span>
                     </div>
                   </div>
