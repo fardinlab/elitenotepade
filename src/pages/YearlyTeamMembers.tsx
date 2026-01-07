@@ -183,16 +183,19 @@ const YearlyTeamMembers = () => {
       return;
     }
 
-    const success = await addMember({
-      email,
-      phone: phone.trim() || '',
-      telegram: telegram.trim() || undefined,
-      twoFA: twoFA.trim() || undefined,
-      password: password.trim() || undefined,
-      joinDate,
-    }, teamId);
+    const result = await addMember(
+      {
+        email,
+        phone: phone.trim() || '',
+        telegram: telegram.trim() || undefined,
+        twoFA: twoFA.trim() || undefined,
+        password: password.trim() || undefined,
+        joinDate,
+      },
+      teamId
+    );
 
-    if (success) {
+    if (result.ok) {
       toast.success('Member added successfully!');
       setEmail('');
       setPhone('');
@@ -203,7 +206,9 @@ const YearlyTeamMembers = () => {
       setErrors({});
       setIsAddModalOpen(false);
     } else {
-      toast.error('Failed to add member');
+      // show the *real* Supabase error so we can fix it
+      toast.error(result.error || 'Failed to add member');
+      if (result.code) toast.error(`Code: ${result.code}`);
     }
   };
 
