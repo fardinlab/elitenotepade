@@ -3,6 +3,9 @@ import { motion } from 'framer-motion';
 import { Pencil, Check, X, Mail, Users, Calendar } from 'lucide-react';
 import { MAX_MEMBERS } from '@/types/member';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 
 interface TeamInfoProps {
   teamName: string;
@@ -11,13 +14,15 @@ interface TeamInfoProps {
   createdAt: string;
   onTeamNameChange: (name: string) => void;
   onAdminEmailChange: (email: string) => void;
+  onCreatedAtChange?: (date: string) => void;
 }
 
-export function TeamInfo({ teamName, adminEmail, memberCount, createdAt, onTeamNameChange, onAdminEmailChange }: TeamInfoProps) {
+export function TeamInfo({ teamName, adminEmail, memberCount, createdAt, onTeamNameChange, onAdminEmailChange, onCreatedAtChange }: TeamInfoProps) {
   const [isEditingName, setIsEditingName] = useState(false);
   const [editNameValue, setEditNameValue] = useState(teamName);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [editEmailValue, setEditEmailValue] = useState(adminEmail);
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   const handleSaveName = () => {
     if (editNameValue.trim()) {
@@ -42,6 +47,13 @@ export function TeamInfo({ teamName, adminEmail, memberCount, createdAt, onTeamN
   const handleCancelEmail = () => {
     setEditEmailValue(adminEmail);
     setIsEditingEmail(false);
+  };
+
+  const handleDateChange = (date: Date | undefined) => {
+    if (date && onCreatedAtChange) {
+      onCreatedAtChange(date.toISOString());
+      setIsDatePickerOpen(false);
+    }
   };
 
   return (
@@ -97,6 +109,27 @@ export function TeamInfo({ teamName, adminEmail, memberCount, createdAt, onTeamN
       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
         <Calendar className="w-4 h-4" />
         <span>Created: {format(new Date(createdAt), 'd MMMM yyyy')}</span>
+        {onCreatedAtChange && (
+          <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+            <PopoverTrigger asChild>
+              <button
+                className="p-1 rounded-lg hover:bg-secondary transition-colors"
+                aria-label="Edit creation date"
+              >
+                <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <CalendarComponent
+                mode="single"
+                selected={new Date(createdAt)}
+                onSelect={handleDateChange}
+                initialFocus
+                className={cn("p-3 pointer-events-auto")}
+              />
+            </PopoverContent>
+          </Popover>
+        )}
       </div>
 
       {/* Admin Email */}
