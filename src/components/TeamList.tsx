@@ -1,9 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Users, Calendar, ChevronRight, Trash2, X, Check, ImagePlus, Pencil } from 'lucide-react';
 import { Team, MAX_MEMBERS, SubscriptionType, SUBSCRIPTION_CONFIG } from '@/types/member';
 import { differenceInDays } from 'date-fns';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface TeamListProps {
   teams: Team[];
@@ -22,8 +24,9 @@ const LOGO_ICONS: Record<SubscriptionType, string> = {
   canva: 'https://static.canva.com/static/images/favicon-1.ico',
 };
 
-// Count members whose join date is 1+ month (30 days) ago
+// Count members whose join date is 1+ month (30 days) ago - for non-yearly teams
 const countMembersOverOneMonth = (team: Team): number => {
+  if (team.isYearlyTeam) return 0; // Yearly teams use different logic
   const now = new Date();
   return team.members.filter(member => {
     const joinDate = new Date(member.joinDate);
@@ -35,8 +38,25 @@ const countMembersWithPendingDue = (team: Team): number => {
   return team.members.filter(member => (member.pendingAmount || 0) > 0).length;
 };
 
+// Check if a yearly member needs red indicator (current month not paid AND due date passed)
+const checkYearlyMemberDue = (
+  member: { id: string; joinDate: string },
+  currentMonthPayments: Record<string, boolean>
+): boolean => {
+  const now = new Date();
+  const currentDay = now.getDate();
+  const joinDay = new Date(member.joinDate).getDate();
+  
+  // If current month is paid, no red indicator
+  if (currentMonthPayments[member.id]) return false;
+  
+  // If due date (join day) has passed, show red indicator
+  return currentDay > joinDay;
+};
+
 export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDeleteTeam, onUpdateTeamLogo }: TeamListProps) {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -45,6 +65,56 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
   const [selectedLogo, setSelectedLogo] = useState<SubscriptionType | null>(null);
   const [teamToAddLogo, setTeamToAddLogo] = useState<Team | null>(null);
   const [logoForTeam, setLogoForTeam] = useState<SubscriptionType | null>(null);
+  const [yearlyCurrentMonthPayments, setYearlyCurrentMonthPayments] = useState<Record<string, boolean>>({});
+
+  // Fetch current month payment status for all yearly team members
+  const fetchYearlyPayments = useCallback(async () => {
+    if (!user) return;
+
+    const yearlyTeams = teams.filter(t => t.isYearlyTeam);
+    if (yearlyTeams.length === 0) return;
+
+    const allMemberIds = yearlyTeams.flatMap(t => t.members.map(m => m.id));
+    if (allMemberIds.length === 0) return;
+
+    const now = new Date();
+    const currentMonth = now.getMonth() + 1;
+    const currentYear = now.getFullYear();
+
+    const { data, error } = await supabase
+      .from('member_payments')
+      .select('member_id, status')
+      .eq('user_id', user.id)
+      .eq('year', currentYear)
+      .eq('month', currentMonth)
+      .in('member_id', allMemberIds);
+
+    if (error) {
+      console.error('Error fetching yearly payments:', error);
+      return;
+    }
+
+    const paymentsMap: Record<string, boolean> = {};
+    (data || []).forEach(p => {
+      if (p.status === 'paid') {
+        paymentsMap[p.member_id] = true;
+      }
+    });
+
+    setYearlyCurrentMonthPayments(paymentsMap);
+  }, [user, teams]);
+
+  useEffect(() => {
+    fetchYearlyPayments();
+  }, [fetchYearlyPayments]);
+
+  // Count yearly team members with due indicators
+  const countYearlyMembersWithDue = (team: Team): number => {
+    if (!team.isYearlyTeam) return 0;
+    return team.members.filter(member => 
+      checkYearlyMemberDue(member, yearlyCurrentMonthPayments)
+    ).length;
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -168,6 +238,8 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
           const isFull = !team.isYearlyTeam && memberCount >= MAX_MEMBERS;
           const isActive = team.id === activeTeamId;
           const membersOverMonth = countMembersOverOneMonth(team);
+          const yearlyMembersWithDue = countYearlyMembersWithDue(team);
+          const totalRedDots = team.isYearlyTeam ? yearlyMembersWithDue : membersOverMonth;
 
           return (
             <motion.div
@@ -222,12 +294,12 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                     <div className="flex items-center gap-2">
                       <h4 className="font-medium text-foreground truncate">{team.teamName}</h4>
                       {/* Dot indicators */}
-                      {!isDeleteMode && (membersOverMonth > 0 || countMembersWithPendingDue(team) > 0) && (
+                      {!isDeleteMode && (totalRedDots > 0 || countMembersWithPendingDue(team) > 0) && (
                         <div className="flex flex-col gap-0.5">
-                          {/* Red dots for members over 1 month */}
-                          {membersOverMonth > 0 && (
+                          {/* Red dots for members needing attention */}
+                          {totalRedDots > 0 && (
                             <div className="flex items-center gap-0.5">
-                              {Array.from({ length: Math.min(membersOverMonth, 8) }).map((_, i) => (
+                              {Array.from({ length: Math.min(totalRedDots, 8) }).map((_, i) => (
                                 <span 
                                   key={i} 
                                   className="w-2 h-2 rounded-full bg-destructive"

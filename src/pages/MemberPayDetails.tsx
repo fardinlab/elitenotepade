@@ -22,6 +22,7 @@ interface MemberData {
   email: string;
   phone: string;
   total_amount: number | null;
+  join_date: string | null;
 }
 
 const MONTHS = [
@@ -52,7 +53,7 @@ const MemberPayDetails = () => {
 
     const { data, error } = await supabase
       .from('members')
-      .select('id, email, phone, total_amount')
+      .select('id, email, phone, total_amount, join_date')
       .eq('id', memberId)
       .eq('user_id', user.id)
       .maybeSingle();
@@ -365,10 +366,16 @@ const MemberPayDetails = () => {
               const month = index + 1;
               const payment = getPaymentForMonth(month);
               const isEditing = editingMonth === month;
+              const joinDay = member.join_date ? new Date(member.join_date).getDate() : null;
 
               return (
                 <div key={month} className="flex items-center justify-between py-2 border-b border-border/50 last:border-0">
-                  <span className="text-sm font-medium text-foreground w-24">{monthName}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-foreground w-24">{monthName}</span>
+                    {joinDay && (
+                      <span className="text-xs text-muted-foreground bg-secondary px-1.5 py-0.5 rounded">{joinDay}</span>
+                    )}
+                  </div>
                   
                   {isEditing ? (
                     <div className="flex items-center gap-2">
