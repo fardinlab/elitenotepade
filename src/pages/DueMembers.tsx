@@ -130,7 +130,7 @@ const DueMembers = () => {
 
   const handleNavigateToMember = (member: DueMember) => {
     if (member.isYearly) {
-      navigate(`/members/${member.id}/pay-details`);
+      navigate(`/yearly-team/${member.teamId}`, { state: { highlightMemberId: member.id } });
     } else {
       navigate(`/team/${member.teamId}`, { state: { highlightMemberId: member.id } });
     }
