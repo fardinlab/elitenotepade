@@ -190,7 +190,7 @@ const YearlyTeamMembers = () => {
       twoFA: twoFA.trim() || undefined,
       password: password.trim() || undefined,
       joinDate,
-    });
+    }, teamId);
 
     if (success) {
       toast.success('Member added successfully!');
