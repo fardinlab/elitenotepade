@@ -97,32 +97,32 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
   return (
     <div className="space-y-3">
       {/* Action Buttons Row */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div className="flex items-center gap-1.5">
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={handleCreateClick}
-          className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors touch-manipulation active:scale-95"
+          className="flex-1 flex items-center justify-center gap-1 px-2.5 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors touch-manipulation active:scale-95"
         >
-          <Plus className="w-4 h-4" />
-          Create New Team
+          <Plus className="w-3 h-3" />
+          New Team
         </motion.button>
 
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={handleCreateClick}
-          className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-3 bg-accent text-accent-foreground rounded-xl text-sm font-medium hover:bg-accent/90 transition-colors touch-manipulation active:scale-95 border border-primary/30"
+          className="flex-1 flex items-center justify-center gap-1 px-2.5 py-2 bg-accent text-accent-foreground rounded-lg text-xs font-medium hover:bg-accent/90 transition-colors touch-manipulation active:scale-95 border border-primary/30"
         >
-          <Plus className="w-4 h-4" />
-          Create Yearly Team
+          <Plus className="w-3 h-3" />
+          Yearly Team
         </motion.button>
         
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={() => setIsDeleteMode(!isDeleteMode)}
-          className={`flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-medium transition-colors touch-manipulation active:scale-95 ${
+          className={`flex-1 flex items-center justify-center gap-1 px-2.5 py-2 rounded-lg text-xs font-medium transition-colors touch-manipulation active:scale-95 ${
             isDeleteMode 
               ? 'bg-destructive text-destructive-foreground' 
               : 'bg-destructive/10 text-destructive border border-destructive/30 hover:bg-destructive/20'
@@ -130,13 +130,13 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
         >
           {isDeleteMode ? (
             <>
-              <X className="w-4 h-4" />
+              <X className="w-3 h-3" />
               Cancel
             </>
           ) : (
             <>
-              <Trash2 className="w-4 h-4" />
-              Delete Team
+              <Trash2 className="w-3 h-3" />
+              Delete
             </>
           )}
         </motion.button>
