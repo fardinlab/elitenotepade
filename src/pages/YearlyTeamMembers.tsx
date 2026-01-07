@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, Plus, Trash2, X, Mail, Phone, Send, Calendar, UserPlus, MessageCircle, Check, AlertCircle, Pencil, Shield, Lock } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, X, Mail, Phone, Send, Calendar, UserPlus, MessageCircle, Check, AlertCircle, Pencil, Shield, Lock, Receipt } from 'lucide-react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -604,6 +604,15 @@ const YearlyTeamMembers = () => {
                             title={member.phone ? 'Call' : 'No phone number'}
                           >
                             <Phone className="w-4 h-4" />
+                          </button>
+                          
+                          {/* Pay Details Button */}
+                          <button
+                            onClick={() => navigate(`/member-pay-details/${member.id}`)}
+                            className="p-2 rounded-lg bg-purple-500/20 text-purple-500 hover:bg-purple-500/30 transition-colors"
+                            title="Pay Details"
+                          >
+                            <Receipt className="w-4 h-4" />
                           </button>
                         </div>
                       ) : (
