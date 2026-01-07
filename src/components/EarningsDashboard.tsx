@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { DollarSign, Clock, TrendingUp } from 'lucide-react';
+import { DollarSign, Clock, TrendingUp, Users } from 'lucide-react';
 import { Team } from '@/types/member';
 
 interface EarningsDashboardProps {
@@ -49,6 +49,7 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
       currentMonth: currentMonthEarnings,
       totalDue,
       last3Months: last3MonthsEarnings,
+      totalMembers: allMembers.length,
     };
   }, [teams]);
 
@@ -68,7 +69,7 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.1 }}
-      className="grid grid-cols-3 gap-2"
+      className="grid grid-cols-4 gap-2"
     >
       {/* Current Month Earnings */}
       <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500/20 to-green-500/20 border border-emerald-500/30">
@@ -101,6 +102,17 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
         </div>
         <p className="text-[10px] text-muted-foreground mb-0.5">Last 3 Months</p>
         <p className="text-sm font-bold text-foreground">{formatCurrency(earnings.last3Months)}</p>
+      </div>
+
+      {/* Total Members */}
+      <div className="p-3 rounded-xl bg-gradient-to-br from-purple-500/20 to-violet-500/20 border border-purple-500/30">
+        <div className="flex items-center gap-1.5 mb-1.5">
+          <div className="w-6 h-6 rounded-md bg-gradient-to-br from-purple-500 to-violet-500 flex items-center justify-center">
+            <Users className="w-3.5 h-3.5 text-white" />
+          </div>
+        </div>
+        <p className="text-[10px] text-muted-foreground mb-0.5">Total Members</p>
+        <p className="text-sm font-bold text-foreground">{earnings.totalMembers}</p>
       </div>
     </motion.div>
   );
