@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import TeamMembers from "./pages/TeamMembers";
+import YearlyTeamMembers from "./pages/YearlyTeamMembers";
 import DueMembers from "./pages/DueMembers";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
@@ -36,6 +37,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <TeamMembers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/yearly-team/:teamId"
+              element={
+                <ProtectedRoute>
+                  <YearlyTeamMembers />
                 </ProtectedRoute>
               }
             />
