@@ -259,45 +259,55 @@ export function useSupabaseData() {
     );
   }, []);
 
-  const addMember = useCallback(async (member: Omit<Member, 'id'>, targetTeamId?: string) => {
-    const teamIdToUse = targetTeamId || activeTeamId;
-    if (!user || !teamIdToUse) return false;
+  const addMember = useCallback(
+    async (member: Omit<Member, 'id'>, targetTeamId?: string) => {
+      const teamIdToUse = targetTeamId || activeTeamId;
+      if (!user || !teamIdToUse) return false;
 
-    const team = teams.find((t) => t.id === teamIdToUse);
-    // No limit for yearly teams
-    if (!team || (!team.isYearlyTeam && team.members.length + 1 >= MAX_MEMBERS)) return false;
+      const team = teams.find((t) => t.id === teamIdToUse);
+      // No limit for yearly teams
+      if (!team || (!team.isYearlyTeam && team.members.length + 1 >= MAX_MEMBERS)) return false;
 
-    const { data, error } = await supabase
-      .from('members')
-      .insert({
-        team_id: teamIdToUse,
-        user_id: user.id,
-        email: member.email,
-        phone: member.phone || '',
-        telegram: member.telegram || null,
-        two_fa: member.twoFA || null,
-        password: member.password || null,
-        join_date: member.joinDate,
-        is_paid: member.isPaid || false,
-        paid_amount: member.paidAmount || null,
-        subscriptions: member.subscriptions || null,
-      })
-      .select()
-      .single();
+      const { data, error } = await supabase
+        .from('members')
+        .insert({
+          team_id: teamIdToUse,
+          user_id: user.id,
+          email: member.email,
+          phone: member.phone || '',
+          telegram: member.telegram || null,
+          two_fa: member.twoFA || null,
+          password: member.password || null,
+          join_date: member.joinDate,
+          is_paid: member.isPaid || false,
+          paid_amount: member.paidAmount || null,
+          subscriptions: member.subscriptions || null,
+        })
+        .select()
+        .maybeSingle();
 
-    if (error) {
-      console.error('Error adding member:', error);
-      return false;
-    }
+      if (error) {
+        console.error('Error adding member:', error);
+        return false;
+      }
 
-    const newMember = mapDbMemberToMember(data);
-    setTeams((prev) =>
-      prev.map((t) =>
-        t.id === teamIdToUse ? { ...t, members: [...t.members, newMember] } : t
-      )
-    );
-    return true;
-  }, [user, activeTeamId, teams]);
+      // In some RLS setups, the insert can succeed but the returning row is not selectable.
+      // In that case, refresh from DB to keep UI in sync.
+      if (!data) {
+        await fetchData();
+        return true;
+      }
+
+      const newMember = mapDbMemberToMember(data);
+      setTeams((prev) =>
+        prev.map((t) =>
+          t.id === teamIdToUse ? { ...t, members: [...t.members, newMember] } : t
+        )
+      );
+      return true;
+    },
+    [user, activeTeamId, teams, fetchData]
+  );
 
   const removeMember = useCallback(async (id: string) => {
     const { error } = await supabase.from('members').delete().eq('id', id);
