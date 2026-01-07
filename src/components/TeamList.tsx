@@ -97,15 +97,25 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
   return (
     <div className="space-y-3">
       {/* Action Buttons Row */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
           onClick={handleCreateClick}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors touch-manipulation active:scale-95"
+          className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-3 bg-primary text-primary-foreground rounded-xl text-sm font-medium hover:bg-primary/90 transition-colors touch-manipulation active:scale-95"
         >
           <Plus className="w-4 h-4" />
           Create New Team
+        </motion.button>
+
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={handleCreateClick}
+          className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-4 py-3 bg-accent text-accent-foreground rounded-xl text-sm font-medium hover:bg-accent/90 transition-colors touch-manipulation active:scale-95 border border-primary/30"
+        >
+          <Plus className="w-4 h-4" />
+          Create Yearly Team
         </motion.button>
         
         <motion.button
