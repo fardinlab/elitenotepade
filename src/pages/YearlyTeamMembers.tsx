@@ -75,32 +75,55 @@ const YearlyTeamMembers = () => {
     const memberIds = team.members.map(m => m.id);
     if (memberIds.length === 0) return;
 
-    const { data: payments, error } = await supabase
-      .from('member_payments')
-      .select('member_id, status, amount')
-      .eq('user_id', user.id)
-      .in('member_id', memberIds);
+    // Fetch payments and member total_amounts in parallel
+    const [paymentsResult, membersResult] = await Promise.all([
+      supabase
+        .from('member_payments')
+        .select('member_id, status, amount')
+        .eq('user_id', user.id)
+        .in('member_id', memberIds),
+      supabase
+        .from('members')
+        .select('id, total_amount')
+        .eq('user_id', user.id)
+        .in('id', memberIds)
+    ]);
 
-    if (error) {
-      console.error('Error fetching payment summaries:', error);
+    if (paymentsResult.error) {
+      console.error('Error fetching payment summaries:', paymentsResult.error);
       return;
     }
 
-    const summaries: Record<string, { totalPaid: number; totalDue: number }> = {};
-    
-    memberIds.forEach(id => {
-      summaries[id] = { totalPaid: 0, totalDue: 0 };
+    const payments = paymentsResult.data || [];
+    const membersData = membersResult.data || [];
+
+    // Create a map of member total_amounts
+    const totalAmounts: Record<string, number> = {};
+    membersData.forEach(m => {
+      totalAmounts[m.id] = m.total_amount || 0;
     });
 
-    (payments || []).forEach(p => {
-      if (!summaries[p.member_id]) {
-        summaries[p.member_id] = { totalPaid: 0, totalDue: 0 };
-      }
+    // Calculate total paid for each member
+    const paidSums: Record<string, number> = {};
+    memberIds.forEach(id => {
+      paidSums[id] = 0;
+    });
+
+    payments.forEach(p => {
       if (p.status === 'paid') {
-        summaries[p.member_id].totalPaid += p.amount || 0;
-      } else {
-        summaries[p.member_id].totalDue += p.amount || 0;
+        paidSums[p.member_id] = (paidSums[p.member_id] || 0) + (p.amount || 0);
       }
+    });
+
+    // Calculate due as total_amount - totalPaid for each member
+    const summaries: Record<string, { totalPaid: number; totalDue: number }> = {};
+    memberIds.forEach(id => {
+      const totalPaid = paidSums[id] || 0;
+      const totalAmount = totalAmounts[id] || 0;
+      summaries[id] = {
+        totalPaid,
+        totalDue: Math.max(0, totalAmount - totalPaid)
+      };
     });
 
     setMemberPaymentSummaries(summaries);
