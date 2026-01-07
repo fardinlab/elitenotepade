@@ -217,7 +217,9 @@ const MemberPayDetails = () => {
     .filter(p => p.status === 'paid')
     .reduce((sum, p) => sum + p.amount, 0);
 
-  const totalDue = (member?.total_amount || 0) - totalPaid;
+  const totalDue = payments
+    .filter(p => p.status === 'due')
+    .reduce((sum, p) => sum + p.amount, 0);
 
   if (loading) {
     return (
