@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, Plus, Trash2, X, Mail, Phone, Send, Calendar, UserPlus, MessageCircle, Check, AlertCircle, Pencil, Shield, Lock, Receipt } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, X, Mail, Phone, Send, Calendar, UserPlus, MessageCircle, Check, AlertCircle, Pencil, Shield, Lock, Receipt, DollarSign } from 'lucide-react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -32,11 +34,14 @@ const YearlyTeamMembers = () => {
     updateMemberDate,
   } = useSupabaseData();
 
+  const { user } = useAuth();
+
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isRemoveMode, setIsRemoveMode] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; email: string } | null>(null);
   const [paymentModal, setPaymentModal] = useState<{ memberId: string; type: 'paid' | 'due' } | null>(null);
   const [paymentAmount, setPaymentAmount] = useState('');
+  const [memberPaymentSummaries, setMemberPaymentSummaries] = useState<Record<string, { totalPaid: number; totalDue: number }>>({});
   
   // Inline editing state
   const [editingField, setEditingField] = useState<{ memberId: string; field: string } | null>(null);
@@ -62,6 +67,50 @@ const YearlyTeamMembers = () => {
   }, [teamId, activeTeam?.id, sortedTeams, setActiveTeam]);
 
   const team = sortedTeams.find(t => t.id === teamId) || activeTeam;
+
+  // Fetch payment summaries for all members in the team
+  const fetchPaymentSummaries = useCallback(async () => {
+    if (!user || !team) return;
+
+    const memberIds = team.members.map(m => m.id);
+    if (memberIds.length === 0) return;
+
+    const { data: payments, error } = await supabase
+      .from('member_payments')
+      .select('member_id, status, amount')
+      .eq('user_id', user.id)
+      .in('member_id', memberIds);
+
+    if (error) {
+      console.error('Error fetching payment summaries:', error);
+      return;
+    }
+
+    const summaries: Record<string, { totalPaid: number; totalDue: number }> = {};
+    
+    memberIds.forEach(id => {
+      summaries[id] = { totalPaid: 0, totalDue: 0 };
+    });
+
+    (payments || []).forEach(p => {
+      if (!summaries[p.member_id]) {
+        summaries[p.member_id] = { totalPaid: 0, totalDue: 0 };
+      }
+      if (p.status === 'paid') {
+        summaries[p.member_id].totalPaid += p.amount || 0;
+      } else {
+        summaries[p.member_id].totalDue += p.amount || 0;
+      }
+    });
+
+    setMemberPaymentSummaries(summaries);
+  }, [user, team]);
+
+  useEffect(() => {
+    if (team && team.members.length > 0) {
+      fetchPaymentSummaries();
+    }
+  }, [team, fetchPaymentSummaries]);
 
   // Handle scroll and highlight for searched member
   useEffect(() => {
@@ -499,6 +548,22 @@ const YearlyTeamMembers = () => {
                             </>
                           )}
                         </div>
+
+                        {/* Payment Summary from Pay Details */}
+                        {(memberPaymentSummaries[member.id]?.totalPaid > 0 || memberPaymentSummaries[member.id]?.totalDue > 0) && (
+                          <div className="flex items-center gap-3 pt-1">
+                            <div className="flex items-center gap-1">
+                              <DollarSign className="w-3 h-3 text-green-500" />
+                              <span className="text-xs text-muted-foreground">Paid:</span>
+                              <span className="text-xs font-medium text-green-500">৳{memberPaymentSummaries[member.id]?.totalPaid || 0}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <DollarSign className="w-3 h-3 text-orange-500" />
+                              <span className="text-xs text-muted-foreground">Due:</span>
+                              <span className="text-xs font-medium text-orange-500">৳{memberPaymentSummaries[member.id]?.totalDue || 0}</span>
+                            </div>
+                          </div>
+                        )}
                       </div>
                       
                       {/* Action Buttons */}
