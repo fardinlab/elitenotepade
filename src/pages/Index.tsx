@@ -70,9 +70,17 @@ const Index = () => {
     }
   };
 
-  const handleCreateNewTeam = async (teamName: string, logo?: SubscriptionType) => {
-    await createNewTeam(teamName, logo);
-    toast.success('New team created!');
+  const handleCreateNewTeam = async (teamName: string, logo?: SubscriptionType, isYearly?: boolean) => {
+    const team = await createNewTeam(teamName, logo, isYearly);
+    if (team) {
+      toast.success(isYearly ? 'Yearly team created!' : 'New team created!');
+      // Navigate to the appropriate page
+      if (isYearly) {
+        navigate(`/yearly-team/${team.id}`);
+      } else {
+        navigate(`/team/${team.id}`);
+      }
+    }
   };
 
   const handleDeleteTeam = async (teamId: string) => {
@@ -81,8 +89,13 @@ const Index = () => {
   };
 
   const handleSelectTeam = (teamId: string, memberId?: string) => {
+    const team = sortedTeams.find(t => t.id === teamId);
     setActiveTeam(teamId);
-    navigate(`/team/${teamId}`, { state: { highlightMemberId: memberId } });
+    if (team?.isYearlyTeam) {
+      navigate(`/yearly-team/${teamId}`, { state: { highlightMemberId: memberId } });
+    } else {
+      navigate(`/team/${teamId}`, { state: { highlightMemberId: memberId } });
+    }
   };
 
   const handleCreateNotepad = async () => {

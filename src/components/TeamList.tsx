@@ -9,7 +9,7 @@ interface TeamListProps {
   teams: Team[];
   activeTeamId: string;
   onSelectTeam: (teamId: string) => void;
-  onCreateTeam: (teamName: string, logo?: SubscriptionType) => void;
+  onCreateTeam: (teamName: string, logo?: SubscriptionType, isYearly?: boolean) => void;
   onDeleteTeam: (teamId: string) => void;
   onUpdateTeamLogo?: (teamId: string, logo: SubscriptionType) => void;
 }
@@ -40,6 +40,7 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [isYearlyModal, setIsYearlyModal] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
   const [selectedLogo, setSelectedLogo] = useState<SubscriptionType | null>(null);
   const [teamToAddLogo, setTeamToAddLogo] = useState<Team | null>(null);
@@ -69,19 +70,21 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
     }
   };
 
-  const handleCreateClick = () => {
+  const handleCreateClick = (isYearly: boolean = false) => {
     setNewTeamName('');
     setSelectedLogo(null);
+    setIsYearlyModal(isYearly);
     setShowCreateModal(true);
   };
 
   const confirmCreate = () => {
     const trimmedName = newTeamName.trim();
     if (trimmedName && trimmedName.length <= 50) {
-      onCreateTeam(trimmedName, selectedLogo || undefined);
+      onCreateTeam(trimmedName, selectedLogo || undefined, isYearlyModal);
       setShowCreateModal(false);
       setNewTeamName('');
       setSelectedLogo(null);
+      setIsYearlyModal(false);
     }
   };
 
@@ -90,7 +93,8 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
       handleDeleteClick(team, { stopPropagation: () => {} } as React.MouseEvent);
     } else {
       onSelectTeam(team.id);
-      navigate(`/team/${team.id}`);
+      // Navigate to different page based on team type
+      navigate(team.isYearlyTeam ? `/yearly-team/${team.id}` : `/team/${team.id}`);
     }
   };
 
@@ -101,7 +105,7 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          onClick={handleCreateClick}
+          onClick={() => handleCreateClick(false)}
           className="flex-1 flex items-center justify-center gap-1 px-2.5 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors touch-manipulation active:scale-95"
         >
           <Plus className="w-3 h-3" />
@@ -111,7 +115,7 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          onClick={handleCreateClick}
+          onClick={() => handleCreateClick(true)}
           className="flex-1 flex items-center justify-center gap-1 px-2.5 py-2 bg-accent text-accent-foreground rounded-lg text-xs font-medium hover:bg-accent/90 transition-colors touch-manipulation active:scale-95 border border-primary/30"
         >
           <Plus className="w-3 h-3" />
@@ -160,8 +164,8 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
 
       <div className="space-y-2">
         {teams.map((team, index) => {
-          const memberCount = team.members.length + 1;
-          const isFull = memberCount >= MAX_MEMBERS;
+          const memberCount = team.isYearlyTeam ? team.members.length : team.members.length + 1;
+          const isFull = !team.isYearlyTeam && memberCount >= MAX_MEMBERS;
           const isActive = team.id === activeTeamId;
           const membersOverMonth = countMembersOverOneMonth(team);
 
@@ -249,7 +253,12 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                           NEW
                         </span>
                       )}
-                      {isFull && (
+                      {team.isYearlyTeam && (
+                        <span className="px-1.5 py-0.5 bg-cyan-500/20 text-cyan-500 text-[10px] font-medium rounded">
+                          YEARLY
+                        </span>
+                      )}
+                      {isFull && !team.isYearlyTeam && (
                         <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-500 text-[10px] font-medium rounded">
                           FULL
                         </span>
@@ -258,7 +267,7 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                     <div className="flex items-center gap-3 mt-1">
                       <span className="text-xs text-muted-foreground flex items-center gap-1">
                         <Users className="w-3 h-3" />
-                        {memberCount}/{MAX_MEMBERS}
+                        {team.isYearlyTeam ? `${team.members.length} members` : `${memberCount}/${MAX_MEMBERS}`}
                       </span>
                       <span className="text-xs text-muted-foreground flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
@@ -346,12 +355,16 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
               className="w-full max-w-sm bg-card border border-border rounded-2xl p-6 space-y-4"
             >
               <div className="text-center space-y-2">
-                <div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center mx-auto">
-                  <Plus className="w-6 h-6 text-primary" />
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto ${isYearlyModal ? 'bg-cyan-500/20' : 'bg-primary/20'}`}>
+                  <Plus className={`w-6 h-6 ${isYearlyModal ? 'text-cyan-500' : 'text-primary'}`} />
                 </div>
-                <h3 className="text-lg font-semibold text-foreground">Create New Team</h3>
+                <h3 className="text-lg font-semibold text-foreground">
+                  {isYearlyModal ? 'Create Yearly Team' : 'Create New Team'}
+                </h3>
                 <p className="text-sm text-muted-foreground">
-                  Enter a name and select a logo for your team
+                  {isYearlyModal 
+                    ? 'Yearly teams have unlimited members and no admin' 
+                    : 'Enter a name and select a logo for your team'}
                 </p>
               </div>
 

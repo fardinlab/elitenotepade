@@ -11,6 +11,7 @@ interface DbTeam {
   logo: string | null;
   created_at: string;
   last_backup: string | null;
+  is_yearly: boolean | null;
 }
 
 interface DbMember {
@@ -36,6 +37,7 @@ const mapDbTeamToTeam = (dbTeam: DbTeam, members: Member[]): Team => ({
   createdAt: dbTeam.created_at,
   lastBackup: dbTeam.last_backup || undefined,
   logo: dbTeam.logo as SubscriptionType | undefined,
+  isYearlyTeam: dbTeam.is_yearly || false,
 });
 
 const mapDbMemberToMember = (dbMember: DbMember): Member => ({
@@ -140,7 +142,7 @@ export function useSupabaseData() {
     setActiveTeamId(teamId);
   }, []);
 
-  const createNewTeam = useCallback(async (teamName?: string, logo?: SubscriptionType) => {
+  const createNewTeam = useCallback(async (teamName?: string, logo?: SubscriptionType, isYearly?: boolean) => {
     if (!user) return null;
 
     const { data, error } = await supabase
@@ -148,8 +150,9 @@ export function useSupabaseData() {
       .insert({
         user_id: user.id,
         team_name: teamName || 'My Elite Team',
-        admin_email: user.email || 'admin@example.com',
+        admin_email: isYearly ? '' : (user.email || 'admin@example.com'),
         logo: logo || null,
+        is_yearly: isYearly || false,
       })
       .select()
       .single();
@@ -256,7 +259,8 @@ export function useSupabaseData() {
     if (!user || !activeTeamId) return false;
 
     const team = teams.find((t) => t.id === activeTeamId);
-    if (!team || team.members.length + 1 >= MAX_MEMBERS) return false;
+    // No limit for yearly teams
+    if (!team || (!team.isYearlyTeam && team.members.length + 1 >= MAX_MEMBERS)) return false;
 
     const { data, error } = await supabase
       .from('members')

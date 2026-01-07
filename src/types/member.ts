@@ -28,6 +28,7 @@ export interface Team {
   createdAt: string;
   lastBackup?: string;
   logo?: SubscriptionType;
+  isYearlyTeam?: boolean;
 }
 
 export interface Notepad {
