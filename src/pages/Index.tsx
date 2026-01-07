@@ -82,6 +82,7 @@ const Index = () => {
 
   const handleSelectTeam = (teamId: string) => {
     setActiveTeam(teamId);
+    navigate(`/team/${teamId}`);
   };
 
   const handleCreateNotepad = async () => {
