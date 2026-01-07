@@ -281,26 +281,43 @@ export function useSupabaseData() {
         email: member.email,
         phone: member.phone || '',
         telegram: member.telegram || null,
-        two_fa: member.twoFA || null,
         join_date: member.joinDate,
         is_paid: member.isPaid || false,
         paid_amount: member.paidAmount || null,
         subscriptions: member.subscriptions || null,
       };
 
-      const tryInsert = async (includePassword: boolean) => {
-        const payload = includePassword
-          ? { ...baseInsert, password: member.password || null }
-          : baseInsert;
+      const buildPayload = (opts: { includePassword: boolean; includeTwoFA: boolean }) => {
+        const payload: Record<string, unknown> = { ...baseInsert };
+        if (opts.includeTwoFA) payload.two_fa = member.twoFA || null;
+        if (opts.includePassword) payload.password = member.password || null;
+        return payload;
+      };
 
+      const tryInsert = (opts: { includePassword: boolean; includeTwoFA: boolean }) => {
+        const payload = buildPayload(opts);
         return supabase.from('members').insert(payload).select().maybeSingle();
       };
 
-      // Some projects don’t have a `password` column on `members`.
-      // If PostgREST tells us the column doesn’t exist, retry without it.
-      let { data, error } = await tryInsert(true);
-      if (error?.code === 'PGRST204' && (error.message || '').includes("'password'")) {
-        ({ data, error } = await tryInsert(false));
+      // Some projects don’t have optional columns like `password` or `two_fa` on `members`.
+      // If PostgREST tells us a column doesn’t exist, retry without that column.
+      let opts = { includePassword: true, includeTwoFA: true };
+      let { data, error } = await tryInsert(opts);
+
+      if (error?.code === 'PGRST204') {
+        const msg = error.message || '';
+        if (msg.includes("'two_fa'")) opts = { ...opts, includeTwoFA: false };
+        if (msg.includes("'password'")) opts = { ...opts, includePassword: false };
+
+        ({ data, error } = await tryInsert(opts));
+
+        // If the error mentions the other optional column on retry, drop it too.
+        if (error?.code === 'PGRST204') {
+          const msg2 = error.message || '';
+          if (msg2.includes("'two_fa'")) opts = { ...opts, includeTwoFA: false };
+          if (msg2.includes("'password'")) opts = { ...opts, includePassword: false };
+          ({ data, error } = await tryInsert(opts));
+        }
       }
 
       if (error) {
