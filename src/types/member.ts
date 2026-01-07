@@ -13,6 +13,8 @@ export interface Member {
   email: string;
   phone: string;
   telegram?: string;
+  twoFA?: string;
+  password?: string;
   joinDate: string;
   isPaid?: boolean;
   paidAmount?: number;
