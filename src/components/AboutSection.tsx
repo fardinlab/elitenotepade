@@ -22,11 +22,11 @@ const AboutSection = () => {
 
       <div className="space-y-3">
         <a
-          href="tel:0193238913"
+          href="tel:01932378913"
           className="flex items-center gap-3 p-3 rounded-xl bg-background/50 hover:bg-background/80 transition-colors group"
         >
           <Phone className="w-5 h-5 text-green-500" />
-          <span className="text-foreground group-hover:text-primary transition-colors">0193238913</span>
+          <span className="text-foreground group-hover:text-primary transition-colors">01932378913</span>
         </a>
 
         <a
