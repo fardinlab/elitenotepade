@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Users, Calendar, ChevronRight, Trash2, X, Check, ImagePlus, Pencil } from 'lucide-react';
+import { Plus, Users, Calendar, ChevronRight, Trash2, X, Check, ImagePlus, Pencil, Bell } from 'lucide-react';
 import { Team, MAX_MEMBERS, SubscriptionType, SUBSCRIPTION_CONFIG } from '@/types/member';
 import { differenceInDays } from 'date-fns';
 import { supabase } from '@/lib/supabase';
@@ -293,13 +293,26 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <h4 className="font-medium text-foreground truncate">{team.teamName}</h4>
-                      {/* Dot indicators */}
-                      {!isDeleteMode && (totalRedDots > 0 || countMembersWithPendingDue(team) > 0) && (
-                        <div className="flex flex-col gap-0.5">
-                          {/* Red dots for members needing attention */}
-                          {totalRedDots > 0 && (
+                      {/* Indicators */}
+                      {!isDeleteMode && (
+                        <div className="flex items-center gap-1">
+                          {/* Bell icons for yearly teams with overdue members */}
+                          {team.isYearlyTeam && yearlyMembersWithDue > 0 && (
                             <div className="flex items-center gap-0.5">
-                              {Array.from({ length: Math.min(totalRedDots, 8) }).map((_, i) => (
+                              {Array.from({ length: Math.min(yearlyMembersWithDue, 8) }).map((_, i) => (
+                                <div 
+                                  key={i} 
+                                  className="w-4 h-4 rounded-full bg-destructive/20 flex items-center justify-center"
+                                >
+                                  <Bell className="w-2.5 h-2.5 text-destructive fill-destructive" />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {/* Red dots for standard teams with members over 30 days */}
+                          {!team.isYearlyTeam && membersOverMonth > 0 && (
+                            <div className="flex items-center gap-0.5">
+                              {Array.from({ length: Math.min(membersOverMonth, 8) }).map((_, i) => (
                                 <span 
                                   key={i} 
                                   className="w-2 h-2 rounded-full bg-destructive"
