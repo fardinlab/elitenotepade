@@ -38,7 +38,7 @@ const countMembersWithPendingDue = (team: Team): number => {
   return team.members.filter(member => (member.pendingAmount || 0) > 0).length;
 };
 
-// Check if a yearly member needs red indicator (current month not paid AND due date passed)
+// Check if a yearly member needs notification (current month not paid AND due date reached or passed)
 const checkYearlyMemberDue = (
   member: { id: string; joinDate: string },
   currentMonthPayments: Record<string, boolean>
@@ -47,11 +47,11 @@ const checkYearlyMemberDue = (
   const currentDay = now.getDate();
   const joinDay = new Date(member.joinDate).getDate();
   
-  // If current month is paid, no red indicator
+  // If current month is paid, no notification
   if (currentMonthPayments[member.id]) return false;
   
-  // If due date (join day) has passed, show red indicator
-  return currentDay > joinDay;
+  // If due date (join day) has reached or passed, show notification
+  return currentDay >= joinDay;
 };
 
 export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDeleteTeam, onUpdateTeamLogo }: TeamListProps) {
