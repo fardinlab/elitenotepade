@@ -261,32 +261,45 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
               >
                 <div className="flex items-center gap-3">
                   {/* Team Logo/Icon */}
-                  <div className={`relative w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden ${
-                    isDeleteMode 
-                      ? 'bg-destructive/20 text-destructive' 
-                    : team.logo && LOGO_ICONS[team.logo]
-                        ? 'bg-white'
-                        : 'bg-secondary text-muted-foreground'
-                  }`}>
-                    {isDeleteMode ? (
-                      <Trash2 className="w-5 h-5" />
-                    ) : team.logo && LOGO_ICONS[team.logo] && SUBSCRIPTION_CONFIG[team.logo] ? (
-                      <img 
-                        src={LOGO_ICONS[team.logo]} 
-                        alt={SUBSCRIPTION_CONFIG[team.logo].name}
-                        className="w-6 h-6 object-contain"
-                      />
-                    ) : (
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setTeamToAddLogo(team);
-                          setLogoForTeam(null);
-                        }}
-                        className="w-full h-full flex items-center justify-center hover:bg-secondary/80 transition-colors"
-                      >
-                        <ImagePlus className="w-5 h-5" />
-                      </button>
+                  <div className="relative">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden ${
+                      isDeleteMode 
+                        ? 'bg-destructive/20 text-destructive' 
+                      : team.logo && LOGO_ICONS[team.logo]
+                          ? 'bg-white'
+                          : 'bg-secondary text-muted-foreground'
+                    }`}>
+                      {isDeleteMode ? (
+                        <Trash2 className="w-5 h-5" />
+                      ) : team.logo && LOGO_ICONS[team.logo] && SUBSCRIPTION_CONFIG[team.logo] ? (
+                        <img 
+                          src={LOGO_ICONS[team.logo]} 
+                          alt={SUBSCRIPTION_CONFIG[team.logo].name}
+                          className="w-6 h-6 object-contain"
+                        />
+                      ) : (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setTeamToAddLogo(team);
+                            setLogoForTeam(null);
+                          }}
+                          className="w-full h-full flex items-center justify-center hover:bg-secondary/80 transition-colors"
+                        >
+                          <ImagePlus className="w-5 h-5" />
+                        </button>
+                      )}
+                    </div>
+                    {/* Bell notification badge for yearly teams */}
+                    {!isDeleteMode && team.isYearlyTeam && yearlyMembersWithDue > 0 && (
+                      <div className="absolute -top-1.5 -right-1.5 flex items-center justify-center">
+                        <div className="relative">
+                          <Bell className="w-4 h-4 text-destructive fill-destructive animate-pulse" />
+                          <span className="absolute -top-1 -right-1.5 min-w-[14px] h-[14px] px-0.5 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center">
+                            {yearlyMembersWithDue}
+                          </span>
+                        </div>
+                      </div>
                     )}
                   </div>
                   
@@ -296,19 +309,6 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                       {/* Indicators */}
                       {!isDeleteMode && (
                         <div className="flex items-center gap-1">
-                          {/* Bell icons for yearly teams with overdue members */}
-                          {team.isYearlyTeam && yearlyMembersWithDue > 0 && (
-                            <div className="flex items-center gap-0.5">
-                              {Array.from({ length: Math.min(yearlyMembersWithDue, 8) }).map((_, i) => (
-                                <div 
-                                  key={i} 
-                                  className="w-4 h-4 rounded-full bg-destructive/20 flex items-center justify-center"
-                                >
-                                  <Bell className="w-2.5 h-2.5 text-destructive fill-destructive" />
-                                </div>
-                              ))}
-                            </div>
-                          )}
                           {/* Red dots for standard teams with members over 30 days */}
                           {!team.isYearlyTeam && membersOverMonth > 0 && (
                             <div className="flex items-center gap-0.5">
