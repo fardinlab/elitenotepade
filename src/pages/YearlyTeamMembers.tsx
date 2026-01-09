@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, Plus, Trash2, X, Mail, Phone, Send, Calendar, UserPlus, MessageCircle, Check, AlertCircle, Pencil, Shield, Lock, Receipt, DollarSign } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, X, UserPlus, Mail, Phone, Send, Calendar, Shield, Lock, Check, AlertCircle } from 'lucide-react';
+import YearlyMemberCard from '@/components/YearlyMemberCard';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
@@ -386,334 +387,29 @@ const YearlyTeamMembers = () => {
               </p>
             </motion.div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-4">
               <AnimatePresence mode="popLayout">
                 {team.members.map((member, index) => {
                   const isOverdue = isMemberOverdue(member);
                   return (
-                  <motion.div
-                    key={member.id}
-                    ref={(el) => { memberRefs.current[member.id] = el; }}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, x: -100 }}
-                    transition={{ delay: index * 0.03 }}
-                    className={`glass-card rounded-xl p-4 card-shadow transition-all ${
-                      highlightedMemberId === member.id 
-                        ? 'ring-2 ring-blue-500 bg-blue-500/20' 
-                        : isOverdue 
-                          ? 'ring-2 ring-destructive bg-destructive/20' 
-                          : ''
-                    } ${isRemoveMode ? 'border-destructive/50' : ''}`}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0 space-y-1.5 group/card">
-                        {/* Email */}
-                        <div className="flex items-center gap-2 group/field">
-                          <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
-                          <span className="text-xs text-muted-foreground">Email:</span>
-                          {editingField?.memberId === member.id && editingField.field === 'email' ? (
-                            <div className="flex items-center gap-1 flex-1">
-                              <input
-                                type="email"
-                                value={editValue}
-                                onChange={(e) => setEditValue(e.target.value)}
-                                className="flex-1 text-sm bg-input rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary"
-                                autoFocus
-                                onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
-                              />
-                              <button onClick={saveEdit} className="p-1 text-green-500 hover:bg-green-500/20 rounded">
-                                <Check className="w-3 h-3" />
-                              </button>
-                              <button onClick={cancelEdit} className="p-1 text-destructive hover:bg-destructive/20 rounded">
-                                <X className="w-3 h-3" />
-                              </button>
-                            </div>
-                          ) : (
-                            <>
-                              <span className="text-sm font-medium text-foreground break-all">{member.email}</span>
-                              <button
-                                onClick={() => startEditing(member.id, 'email', member.email)}
-                                className="p-1 rounded hover:bg-secondary opacity-0 group-hover/field:opacity-100 transition-opacity"
-                              >
-                                <Pencil className="w-3 h-3 text-muted-foreground" />
-                              </button>
-                            </>
-                          )}
-                        </div>
-
-                        {/* 2FA */}
-                        <div className="flex items-center gap-2 group/field">
-                          <Shield className="w-4 h-4 text-muted-foreground shrink-0" />
-                          <span className="text-xs text-muted-foreground">2FA:</span>
-                          {editingField?.memberId === member.id && editingField.field === 'twoFA' ? (
-                            <div className="flex items-center gap-1 flex-1">
-                              <input
-                                type="text"
-                                value={editValue}
-                                onChange={(e) => setEditValue(e.target.value)}
-                                className="flex-1 text-xs bg-input rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary"
-                                autoFocus
-                                onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
-                              />
-                              <button onClick={saveEdit} className="p-1 text-green-500 hover:bg-green-500/20 rounded">
-                                <Check className="w-3 h-3" />
-                              </button>
-                              <button onClick={cancelEdit} className="p-1 text-destructive hover:bg-destructive/20 rounded">
-                                <X className="w-3 h-3" />
-                              </button>
-                            </div>
-                          ) : (
-                            <>
-                              <span className="text-xs text-muted-foreground">{member.twoFA || '—'}</span>
-                              <span className="text-[10px] text-muted-foreground/50">(Optional)</span>
-                              <button
-                                onClick={() => startEditing(member.id, 'twoFA', member.twoFA || '')}
-                                className="p-1 rounded hover:bg-secondary opacity-0 group-hover/field:opacity-100 transition-opacity"
-                              >
-                                <Pencil className="w-3 h-3 text-muted-foreground" />
-                              </button>
-                            </>
-                          )}
-                        </div>
-
-                        {/* Password */}
-                        <div className="flex items-center gap-2 group/field">
-                          <Lock className="w-4 h-4 text-muted-foreground shrink-0" />
-                          <span className="text-xs text-muted-foreground">Password:</span>
-                          {editingField?.memberId === member.id && editingField.field === 'password' ? (
-                            <div className="flex items-center gap-1 flex-1">
-                              <input
-                                type="text"
-                                value={editValue}
-                                onChange={(e) => setEditValue(e.target.value)}
-                                className="flex-1 text-xs bg-input rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary"
-                                autoFocus
-                                onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
-                              />
-                              <button onClick={saveEdit} className="p-1 text-green-500 hover:bg-green-500/20 rounded">
-                                <Check className="w-3 h-3" />
-                              </button>
-                              <button onClick={cancelEdit} className="p-1 text-destructive hover:bg-destructive/20 rounded">
-                                <X className="w-3 h-3" />
-                              </button>
-                            </div>
-                          ) : (
-                            <>
-                              <span className="text-xs text-muted-foreground">{member.password || '—'}</span>
-                              <span className="text-[10px] text-muted-foreground/50">(Optional)</span>
-                              <button
-                                onClick={() => startEditing(member.id, 'password', member.password || '')}
-                                className="p-1 rounded hover:bg-secondary opacity-0 group-hover/field:opacity-100 transition-opacity"
-                              >
-                                <Pencil className="w-3 h-3 text-muted-foreground" />
-                              </button>
-                            </>
-                          )}
-                        </div>
-
-                        {/* Phone */}
-                        <div className="flex items-center gap-2 group/field">
-                          <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
-                          <span className="text-xs text-muted-foreground">Phone:</span>
-                          {editingField?.memberId === member.id && editingField.field === 'phone' ? (
-                            <div className="flex items-center gap-1 flex-1">
-                              <input
-                                type="tel"
-                                value={editValue}
-                                onChange={(e) => setEditValue(e.target.value)}
-                                className="flex-1 text-xs bg-input rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary"
-                                autoFocus
-                                onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
-                              />
-                              <button onClick={saveEdit} className="p-1 text-green-500 hover:bg-green-500/20 rounded">
-                                <Check className="w-3 h-3" />
-                              </button>
-                              <button onClick={cancelEdit} className="p-1 text-destructive hover:bg-destructive/20 rounded">
-                                <X className="w-3 h-3" />
-                              </button>
-                            </div>
-                          ) : (
-                            <>
-                              <span className="text-xs text-muted-foreground">{member.phone || '—'}</span>
-                              <button
-                                onClick={() => startEditing(member.id, 'phone', member.phone || '')}
-                                className="p-1 rounded hover:bg-secondary opacity-0 group-hover/field:opacity-100 transition-opacity"
-                              >
-                                <Pencil className="w-3 h-3 text-muted-foreground" />
-                              </button>
-                            </>
-                          )}
-                        </div>
-
-                        {/* Telegram */}
-                        <div className="flex items-center gap-2 group/field">
-                          <Send className="w-4 h-4 text-muted-foreground shrink-0" />
-                          <span className="text-xs text-muted-foreground">Telegram:</span>
-                          {editingField?.memberId === member.id && editingField.field === 'telegram' ? (
-                            <div className="flex items-center gap-1 flex-1">
-                              <input
-                                type="text"
-                                value={editValue}
-                                onChange={(e) => setEditValue(e.target.value)}
-                                className="flex-1 text-xs bg-input rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary"
-                                autoFocus
-                                placeholder="@username"
-                                onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
-                              />
-                              <button onClick={saveEdit} className="p-1 text-green-500 hover:bg-green-500/20 rounded">
-                                <Check className="w-3 h-3" />
-                              </button>
-                              <button onClick={cancelEdit} className="p-1 text-destructive hover:bg-destructive/20 rounded">
-                                <X className="w-3 h-3" />
-                              </button>
-                            </div>
-                          ) : (
-                            <>
-                              <span className="text-xs text-muted-foreground">{member.telegram || '—'}</span>
-                              <button
-                                onClick={() => startEditing(member.id, 'telegram', member.telegram || '')}
-                                className="p-1 rounded hover:bg-secondary opacity-0 group-hover/field:opacity-100 transition-opacity"
-                              >
-                                <Pencil className="w-3 h-3 text-muted-foreground" />
-                              </button>
-                            </>
-                          )}
-                        </div>
-
-                        {/* Join Date */}
-                        <div className="flex items-center gap-2 group/field">
-                          <Calendar className="w-4 h-4 text-muted-foreground shrink-0" />
-                          <span className="text-xs text-muted-foreground">Join Date:</span>
-                          {editingField?.memberId === member.id && editingField.field === 'joinDate' ? (
-                            <div className="flex items-center gap-1 flex-1">
-                              <input
-                                type="date"
-                                value={editValue}
-                                onChange={(e) => setEditValue(e.target.value)}
-                                className="flex-1 text-xs bg-input rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-primary"
-                                autoFocus
-                                onKeyDown={(e) => e.key === 'Enter' && saveEdit()}
-                              />
-                              <button onClick={saveEdit} className="p-1 text-green-500 hover:bg-green-500/20 rounded">
-                                <Check className="w-3 h-3" />
-                              </button>
-                              <button onClick={cancelEdit} className="p-1 text-destructive hover:bg-destructive/20 rounded">
-                                <X className="w-3 h-3" />
-                              </button>
-                            </div>
-                          ) : (
-                            <>
-                              <span className="text-xs text-muted-foreground">
-                                {format(new Date(member.joinDate), 'd MMM yyyy')}
-                              </span>
-                              <button
-                                onClick={() => startEditing(member.id, 'joinDate', member.joinDate)}
-                                className="p-1 rounded hover:bg-secondary opacity-0 group-hover/field:opacity-100 transition-opacity"
-                              >
-                                <Pencil className="w-3 h-3 text-muted-foreground" />
-                              </button>
-                            </>
-                          )}
-                        </div>
-
-                        {/* Payment Summary from Pay Details */}
-                        {(memberPaymentSummaries[member.id]?.totalPaid > 0 || memberPaymentSummaries[member.id]?.totalDue > 0) && (
-                          <div className="flex items-center gap-3 pt-1">
-                            <div className="flex items-center gap-1">
-                              <DollarSign className="w-3 h-3 text-green-500" />
-                              <span className="text-xs text-muted-foreground">Paid:</span>
-                              <span className="text-xs font-medium text-green-500">৳{memberPaymentSummaries[member.id]?.totalPaid || 0}</span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <DollarSign className="w-3 h-3 text-orange-500" />
-                              <span className="text-xs text-muted-foreground">Due:</span>
-                              <span className="text-xs font-medium text-orange-500">৳{memberPaymentSummaries[member.id]?.totalDue || 0}</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Action Buttons */}
-                      {!isRemoveMode ? (
-                        <div className="flex flex-col gap-1.5 shrink-0">
-                          {/* WhatsApp Button */}
-                          <button
-                            onClick={() => {
-                              if (member.phone) {
-                                const cleanPhone = member.phone.replace(/[^0-9+]/g, '');
-                                window.open(`https://wa.me/${cleanPhone}`, '_blank');
-                              }
-                            }}
-                            disabled={!member.phone}
-                            className={`p-2 rounded-lg transition-colors ${
-                              member.phone 
-                                ? 'bg-green-500/20 text-green-500 hover:bg-green-500/30' 
-                                : 'bg-muted text-muted-foreground/40 cursor-not-allowed'
-                            }`}
-                            title={member.phone ? 'WhatsApp' : 'No phone number'}
-                          >
-                            <MessageCircle className="w-4 h-4" />
-                          </button>
-                          
-                          {/* Telegram Button */}
-                          <button
-                            onClick={() => {
-                              if (member.telegram) {
-                                const username = member.telegram.replace('@', '');
-                                window.open(`https://t.me/${username}`, '_blank');
-                              }
-                            }}
-                            disabled={!member.telegram}
-                            className={`p-2 rounded-lg transition-colors ${
-                              member.telegram 
-                                ? 'bg-blue-500/20 text-blue-500 hover:bg-blue-500/30' 
-                                : 'bg-muted text-muted-foreground/40 cursor-not-allowed'
-                            }`}
-                            title={member.telegram ? 'Telegram' : 'No Telegram username'}
-                          >
-                            <Send className="w-4 h-4" />
-                          </button>
-                          
-                          {/* Call Button */}
-                          <button
-                            onClick={() => {
-                              if (member.phone) {
-                                window.open(`tel:${member.phone}`, '_self');
-                              }
-                            }}
-                            disabled={!member.phone}
-                            className={`p-2 rounded-lg transition-colors ${
-                              member.phone 
-                                ? 'bg-primary/20 text-primary hover:bg-primary/30' 
-                                : 'bg-muted text-muted-foreground/40 cursor-not-allowed'
-                            }`}
-                            title={member.phone ? 'Call' : 'No phone number'}
-                          >
-                            <Phone className="w-4 h-4" />
-                          </button>
-                          
-                          {/* Pay Details Button */}
-                          <button
-                            onClick={() => navigate(`/member-pay-details/${member.id}`)}
-                            className="p-2 rounded-lg bg-purple-500/20 text-purple-500 hover:bg-purple-500/30 transition-colors"
-                            title="Pay Details"
-                          >
-                            <Receipt className="w-4 h-4" />
-                          </button>
-                        </div>
-                      ) : (
-                        <motion.button
-                          initial={{ scale: 0 }}
-                          animate={{ scale: 1 }}
-                          onClick={() => handleRemoveMember(member.id, member.email)}
-                          className="ml-3 p-2 rounded-lg bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </motion.button>
-                      )}
-                    </div>
-                  </motion.div>
+                    <YearlyMemberCard
+                      key={member.id}
+                      member={member}
+                      index={index}
+                      isHighlighted={highlightedMemberId === member.id}
+                      isOverdue={isOverdue}
+                      isRemoveMode={isRemoveMode}
+                      paymentSummary={memberPaymentSummaries[member.id]}
+                      editingField={editingField}
+                      editValue={editValue}
+                      memberRef={(el) => { memberRefs.current[member.id] = el; }}
+                      onStartEditing={startEditing}
+                      onSaveEdit={saveEdit}
+                      onCancelEdit={cancelEdit}
+                      onEditValueChange={setEditValue}
+                      onRemove={handleRemoveMember}
+                      onNavigatePayDetails={(id) => navigate(`/member-pay-details/${id}`)}
+                    />
                   );
                 })}
               </AnimatePresence>
