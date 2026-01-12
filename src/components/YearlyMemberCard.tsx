@@ -77,56 +77,77 @@ const YearlyMemberCard = ({
     inputType: string = 'text',
     placeholder?: string,
     isOptional?: boolean
-  ) => (
-    <div className="flex items-center gap-3 group/field py-1.5">
-      <div className="w-8 h-8 rounded-lg bg-muted/30 flex items-center justify-center shrink-0">
-        {icon}
+  ) => {
+    // Special handling for 2FA field - truncate long values
+    const isTwoFAField = field === 'twoFA';
+    
+    return (
+      <div className="flex items-center gap-3 group/field py-1.5">
+        <div className="w-8 h-8 rounded-lg bg-muted/30 flex items-center justify-center shrink-0">
+          {icon}
+        </div>
+        <div className="flex-1 min-w-0">
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 block mb-0.5">
+            {label}
+            {isOptional && <span className="ml-1 text-muted-foreground/40">(Optional)</span>}
+          </span>
+          {isEditing(field) ? (
+            <div className="flex items-center gap-2">
+              <input
+                type={inputType}
+                value={editValue}
+                onChange={(e) => onEditValueChange(e.target.value)}
+                className="flex-1 text-sm bg-background/50 border border-border rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                autoFocus
+                placeholder={placeholder}
+                onKeyDown={(e) => e.key === 'Enter' && onSaveEdit()}
+              />
+              <button 
+                onClick={onSaveEdit} 
+                className="p-1.5 bg-green-500/20 text-green-500 hover:bg-green-500/30 rounded-lg transition-colors"
+              >
+                <Check className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={onCancelEdit} 
+                className="p-1.5 bg-destructive/20 text-destructive hover:bg-destructive/30 rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5">
+              <span 
+                className={`font-medium text-foreground ${
+                  isTwoFAField 
+                    ? 'text-xs truncate max-w-[140px] sm:max-w-[200px]' 
+                    : 'text-sm'
+                }`}
+                title={isTwoFAField && value ? value : undefined}
+              >
+                {value || '—'}
+              </span>
+              {isTwoFAField && value && (
+                <button
+                  onClick={() => copyToClipboard(value, '2FA')}
+                  className="p-1 rounded-md hover:bg-muted/50 transition-colors shrink-0"
+                  title="Copy 2FA"
+                >
+                  <Copy className="w-3 h-3 text-muted-foreground" />
+                </button>
+              )}
+              <button
+                onClick={() => onStartEditing(member.id, field, value || '')}
+                className="p-1 rounded-md hover:bg-muted/50 opacity-0 group-hover/field:opacity-100 transition-all shrink-0"
+              >
+                <Pencil className="w-3 h-3 text-muted-foreground" />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-      <div className="flex-1 min-w-0">
-        <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 block mb-0.5">
-          {label}
-          {isOptional && <span className="ml-1 text-muted-foreground/40">(Optional)</span>}
-        </span>
-        {isEditing(field) ? (
-          <div className="flex items-center gap-2">
-            <input
-              type={inputType}
-              value={editValue}
-              onChange={(e) => onEditValueChange(e.target.value)}
-              className="flex-1 text-sm bg-background/50 border border-border rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-primary/50"
-              autoFocus
-              placeholder={placeholder}
-              onKeyDown={(e) => e.key === 'Enter' && onSaveEdit()}
-            />
-            <button 
-              onClick={onSaveEdit} 
-              className="p-1.5 bg-green-500/20 text-green-500 hover:bg-green-500/30 rounded-lg transition-colors"
-            >
-              <Check className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={onCancelEdit} 
-              className="p-1.5 bg-destructive/20 text-destructive hover:bg-destructive/30 rounded-lg transition-colors"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-foreground">
-              {value || '—'}
-            </span>
-            <button
-              onClick={() => onStartEditing(member.id, field, value || '')}
-              className="p-1 rounded-md hover:bg-muted/50 opacity-0 group-hover/field:opacity-100 transition-all"
-            >
-              <Pencil className="w-3 h-3 text-muted-foreground" />
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <motion.div
