@@ -22,6 +22,7 @@ interface DbMember {
   phone: string;
   telegram: string | null;
   two_fa: string | null;
+  twofa: string | null;
   password: string | null;
   join_date: string;
   is_paid: boolean;
@@ -47,7 +48,7 @@ const mapDbMemberToMember = (dbMember: DbMember): Member => ({
   email: dbMember.email,
   phone: dbMember.phone,
   telegram: dbMember.telegram || undefined,
-  twoFA: dbMember.two_fa || undefined,
+  twoFA: dbMember.twofa || dbMember.two_fa || undefined,
   password: dbMember.password || undefined,
   joinDate: dbMember.join_date,
   isPaid: dbMember.is_paid,
@@ -289,7 +290,7 @@ export function useSupabaseData() {
 
       const buildPayload = (opts: { includePassword: boolean; includeTwoFA: boolean }) => {
         const payload: Record<string, unknown> = { ...baseInsert };
-        if (opts.includeTwoFA) payload.two_fa = member.twoFA || null;
+        if (opts.includeTwoFA) payload.twofa = member.twoFA || null;
         if (opts.includePassword) payload.password = member.password || null;
         return payload;
       };
@@ -537,10 +538,25 @@ export function useSupabaseData() {
   }, [activeTeamId]);
 
   const updateMemberTwoFA = useCallback(async (id: string, twoFA: string) => {
-    const { error } = await supabase
+    // Try new column name first, fallback to old one
+    let error = null;
+    
+    // Try with 'twofa' column first
+    const result1 = await supabase
       .from('members')
-      .update({ two_fa: twoFA || null })
+      .update({ twofa: twoFA || null })
       .eq('id', id);
+    
+    if (result1.error?.code === 'PGRST204' || result1.error?.message?.includes('twofa')) {
+      // Fallback to 'two_fa' column
+      const result2 = await supabase
+        .from('members')
+        .update({ two_fa: twoFA || null })
+        .eq('id', id);
+      error = result2.error;
+    } else {
+      error = result1.error;
+    }
 
     if (error) {
       console.error('Error updating member 2FA:', error);
