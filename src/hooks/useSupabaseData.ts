@@ -21,8 +21,15 @@ interface DbMember {
   email: string;
   phone: string;
   telegram: string | null;
+
+  // Different projects may have different column names for 2FA
   two_fa: string | null;
   twofa: string | null;
+  twofa_secret: string | null;
+
+  // Optional OTP secret column (some projects use otp_secret)
+  otp_secret?: string | null;
+
   password: string | null;
   join_date: string;
   is_paid: boolean;
@@ -48,7 +55,8 @@ const mapDbMemberToMember = (dbMember: DbMember): Member => ({
   email: dbMember.email,
   phone: dbMember.phone,
   telegram: dbMember.telegram || undefined,
-  twoFA: dbMember.twofa || dbMember.two_fa || undefined,
+  // Prefer the column that actually exists in the DB
+  twoFA: dbMember.twofa ?? dbMember.two_fa ?? dbMember.twofa_secret ?? undefined,
   password: dbMember.password || undefined,
   joinDate: dbMember.join_date,
   isPaid: dbMember.is_paid,
@@ -290,7 +298,8 @@ export function useSupabaseData() {
 
       const buildPayload = (opts: { includePassword: boolean; includeTwoFA: boolean }) => {
         const payload: Record<string, unknown> = { ...baseInsert };
-        if (opts.includeTwoFA) payload.twofa = member.twoFA || null;
+        // Most compatible approach: store 2FA into twofa_secret when available; fallback handled by PostgREST retry
+        if (opts.includeTwoFA) payload.twofa_secret = member.twoFA || null;
         if (opts.includePassword) payload.password = member.password || null;
         return payload;
       };
@@ -538,28 +547,39 @@ export function useSupabaseData() {
   }, [activeTeamId]);
 
   const updateMemberTwoFA = useCallback(async (id: string, twoFA: string) => {
-    // Try new column name first, fallback to old one
-    let error = null;
-    
-    // Try with 'twofa' column first
-    const result1 = await supabase
-      .from('members')
-      .update({ twofa: twoFA || null })
-      .eq('id', id);
-    
-    if (result1.error?.code === 'PGRST204' || result1.error?.message?.includes('twofa')) {
-      // Fallback to 'two_fa' column
-      const result2 = await supabase
-        .from('members')
-        .update({ two_fa: twoFA || null })
-        .eq('id', id);
-      error = result2.error;
-    } else {
-      error = result1.error;
+    // Different DBs have different column names; try in a safe order.
+    const tryUpdate = async (payload: Record<string, unknown>) => {
+      return supabase.from('members').update(payload).eq('id', id);
+    };
+
+    const candidates: Array<Record<string, unknown>> = [
+      { twofa_secret: twoFA || null },
+      { twofa: twoFA || null },
+      { two_fa: twoFA || null },
+    ];
+
+    let lastError: any = null;
+
+    for (const payload of candidates) {
+      const res = await tryUpdate(payload);
+      if (!res.error) {
+        lastError = null;
+        break;
+      }
+
+      // Column missing -> try next
+      if (res.error.code === 'PGRST204') {
+        lastError = res.error;
+        continue;
+      }
+
+      // Any other error (RLS, validation, etc.) stop immediately
+      lastError = res.error;
+      break;
     }
 
-    if (error) {
-      console.error('Error updating member 2FA:', error);
+    if (lastError) {
+      console.error('Error updating member 2FA:', lastError);
       return;
     }
 
