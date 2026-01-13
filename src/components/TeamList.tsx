@@ -242,6 +242,9 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
           const membersOverMonth = countMembersOverOneMonth(team);
           const yearlyMembersWithDue = countYearlyMembersWithDue(team);
           const totalRedDots = team.isYearlyTeam ? yearlyMembersWithDue : membersOverMonth;
+          
+          // Check if Normal team is 31+ days old from creation
+          const isTeamExpired = !team.isYearlyTeam && differenceInDays(new Date(), new Date(team.createdAt)) >= 31;
 
           return (
             <motion.div
@@ -250,6 +253,10 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05 }}
               className={`rounded-xl border transition-all overflow-hidden ${
+                isTeamExpired 
+                  ? 'grayscale opacity-60'
+                  : ''
+              } ${
                 isDeleteMode
                   ? 'bg-destructive/5 border-destructive/30 hover:bg-destructive/10 hover:border-destructive/50'
                   : isActive
