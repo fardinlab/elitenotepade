@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Users, Calendar, Mail, Phone, Crown } from 'lucide-react';
+import { ArrowLeft, Users, Calendar, Mail, Phone, Crown, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
@@ -15,6 +15,7 @@ interface MemberWithTeam {
   teamId: string;
   teamName: string;
   isYearlyTeam: boolean;
+  paidAmount?: number;
 }
 
 export default function CurrentMonthMembers() {
@@ -28,11 +29,11 @@ export default function CurrentMonthMembers() {
   const currentMonthName = new Date().toLocaleDateString('bn-BD', { month: 'long', year: 'numeric' });
 
   useEffect(() => {
-    const fetchCurrentMonthMembers = async () => {
+    const fetchPaidMembers = async () => {
       if (!user) return;
 
       try {
-        // Fetch all teams with their members
+        // Fetch all teams
         const { data: teamsData, error: teamsError } = await supabase
           .from('teams')
           .select('id, team_name, is_yearly_team')
@@ -40,51 +41,110 @@ export default function CurrentMonthMembers() {
 
         if (teamsError) throw teamsError;
 
+        // Fetch all members with paid_amount > 0 from normal teams (current month by join_date)
         const { data: membersData, error: membersError } = await supabase
           .from('members')
-          .select('id, email, phone, join_date, team_id')
+          .select('id, email, phone, join_date, team_id, paid_amount')
           .eq('user_id', user.id);
 
         if (membersError) throw membersError;
 
-        // Filter members for current month
-        const currentMonthMembers: MemberWithTeam[] = [];
+        // Get yearly team IDs
+        const yearlyTeamIds = (teamsData || []).filter(t => t.is_yearly_team).map(t => t.id);
+        const normalTeamIds = (teamsData || []).filter(t => !t.is_yearly_team).map(t => t.id);
+
+        // Filter normal team members who paid in current month
+        const paidMembers: MemberWithTeam[] = [];
 
         (membersData || []).forEach(member => {
           const joinDate = new Date(member.join_date);
           const memberMonth = joinDate.getMonth();
           const memberYear = joinDate.getFullYear();
 
-          if (memberMonth === currentMonth && memberYear === currentYear) {
+          // Normal team members: check if paid_amount > 0 and join_date is current month
+          if (normalTeamIds.includes(member.team_id) && 
+              memberMonth === currentMonth && 
+              memberYear === currentYear && 
+              member.paid_amount > 0) {
             const team = teamsData?.find(t => t.id === member.team_id);
             if (team) {
-              currentMonthMembers.push({
+              paidMembers.push({
                 id: member.id,
                 email: member.email,
                 phone: member.phone,
                 joinDate: member.join_date,
                 teamId: team.id,
                 teamName: team.team_name,
-                isYearlyTeam: team.is_yearly_team,
+                isYearlyTeam: false,
+                paidAmount: member.paid_amount,
               });
             }
           }
         });
 
-        // Sort by join date (newest first)
-        currentMonthMembers.sort((a, b) => 
-          new Date(b.joinDate).getTime() - new Date(a.joinDate).getTime()
-        );
+        // For yearly team members, check member_payments table for current month paid entries
+        if (yearlyTeamIds.length > 0) {
+          const yearlyMemberIds = (membersData || [])
+            .filter(m => yearlyTeamIds.includes(m.team_id))
+            .map(m => m.id);
 
-        setMembers(currentMonthMembers);
+          if (yearlyMemberIds.length > 0) {
+            // Get current month name for matching
+            const monthNames = ['january', 'february', 'march', 'april', 'may', 'june', 
+                               'july', 'august', 'september', 'october', 'november', 'december'];
+            const currentMonthNameEn = monthNames[currentMonth];
+
+            const { data: paymentsData, error: paymentsError } = await supabase
+              .from('member_payments')
+              .select('member_id, amount, month, year')
+              .eq('user_id', user.id)
+              .in('member_id', yearlyMemberIds)
+              .eq('status', 'paid')
+              .eq('month', currentMonthNameEn)
+              .eq('year', currentYear);
+
+            if (!paymentsError && paymentsData) {
+              // Group payments by member
+              const memberPayments: Record<string, number> = {};
+              paymentsData.forEach(p => {
+                memberPayments[p.member_id] = (memberPayments[p.member_id] || 0) + p.amount;
+              });
+
+              // Add yearly members who paid this month
+              Object.keys(memberPayments).forEach(memberId => {
+                const member = membersData?.find(m => m.id === memberId);
+                if (member) {
+                  const team = teamsData?.find(t => t.id === member.team_id);
+                  if (team) {
+                    paidMembers.push({
+                      id: member.id,
+                      email: member.email,
+                      phone: member.phone,
+                      joinDate: member.join_date,
+                      teamId: team.id,
+                      teamName: team.team_name,
+                      isYearlyTeam: true,
+                      paidAmount: memberPayments[memberId],
+                    });
+                  }
+                }
+              });
+            }
+          }
+        }
+
+        // Sort by paid amount (highest first)
+        paidMembers.sort((a, b) => (b.paidAmount || 0) - (a.paidAmount || 0));
+
+        setMembers(paidMembers);
       } catch (error) {
-        console.error('Error fetching current month members:', error);
+        console.error('Error fetching paid members:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCurrentMonthMembers();
+    fetchPaidMembers();
   }, [user, currentMonth, currentYear]);
 
   const handleMemberClick = (member: MemberWithTeam) => {
@@ -117,12 +177,12 @@ export default function CurrentMonthMembers() {
             <ArrowLeft className="w-5 h-5" />
           </Button>
           <div className="flex-1">
-            <h1 className="text-lg font-bold text-foreground">বর্তমান মাসের মেম্বার</h1>
+            <h1 className="text-lg font-bold text-foreground">এই মাসে Paid করেছে</h1>
             <p className="text-xs text-muted-foreground">{currentMonthName}</p>
           </div>
-          <div className="flex items-center gap-2 bg-primary/10 px-3 py-1.5 rounded-full">
-            <Users className="w-4 h-4 text-primary" />
-            <span className="text-sm font-bold text-primary">{members.length}</span>
+          <div className="flex items-center gap-2 bg-emerald-500/10 px-3 py-1.5 rounded-full">
+            <CheckCircle className="w-4 h-4 text-emerald-500" />
+            <span className="text-sm font-bold text-emerald-500">{members.length}</span>
           </div>
         </div>
       </div>
@@ -135,8 +195,8 @@ export default function CurrentMonthMembers() {
           </div>
         ) : members.length === 0 ? (
           <div className="text-center py-12">
-            <Users className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />
-            <p className="text-muted-foreground">এই মাসে কোনো মেম্বার নেই</p>
+            <CheckCircle className="w-12 h-12 mx-auto text-muted-foreground/50 mb-3" />
+            <p className="text-muted-foreground">এই মাসে কেউ Paid করেনি</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -171,13 +231,15 @@ export default function CurrentMonthMembers() {
                         </div>
                       )}
                       
-                      {/* Join Date */}
-                      <div className="flex items-center gap-2">
-                        <Calendar className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                        <span className="text-xs text-muted-foreground">
-                          {formatDate(member.joinDate)}
-                        </span>
-                      </div>
+                      {/* Paid Amount */}
+                      {member.paidAmount && (
+                        <div className="flex items-center gap-2">
+                          <CheckCircle className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                          <span className="text-xs font-medium text-emerald-500">
+                            ৳{member.paidAmount.toLocaleString()} Paid
+                          </span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Team Info */}
