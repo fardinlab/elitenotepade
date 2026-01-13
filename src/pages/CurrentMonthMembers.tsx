@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Users, Calendar, Mail, Phone, Crown, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Users, Calendar, Mail, Phone, Crown, CheckCircle, Wallet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/lib/supabase';
@@ -163,6 +163,8 @@ export default function CurrentMonthMembers() {
     });
   };
 
+  const totalCollected = members.reduce((sum, m) => sum + (m.paidAmount || 0), 0);
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -185,6 +187,19 @@ export default function CurrentMonthMembers() {
             <span className="text-sm font-bold text-emerald-500">{members.length}</span>
           </div>
         </div>
+        
+        {/* Total Collected Amount */}
+        {!loading && members.length > 0 && (
+          <div className="px-4 pb-3">
+            <div className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-emerald-500/10 to-green-500/10 border border-emerald-500/20">
+              <div className="flex items-center gap-2">
+                <Wallet className="w-5 h-5 text-emerald-500" />
+                <span className="text-sm text-muted-foreground">মোট Collect হয়েছে</span>
+              </div>
+              <span className="text-lg font-bold text-emerald-500">৳{totalCollected.toLocaleString()}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Content */}
