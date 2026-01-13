@@ -227,8 +227,8 @@ export function MemberCard({
 
   const isOverOneMonth = differenceInDays(new Date(), new Date(member.joinDate)) >= 30;
   
-  // Determine if red indicator should be hidden (when pushed and not paid for current month)
-  const shouldShowRedIndicator = !member.isPushed && isOverOneMonth;
+  // Determine if red indicator should be hidden (when pushed OR has active team)
+  const shouldShowRedIndicator = !member.isPushed && !member.activeTeamId && isOverOneMonth;
 
   // Card highlight classes
   const getCardClasses = () => {
@@ -239,6 +239,10 @@ export function MemberCard({
     }
     if (member.isPushed) {
       return 'glass-card hover:border-primary/30 grayscale opacity-70';
+    }
+    // If member has active team, show green card
+    if (member.activeTeamId) {
+      return 'bg-emerald-500/15 border border-emerald-500/50 hover:border-emerald-500/70';
     }
     if (shouldShowRedIndicator) {
       return 'bg-destructive/10 border border-destructive/50 hover:border-destructive/70';
