@@ -36,7 +36,7 @@ export default function CurrentMonthMembers() {
         // Fetch all teams
         const { data: teamsData, error: teamsError } = await supabase
           .from('teams')
-          .select('id, team_name, is_yearly_team')
+          .select('id, team_name, is_yearly')
           .eq('user_id', user.id);
 
         if (teamsError) throw teamsError;
@@ -50,8 +50,8 @@ export default function CurrentMonthMembers() {
         if (membersError) throw membersError;
 
         // Get yearly team IDs
-        const yearlyTeamIds = (teamsData || []).filter(t => t.is_yearly_team).map(t => t.id);
-        const normalTeamIds = (teamsData || []).filter(t => !t.is_yearly_team).map(t => t.id);
+        const yearlyTeamIds = (teamsData || []).filter(t => t.is_yearly).map(t => t.id);
+        const normalTeamIds = (teamsData || []).filter(t => !t.is_yearly).map(t => t.id);
 
         // Filter normal team members who paid in current month
         const paidMembers: MemberWithTeam[] = [];
