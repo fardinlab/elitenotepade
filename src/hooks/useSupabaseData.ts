@@ -37,6 +37,10 @@ interface DbMember {
   pending_amount: number | null;
   subscriptions: string[] | null;
   created_at: string;
+  
+  // Pushed and Active fields
+  is_pushed?: boolean | null;
+  active_team_id?: string | null;
 }
 
 const mapDbTeamToTeam = (dbTeam: DbTeam, members: Member[]): Team => ({
@@ -63,6 +67,8 @@ const mapDbMemberToMember = (dbMember: DbMember): Member => ({
   paidAmount: dbMember.paid_amount || undefined,
   pendingAmount: dbMember.pending_amount || undefined,
   subscriptions: (dbMember.subscriptions as SubscriptionType[]) || undefined,
+  isPushed: dbMember.is_pushed || false,
+  activeTeamId: dbMember.active_team_id || undefined,
 });
 
 export function useSupabaseData() {
@@ -622,6 +628,48 @@ export function useSupabaseData() {
     );
   }, [activeTeamId]);
 
+  const updateMemberPushed = useCallback(async (id: string, isPushed: boolean) => {
+    const { error } = await supabase
+      .from('members')
+      .update({ is_pushed: isPushed })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating member pushed status:', error);
+      return;
+    }
+
+    setTeams((prev) =>
+      prev.map((t) => ({
+        ...t,
+        members: t.members.map((m) =>
+          m.id === id ? { ...m, isPushed } : m
+        ),
+      }))
+    );
+  }, []);
+
+  const updateMemberActiveTeam = useCallback(async (id: string, activeTeamId?: string) => {
+    const { error } = await supabase
+      .from('members')
+      .update({ active_team_id: activeTeamId || null })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating member active team:', error);
+      return;
+    }
+
+    setTeams((prev) =>
+      prev.map((t) => ({
+        ...t,
+        members: t.members.map((m) =>
+          m.id === id ? { ...m, activeTeamId: activeTeamId || undefined } : m
+        ),
+      }))
+    );
+  }, []);
+
   const searchMembers = useCallback((query: string) => {
     if (!query.trim()) return [];
 
@@ -702,6 +750,8 @@ export function useSupabaseData() {
     updateMemberPayment,
     updateMemberSubscriptions,
     updateMemberPendingAmount,
+    updateMemberPushed,
+    updateMemberActiveTeam,
     updateTeamLogo,
     canAddMember,
     isTeamFull,

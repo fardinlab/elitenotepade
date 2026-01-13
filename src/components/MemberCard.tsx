@@ -1,8 +1,9 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Phone, Trash2, Calendar, Pencil, Check, X, Send, DollarSign, AlertCircle, Copy } from 'lucide-react';
+import { Phone, Trash2, Calendar, Pencil, Check, X, Send, DollarSign, AlertCircle, Copy, Pause, Play } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
-import { Member, SubscriptionType } from '@/types/member';
+import { Member, SubscriptionType, Team } from '@/types/member';
 import { SubscriptionBadges } from './SubscriptionBadges';
 
 interface MemberCardProps {
@@ -10,6 +11,8 @@ interface MemberCardProps {
   index: number;
   isRemoveMode: boolean;
   isHighlighted?: boolean;
+  highlightColor?: 'blue' | 'green';
+  allTeams?: Team[];
   onRemove: () => void;
   onDateChange: (id: string, date: string) => void;
   onEmailChange: (id: string, email: string) => void;
@@ -18,6 +21,8 @@ interface MemberCardProps {
   onPaymentChange: (id: string, isPaid: boolean, paidAmount?: number) => void;
   onSubscriptionsChange: (id: string, subscriptions: SubscriptionType[]) => void;
   onPendingAmountChange: (id: string, pendingAmount?: number) => void;
+  onPushedChange?: (id: string, isPushed: boolean) => void;
+  onActiveTeamChange?: (id: string, activeTeamId?: string) => void;
 }
 
 export function MemberCard({ 
@@ -25,6 +30,8 @@ export function MemberCard({
   index, 
   isRemoveMode,
   isHighlighted = false,
+  highlightColor = 'blue',
+  allTeams = [],
   onRemove, 
   onDateChange,
   onEmailChange,
@@ -32,8 +39,11 @@ export function MemberCard({
   onTelegramChange,
   onPaymentChange,
   onSubscriptionsChange,
-  onPendingAmountChange
+  onPendingAmountChange,
+  onPushedChange,
+  onActiveTeamChange
 }: MemberCardProps) {
+  const navigate = useNavigate();
   const [isEditingDate, setIsEditingDate] = useState(false);
   const [editDateValue, setEditDateValue] = useState(member.joinDate);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
@@ -46,6 +56,46 @@ export function MemberCard({
   const [editPaidAmount, setEditPaidAmount] = useState(member.paidAmount?.toString() || '');
   const [isEditingPending, setIsEditingPending] = useState(false);
   const [editPendingAmount, setEditPendingAmount] = useState(member.pendingAmount?.toString() || '');
+  const [showActiveTeamSelect, setShowActiveTeamSelect] = useState(false);
+
+  // Get the active team name for display
+  const activeTeamName = member.activeTeamId 
+    ? allTeams.find(t => t.id === member.activeTeamId)?.teamName 
+    : undefined;
+
+  const handleNavigateToActiveTeam = () => {
+    if (member.activeTeamId) {
+      const targetTeam = allTeams.find(t => t.id === member.activeTeamId);
+      if (targetTeam) {
+        const route = targetTeam.isYearlyTeam ? '/yearly-members' : '/team';
+        navigate(`${route}/${member.activeTeamId}`, { 
+          state: { 
+            highlightMemberId: member.id,
+            highlightColor: 'green'
+          } 
+        });
+      }
+    }
+  };
+
+  const handleTogglePushed = () => {
+    if (onPushedChange) {
+      onPushedChange(member.id, !member.isPushed);
+    }
+  };
+
+  const handleSelectActiveTeam = (teamId: string) => {
+    if (onActiveTeamChange) {
+      onActiveTeamChange(member.id, teamId || undefined);
+    }
+    setShowActiveTeamSelect(false);
+  };
+
+  const handleClearActiveTeam = () => {
+    if (onActiveTeamChange) {
+      onActiveTeamChange(member.id, undefined);
+    }
+  };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -142,6 +192,25 @@ export function MemberCard({
   };
 
   const isOverOneMonth = differenceInDays(new Date(), new Date(member.joinDate)) >= 30;
+  
+  // Determine if red indicator should be hidden (when pushed and not paid for current month)
+  const shouldShowRedIndicator = !member.isPushed && isOverOneMonth;
+
+  // Card highlight classes
+  const getCardClasses = () => {
+    if (isHighlighted) {
+      return highlightColor === 'green'
+        ? 'bg-emerald-500/20 border-2 border-emerald-500 ring-2 ring-emerald-500/50'
+        : 'bg-blue-500/20 border-2 border-blue-500 ring-2 ring-blue-500/50';
+    }
+    if (member.isPushed) {
+      return 'glass-card hover:border-primary/30 grayscale opacity-70';
+    }
+    if (shouldShowRedIndicator) {
+      return 'bg-destructive/10 border border-destructive/50 hover:border-destructive/70';
+    }
+    return 'glass-card hover:border-primary/30';
+  };
 
   return (
     <motion.div
@@ -149,14 +218,92 @@ export function MemberCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -100 }}
       transition={{ delay: index * 0.05 }}
-      className={`rounded-xl p-4 card-shadow transition-all duration-300 touch-manipulation ${
-        isHighlighted
-          ? 'bg-blue-500/20 border-2 border-blue-500 ring-2 ring-blue-500/50'
-          : isOverOneMonth 
-            ? 'bg-destructive/10 border border-destructive/50 hover:border-destructive/70' 
-            : 'glass-card hover:border-primary/30'
-      }`}
+      className={`rounded-xl p-4 card-shadow transition-all duration-300 touch-manipulation ${getCardClasses()}`}
     >
+      {/* Pushed and Active Controls */}
+      {!isRemoveMode && (onPushedChange || onActiveTeamChange) && (
+        <div className="flex items-center gap-3 mb-3 pb-2 border-b border-border/50">
+          {/* Pushed Toggle */}
+          {onPushedChange && (
+            <button
+              onClick={handleTogglePushed}
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-all ${
+                member.isPushed
+                  ? 'bg-muted text-muted-foreground'
+                  : 'bg-primary/10 text-primary hover:bg-primary/20'
+              }`}
+            >
+              {member.isPushed ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+              <span>Pushed</span>
+            </button>
+          )}
+
+          {/* Active Team */}
+          {onActiveTeamChange && (
+            <div className="flex items-center gap-1.5">
+              {showActiveTeamSelect ? (
+                <div className="flex items-center gap-1">
+                  <select
+                    className="bg-input rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-primary max-w-[120px]"
+                    value={member.activeTeamId || ''}
+                    onChange={(e) => handleSelectActiveTeam(e.target.value)}
+                    autoFocus
+                  >
+                    <option value="">None</option>
+                    {allTeams
+                      .filter(t => !t.isYearlyTeam)
+                      .map(t => (
+                        <option key={t.id} value={t.id}>{t.teamName}</option>
+                      ))
+                    }
+                  </select>
+                  <button
+                    onClick={() => setShowActiveTeamSelect(false)}
+                    className="p-1 rounded bg-muted/50 hover:bg-muted transition-colors"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowActiveTeamSelect(true)}
+                  className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-all ${
+                    member.activeTeamId
+                      ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                      : 'bg-muted/30 text-muted-foreground hover:bg-muted/50'
+                  }`}
+                >
+                  <Play className="w-3 h-3" />
+                  <span>Active</span>
+                </button>
+              )}
+              
+              {/* Show active team name that navigates on click */}
+              {activeTeamName && !showActiveTeamSelect && (
+                <button
+                  onClick={handleNavigateToActiveTeam}
+                  className="text-xs text-emerald-400 hover:text-emerald-300 hover:underline transition-colors truncate max-w-[100px]"
+                  title={`Go to ${activeTeamName}`}
+                >
+                  {activeTeamName}
+                </button>
+              )}
+              
+              {/* Clear active team */}
+              {member.activeTeamId && !showActiveTeamSelect && (
+                <button
+                  onClick={handleClearActiveTeam}
+                  className="p-0.5 rounded hover:bg-muted/50 transition-colors"
+                  title="Clear active team"
+                >
+                  <X className="w-3 h-3 text-muted-foreground" />
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0 space-y-1">
           {/* Email - Editable */}

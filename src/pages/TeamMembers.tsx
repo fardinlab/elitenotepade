@@ -16,8 +16,11 @@ const TeamMembers = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { teamId } = useParams<{ teamId: string }>();
-  const highlightMemberId = (location.state as { highlightMemberId?: string })?.highlightMemberId;
+  const locationState = location.state as { highlightMemberId?: string; highlightColor?: 'blue' | 'green' } | null;
+  const highlightMemberId = locationState?.highlightMemberId;
+  const highlightColorFromState = locationState?.highlightColor || 'blue';
   const [highlightedMemberId, setHighlightedMemberId] = useState<string | null>(null);
+  const [highlightColor, setHighlightColor] = useState<'blue' | 'green'>('blue');
   const memberRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   
   const {
@@ -37,6 +40,8 @@ const TeamMembers = () => {
     updateMemberPayment,
     updateMemberSubscriptions,
     updateMemberPendingAmount,
+    updateMemberPushed,
+    updateMemberActiveTeam,
     canAddMember,
     memberCount,
   } = useSupabaseData();
@@ -61,6 +66,7 @@ const TeamMembers = () => {
   useEffect(() => {
     if (highlightMemberId && team) {
       setHighlightedMemberId(highlightMemberId);
+      setHighlightColor(highlightColorFromState);
       
       // Wait for render then scroll
       setTimeout(() => {
@@ -80,7 +86,7 @@ const TeamMembers = () => {
 
       return () => clearTimeout(timer);
     }
-  }, [highlightMemberId, team]);
+  }, [highlightMemberId, highlightColorFromState, team]);
 
   const handleAddMember = async (member: { email: string; phone: string; telegram?: string; joinDate: string }) => {
     const result = await addMember(member);
@@ -169,6 +175,8 @@ const TeamMembers = () => {
                       index={index}
                       isRemoveMode={isRemoveMode}
                       isHighlighted={highlightedMemberId === member.id}
+                      highlightColor={highlightColor}
+                      allTeams={sortedTeams}
                       onRemove={() => handleRemoveMember(member.id, member.email)}
                       onDateChange={updateMemberDate}
                       onEmailChange={updateMemberEmail}
@@ -177,6 +185,8 @@ const TeamMembers = () => {
                       onPaymentChange={updateMemberPayment}
                       onSubscriptionsChange={updateMemberSubscriptions}
                       onPendingAmountChange={updateMemberPendingAmount}
+                      onPushedChange={updateMemberPushed}
+                      onActiveTeamChange={updateMemberActiveTeam}
                     />
                   </div>
                 ))}

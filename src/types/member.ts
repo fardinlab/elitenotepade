@@ -20,6 +20,9 @@ export interface Member {
   paidAmount?: number;
   pendingAmount?: number;
   subscriptions?: SubscriptionType[];
+  isPushed?: boolean;
+  activeTeamId?: string;
+  activeTeamName?: string;
 }
 
 export interface Team {
