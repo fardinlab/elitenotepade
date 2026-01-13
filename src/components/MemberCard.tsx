@@ -56,21 +56,47 @@ export function MemberCard({
   const [editPaidAmount, setEditPaidAmount] = useState(member.paidAmount?.toString() || '');
   const [isEditingPending, setIsEditingPending] = useState(false);
   const [editPendingAmount, setEditPendingAmount] = useState(member.pendingAmount?.toString() || '');
-  const [showActiveTeamSelect, setShowActiveTeamSelect] = useState(false);
-
   // Get the active team name for display
   const activeTeamName = member.activeTeamId 
     ? allTeams.find(t => t.id === member.activeTeamId)?.teamName 
     : undefined;
 
+  // Find the team where this member's email exists (prioritize current month's team)
+  const findTeamWithEmail = () => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    // Filter non-yearly teams that contain this email (excluding current team)
+    const teamsWithEmail = allTeams.filter(t => {
+      if (t.isYearlyTeam) return false;
+      // Check if any member in this team has the same email
+      return t.members.some(m => m.email.toLowerCase() === member.email.toLowerCase() && m.id !== member.id);
+    });
+
+    if (teamsWithEmail.length === 0) return null;
+
+    // Prioritize teams created in the current month
+    const currentMonthTeam = teamsWithEmail.find(t => {
+      const createdDate = new Date(t.createdAt);
+      return createdDate.getMonth() === currentMonth && createdDate.getFullYear() === currentYear;
+    });
+
+    return currentMonthTeam || teamsWithEmail[0];
+  };
+
   const handleNavigateToActiveTeam = () => {
     if (member.activeTeamId) {
       const targetTeam = allTeams.find(t => t.id === member.activeTeamId);
       if (targetTeam) {
+        // Find the member with same email in the target team
+        const targetMember = targetTeam.members.find(
+          m => m.email.toLowerCase() === member.email.toLowerCase()
+        );
         const route = targetTeam.isYearlyTeam ? '/yearly-members' : '/team';
         navigate(`${route}/${member.activeTeamId}`, { 
           state: { 
-            highlightMemberId: member.id,
+            highlightMemberId: targetMember?.id || member.id,
             highlightColor: 'green'
           } 
         });
@@ -84,11 +110,19 @@ export function MemberCard({
     }
   };
 
-  const handleSelectActiveTeam = (teamId: string) => {
-    if (onActiveTeamChange) {
-      onActiveTeamChange(member.id, teamId || undefined);
+  const handleAutoSetActiveTeam = () => {
+    if (!onActiveTeamChange) return;
+    
+    if (member.activeTeamId) {
+      // If already has active team, clear it
+      onActiveTeamChange(member.id, undefined);
+    } else {
+      // Auto-detect and set the team with this email
+      const foundTeam = findTeamWithEmail();
+      if (foundTeam) {
+        onActiveTeamChange(member.id, foundTeam.id);
+      }
     }
-    setShowActiveTeamSelect(false);
   };
 
   const handleClearActiveTeam = () => {
@@ -241,45 +275,20 @@ export function MemberCard({
           {/* Active Team */}
           {onActiveTeamChange && (
             <div className="flex items-center gap-1.5">
-              {showActiveTeamSelect ? (
-                <div className="flex items-center gap-1">
-                  <select
-                    className="bg-input rounded px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-primary max-w-[120px]"
-                    value={member.activeTeamId || ''}
-                    onChange={(e) => handleSelectActiveTeam(e.target.value)}
-                    autoFocus
-                  >
-                    <option value="">None</option>
-                    {allTeams
-                      .filter(t => !t.isYearlyTeam)
-                      .map(t => (
-                        <option key={t.id} value={t.id}>{t.teamName}</option>
-                      ))
-                    }
-                  </select>
-                  <button
-                    onClick={() => setShowActiveTeamSelect(false)}
-                    className="p-1 rounded bg-muted/50 hover:bg-muted transition-colors"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </div>
-              ) : (
-                <button
-                  onClick={() => setShowActiveTeamSelect(true)}
-                  className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-all ${
-                    member.activeTeamId
-                      ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
-                      : 'bg-muted/30 text-muted-foreground hover:bg-muted/50'
-                  }`}
-                >
-                  <Play className="w-3 h-3" />
-                  <span>Active</span>
-                </button>
-              )}
+              <button
+                onClick={handleAutoSetActiveTeam}
+                className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-all ${
+                  member.activeTeamId
+                    ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500/30'
+                    : 'bg-muted/30 text-muted-foreground hover:bg-muted/50'
+                }`}
+              >
+                <Play className="w-3 h-3" />
+                <span>Active</span>
+              </button>
               
               {/* Show active team name that navigates on click */}
-              {activeTeamName && !showActiveTeamSelect && (
+              {activeTeamName && (
                 <button
                   onClick={handleNavigateToActiveTeam}
                   className="text-xs text-emerald-400 hover:text-emerald-300 hover:underline transition-colors truncate max-w-[100px]"
@@ -290,7 +299,7 @@ export function MemberCard({
               )}
               
               {/* Clear active team */}
-              {member.activeTeamId && !showActiveTeamSelect && (
+              {member.activeTeamId && (
                 <button
                   onClick={handleClearActiveTeam}
                   className="p-0.5 rounded hover:bg-muted/50 transition-colors"
