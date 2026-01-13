@@ -9,6 +9,7 @@ import Index from "./pages/Index";
 import TeamMembers from "./pages/TeamMembers";
 import YearlyTeamMembers from "./pages/YearlyTeamMembers";
 import DueMembers from "./pages/DueMembers";
+import CurrentMonthMembers from "./pages/CurrentMonthMembers";
 import MemberPayDetails from "./pages/MemberPayDetails";
 import Profile from "./pages/Profile";
 import Auth from "./pages/Auth";
@@ -54,6 +55,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <DueMembers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/current-month-members"
+              element={
+                <ProtectedRoute>
+                  <CurrentMonthMembers />
                 </ProtectedRoute>
               }
             />
