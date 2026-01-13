@@ -20,6 +20,7 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [paymentSummaries, setPaymentSummaries] = useState<PaymentSummary[]>([]);
+  const [currentMonthYearlyPaid, setCurrentMonthYearlyPaid] = useState(0);
 
   // Fetch payment summaries for all yearly team members
   useEffect(() => {
@@ -33,19 +34,36 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
 
       if (yearlyMembers.length === 0) {
         setPaymentSummaries([]);
+        setCurrentMonthYearlyPaid(0);
         return;
       }
 
       const memberIds = yearlyMembers.map(m => m.id);
 
-      // Fetch payments and member total_amounts in parallel
-      const [paymentsResult, membersResult] = await Promise.all([
+      // Get current month name for fetching current month payments
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+      const monthNames = ['january', 'february', 'march', 'april', 'may', 'june', 
+                         'july', 'august', 'september', 'october', 'november', 'december'];
+      const currentMonthNameEn = monthNames[currentMonth];
+
+      // Fetch all payments, current month payments, and member total_amounts in parallel
+      const [paymentsResult, currentMonthPaymentsResult, membersResult] = await Promise.all([
         supabase
           .from('member_payments')
           .select('member_id, amount, status')
           .eq('user_id', user.id)
           .in('member_id', memberIds)
           .eq('status', 'paid'),
+        supabase
+          .from('member_payments')
+          .select('member_id, amount, status, month, year')
+          .eq('user_id', user.id)
+          .in('member_id', memberIds)
+          .eq('status', 'paid')
+          .eq('month', currentMonthNameEn)
+          .eq('year', currentYear),
         supabase
           .from('members')
           .select('id, total_amount')
@@ -57,10 +75,22 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
         return;
       }
 
+      if (currentMonthPaymentsResult.error) {
+        console.error('Error fetching current month payments:', currentMonthPaymentsResult.error);
+        return;
+      }
+
       if (membersResult.error) {
         console.error('Error fetching members:', membersResult.error);
         return;
       }
+
+      // Calculate current month yearly paid amount
+      let yearlyCurrentMonthPaid = 0;
+      (currentMonthPaymentsResult.data || []).forEach(payment => {
+        yearlyCurrentMonthPaid += payment.amount;
+      });
+      setCurrentMonthYearlyPaid(yearlyCurrentMonthPaid);
 
       // Create a map of member total_amounts
       const memberTotalAmounts: Record<string, number> = {};
@@ -143,8 +173,9 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
       }
     });
 
-    // Add yearly team total paid to earnings
-    currentMonthEarnings += totalPaid;
+    // Add yearly team current month paid to current month earnings
+    currentMonthEarnings += currentMonthYearlyPaid;
+    // Add yearly team total paid to last 3 months earnings
     last3MonthsEarnings += totalPaid;
 
     return {
@@ -153,7 +184,7 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
       last3Months: last3MonthsEarnings,
       totalMembers: allMembers.length,
     };
-  }, [teams, paymentSummaries]);
+  }, [teams, paymentSummaries, currentMonthYearlyPaid]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
