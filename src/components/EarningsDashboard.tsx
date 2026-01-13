@@ -21,6 +21,7 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
   const { user } = useAuth();
   const [paymentSummaries, setPaymentSummaries] = useState<PaymentSummary[]>([]);
   const [currentMonthYearlyPaid, setCurrentMonthYearlyPaid] = useState(0);
+  const [last3MonthsYearlyPaid, setLast3MonthsYearlyPaid] = useState(0);
 
   // Fetch payment summaries for all yearly team members
   useEffect(() => {
@@ -35,12 +36,13 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
       if (yearlyMembers.length === 0) {
         setPaymentSummaries([]);
         setCurrentMonthYearlyPaid(0);
+        setLast3MonthsYearlyPaid(0);
         return;
       }
 
       const memberIds = yearlyMembers.map(m => m.id);
 
-      // Get current month name for fetching current month payments
+      // Get current month and last 3 months info
       const now = new Date();
       const currentMonth = now.getMonth();
       const currentYear = now.getFullYear();
@@ -48,11 +50,21 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
                          'july', 'august', 'september', 'october', 'november', 'december'];
       const currentMonthNameEn = monthNames[currentMonth];
 
+      // Calculate last 3 months (including current month)
+      const last3MonthsFilters: { month: string; year: number }[] = [];
+      for (let i = 0; i < 3; i++) {
+        const d = new Date(currentYear, currentMonth - i, 1);
+        last3MonthsFilters.push({
+          month: monthNames[d.getMonth()],
+          year: d.getFullYear()
+        });
+      }
+
       // Fetch all payments, current month payments, and member total_amounts in parallel
       const [paymentsResult, currentMonthPaymentsResult, membersResult] = await Promise.all([
         supabase
           .from('member_payments')
-          .select('member_id, amount, status')
+          .select('member_id, amount, status, month, year')
           .eq('user_id', user.id)
           .in('member_id', memberIds)
           .eq('status', 'paid'),
@@ -92,6 +104,18 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
       });
       setCurrentMonthYearlyPaid(yearlyCurrentMonthPaid);
 
+      // Calculate last 3 months yearly paid amount
+      let yearlyLast3MonthsPaid = 0;
+      (paymentsResult.data || []).forEach(payment => {
+        const isInLast3Months = last3MonthsFilters.some(
+          f => f.month === payment.month && f.year === payment.year
+        );
+        if (isInLast3Months) {
+          yearlyLast3MonthsPaid += payment.amount;
+        }
+      });
+      setLast3MonthsYearlyPaid(yearlyLast3MonthsPaid);
+
       // Create a map of member total_amounts
       const memberTotalAmounts: Record<string, number> = {};
       (membersResult.data || []).forEach(member => {
@@ -127,35 +151,27 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
     const currentYear = now.getFullYear();
 
     let currentMonthEarnings = 0;
-    let totalDue = 0;
+    let regularDue = 0; // Only regular team due
     let last3MonthsEarnings = 0;
-    let totalPaid = 0;
 
     // Get all members from all teams
     const allMembers = teams.flatMap(team => team.members);
-    const yearlyMembers = teams.filter(team => team.isYearlyTeam).flatMap(team => team.members);
-
-    // Calculate Total Paid and Total Due for yearly team members
-    yearlyMembers.forEach(member => {
-      const summary = paymentSummaries.find(s => s.member_id === member.id);
-      const memberTotalPaid = summary?.total_paid || 0;
-      const memberTotalAmount = summary?.total_amount || 0;
-      const memberTotalDue = Math.max(0, memberTotalAmount - memberTotalPaid);
-      
-      totalPaid += memberTotalPaid;
-      totalDue += memberTotalDue;
-    });
 
     // Calculate current month and last 3 months earnings from regular teams
+    // Also calculate regular team due only
     const regularMembers = teams.filter(team => !team.isYearlyTeam).flatMap(team => team.members);
+    
+    // Calculate last 3 months date range
+    const threeMonthsAgo = new Date(currentYear, currentMonth - 2, 1);
+    
     regularMembers.forEach(member => {
       const joinDate = new Date(member.joinDate);
       const memberMonth = joinDate.getMonth();
       const memberYear = joinDate.getFullYear();
 
-      // Add to total due from pending amount
+      // Add to regular due from pending amount
       if (member.pendingAmount) {
-        totalDue += member.pendingAmount;
+        regularDue += member.pendingAmount;
       }
 
       // Check if member has paid amount
@@ -166,7 +182,6 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
         }
 
         // Last 3 months earnings (including current month)
-        const threeMonthsAgo = new Date(currentYear, currentMonth - 2, 1);
         if (joinDate >= threeMonthsAgo) {
           last3MonthsEarnings += member.paidAmount;
         }
@@ -175,16 +190,17 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
 
     // Add yearly team current month paid to current month earnings
     currentMonthEarnings += currentMonthYearlyPaid;
-    // Add yearly team total paid to last 3 months earnings
-    last3MonthsEarnings += totalPaid;
+    
+    // Add yearly team last 3 months paid to last 3 months earnings
+    last3MonthsEarnings += last3MonthsYearlyPaid;
 
     return {
       currentMonth: currentMonthEarnings,
-      totalDue,
+      totalDue: regularDue, // Only regular due in display
       last3Months: last3MonthsEarnings,
       totalMembers: allMembers.length,
     };
-  }, [teams, paymentSummaries, currentMonthYearlyPaid]);
+  }, [teams, currentMonthYearlyPaid, last3MonthsYearlyPaid]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
