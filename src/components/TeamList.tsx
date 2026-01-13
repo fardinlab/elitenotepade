@@ -29,6 +29,8 @@ const countMembersOverOneMonth = (team: Team): number => {
   if (team.isYearlyTeam) return 0; // Yearly teams use different logic
   const now = new Date();
   return team.members.filter(member => {
+    // Skip pushed members - they don't show red indicators
+    if (member.isPushed) return false;
     const joinDate = new Date(member.joinDate);
     return differenceInDays(now, joinDate) >= 30;
   }).length;
