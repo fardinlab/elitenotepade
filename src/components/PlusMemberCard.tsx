@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Phone, Trash2, Calendar, Pencil, Check, X, Send, Copy, Pause, Play } from 'lucide-react';
+import { Phone, Trash2, Calendar, Pencil, Check, X, Send, Copy, Pause, Play, DollarSign } from 'lucide-react';
 import { Member } from '@/types/member';
 import { toast } from 'sonner';
 
@@ -18,6 +18,8 @@ interface PlusMemberCardProps {
   onEPassChange: (id: string, ePass: string) => void;
   onGPassChange: (id: string, gPass: string) => void;
   onPushedChange?: (id: string, isPushed: boolean) => void;
+  onPaymentChange?: (id: string, isPaid: boolean, paidAmount?: number) => void;
+  onPendingAmountChange?: (id: string, pendingAmount?: number) => void;
 }
 
 export function PlusMemberCard({ 
@@ -33,7 +35,9 @@ export function PlusMemberCard({
   onTelegramChange,
   onEPassChange,
   onGPassChange,
-  onPushedChange
+  onPushedChange,
+  onPaymentChange,
+  onPendingAmountChange
 }: PlusMemberCardProps) {
   const [isEditingDate, setIsEditingDate] = useState(false);
   const [editDateValue, setEditDateValue] = useState(member.joinDate);
@@ -47,6 +51,10 @@ export function PlusMemberCard({
   const [editEPassValue, setEditEPassValue] = useState(member.ePass || '');
   const [isEditingGPass, setIsEditingGPass] = useState(false);
   const [editGPassValue, setEditGPassValue] = useState(member.gPass || '');
+  const [isEditingPayment, setIsEditingPayment] = useState(false);
+  const [editPaidAmount, setEditPaidAmount] = useState(member.paidAmount?.toString() || '');
+  const [isEditingPending, setIsEditingPending] = useState(false);
+  const [editPendingAmount, setEditPendingAmount] = useState(member.pendingAmount?.toString() || '');
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -122,6 +130,22 @@ export function PlusMemberCard({
   const handleSaveGPass = () => {
     onGPassChange(member.id, editGPassValue.trim());
     setIsEditingGPass(false);
+  };
+
+  const handleSavePayment = () => {
+    if (onPaymentChange) {
+      const amount = parseFloat(editPaidAmount) || 0;
+      onPaymentChange(member.id, amount > 0, amount > 0 ? amount : undefined);
+      setIsEditingPayment(false);
+    }
+  };
+
+  const handleSavePending = () => {
+    if (onPendingAmountChange) {
+      const amount = parseFloat(editPendingAmount) || 0;
+      onPendingAmountChange(member.id, amount > 0 ? amount : undefined);
+      setIsEditingPending(false);
+    }
   };
 
   // Card classes with glassmorphism
@@ -454,6 +478,87 @@ export function PlusMemberCard({
             </div>
           )}
         </div>
+
+        {/* Payment Status - Paid/Due */}
+        {!isRemoveMode && (onPaymentChange || onPendingAmountChange) && (
+          <div className="mt-4 flex items-center gap-2">
+            <DollarSign className="w-3.5 h-3.5 text-muted-foreground/60" />
+            
+            {/* Paid Button */}
+            {isEditingPayment ? (
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="number"
+                  value={editPaidAmount}
+                  onChange={(e) => setEditPaidAmount(e.target.value)}
+                  placeholder="Amount"
+                  className="w-20 bg-white/10 backdrop-blur-sm rounded-lg px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/50 border border-white/10"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSavePayment();
+                    if (e.key === 'Escape') { setEditPaidAmount(member.paidAmount?.toString() || ''); setIsEditingPayment(false); }
+                  }}
+                />
+                <motion.button whileTap={{ scale: 0.9 }} onClick={handleSavePayment} className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
+                  <Check className="w-3 h-3" />
+                </motion.button>
+                <motion.button whileTap={{ scale: 0.9 }} onClick={() => { setEditPaidAmount(member.paidAmount?.toString() || ''); setIsEditingPayment(false); }} className="p-1.5 rounded-lg bg-red-500/20 text-red-400">
+                  <X className="w-3 h-3" />
+                </motion.button>
+              </div>
+            ) : (
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setIsEditingPayment(true)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  member.isPaid
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                    : 'bg-muted/30 text-muted-foreground border border-muted-foreground/20 hover:bg-emerald-500/10 hover:text-emerald-400 hover:border-emerald-500/20'
+                }`}
+              >
+                Paid {member.paidAmount ? `৳${member.paidAmount}` : ''}
+              </motion.button>
+            )}
+
+            {/* Due Button */}
+            {isEditingPending ? (
+              <div className="flex items-center gap-1.5">
+                <input
+                  type="number"
+                  value={editPendingAmount}
+                  onChange={(e) => setEditPendingAmount(e.target.value)}
+                  placeholder="Due amount"
+                  className="w-20 bg-white/10 backdrop-blur-sm rounded-lg px-2 py-1.5 text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-purple-500/50 border border-white/10"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSavePending();
+                    if (e.key === 'Escape') { setEditPendingAmount(member.pendingAmount?.toString() || ''); setIsEditingPending(false); }
+                  }}
+                />
+                <motion.button whileTap={{ scale: 0.9 }} onClick={handleSavePending} className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400">
+                  <Check className="w-3 h-3" />
+                </motion.button>
+                <motion.button whileTap={{ scale: 0.9 }} onClick={() => { setEditPendingAmount(member.pendingAmount?.toString() || ''); setIsEditingPending(false); }} className="p-1.5 rounded-lg bg-red-500/20 text-red-400">
+                  <X className="w-3 h-3" />
+                </motion.button>
+              </div>
+            ) : (
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setIsEditingPending(true)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  (member.pendingAmount || 0) > 0
+                    ? 'bg-orange-500/20 text-orange-400 border border-orange-500/30'
+                    : 'bg-muted/30 text-muted-foreground border border-muted-foreground/20 hover:bg-orange-500/10 hover:text-orange-400 hover:border-orange-500/20'
+                }`}
+              >
+                Due {(member.pendingAmount || 0) > 0 ? `৳${member.pendingAmount}` : ''}
+              </motion.button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Action Buttons - Bottom */}
