@@ -39,6 +39,8 @@ const PlusTeamMembers = () => {
     updateMemberEPass,
     updateMemberGPass,
     updateMemberPushed,
+    updateMemberPayment,
+    updateMemberPendingAmount,
     memberCount,
   } = useSupabaseData();
 
@@ -201,6 +203,8 @@ const PlusTeamMembers = () => {
                       onEPassChange={updateMemberEPass}
                       onGPassChange={updateMemberGPass}
                       onPushedChange={updateMemberPushed}
+                      onPaymentChange={updateMemberPayment}
+                      onPendingAmountChange={updateMemberPendingAmount}
                     />
                   </div>
                 ))}
