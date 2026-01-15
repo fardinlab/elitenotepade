@@ -3,7 +3,7 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
-import { MAX_MEMBERS } from '@/types/member';
+// Plus teams have unlimited members - no MAX_MEMBERS import needed
 import { TeamInfo } from '@/components/TeamInfo';
 import { MemberCard } from '@/components/MemberCard';
 import { EmptyState } from '@/components/EmptyState';
@@ -89,13 +89,14 @@ const PlusTeamMembers = () => {
   }, [highlightMemberId, highlightColorFromState, team]);
 
   const handleAddMember = async (member: { email: string; phone: string; telegram?: string; joinDate: string }) => {
-    const result = await addMember(member);
+    // Plus teams allow unlimited members, so we bypass the limit check
+    const result = await addMember(member, undefined, true); // skipLimitCheck = true
     if (result.ok) {
       toast.success('Member added successfully!');
       return true;
     }
 
-    toast.error(result.error || `Maximum ${MAX_MEMBERS} members allowed`);
+    toast.error(result.error || 'Failed to add member');
     if (result.code) toast.error(`Code: ${result.code}`);
     return false;
   };
@@ -202,12 +203,12 @@ const PlusTeamMembers = () => {
       </main>
 
       <ActionControls
-        canAdd={canAddMember}
+        canAdd={true}
         isRemoveMode={isRemoveMode}
         onAddClick={() => setIsAddModalOpen(true)}
         onRemoveModeToggle={() => setIsRemoveMode(!isRemoveMode)}
         memberCount={memberCount}
-        maxMembers={MAX_MEMBERS}
+        showMemberLimit={false}
       />
 
       <AddMemberModal
