@@ -316,8 +316,8 @@ export function PlusMemberCard({
         )}
       </div>
 
-      {/* Details Grid - 2 columns */}
-      <div className="mt-4 grid grid-cols-2 gap-x-4 gap-y-2">
+      {/* Details - Vertical Stack */}
+      <div className="mt-4 space-y-2">
         {/* E-Pass */}
         <EditableField
           label="E-Pass"
@@ -408,8 +408,8 @@ export function PlusMemberCard({
           </div>
         )}
 
-        {/* Join Date - Full width */}
-        <div className="col-span-2">
+        {/* Join Date */}
+        <div>
           {isEditingDate ? (
             <div className="flex items-center gap-1.5">
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground/60 w-14 flex-shrink-0">Joined</span>
