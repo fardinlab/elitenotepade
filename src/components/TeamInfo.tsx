@@ -96,7 +96,7 @@ export function TeamInfo({ teamName, adminEmail, memberCount, createdAt, onTeamN
             <h2 className="font-display text-xl font-bold text-foreground">{teamName}</h2>
             <button
               onClick={() => setIsEditingName(true)}
-              className="p-1.5 rounded-lg hover:bg-secondary transition-colors invisible"
+              className="p-1.5 rounded-lg hover:bg-secondary transition-colors"
               aria-label="Edit team name"
             >
               <Pencil className="w-4 h-4 text-muted-foreground" />
@@ -113,7 +113,7 @@ export function TeamInfo({ teamName, adminEmail, memberCount, createdAt, onTeamN
           <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
             <PopoverTrigger asChild>
               <button
-                className="p-1 rounded-lg hover:bg-secondary transition-colors invisible"
+                className="p-1 rounded-lg hover:bg-secondary transition-colors"
                 aria-label="Edit creation date"
               >
                 <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
@@ -134,9 +134,9 @@ export function TeamInfo({ teamName, adminEmail, memberCount, createdAt, onTeamN
 
       {/* Admin Email */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-        <Mail className="w-4 h-4" />
         {isEditingEmail ? (
           <div className="flex items-center gap-2 flex-1">
+            <Mail className="w-4 h-4 flex-shrink-0" />
             <input
               type="email"
               value={editEmailValue}
@@ -163,10 +163,11 @@ export function TeamInfo({ teamName, adminEmail, memberCount, createdAt, onTeamN
           </div>
         ) : (
           <>
+            <Mail className="w-4 h-4" />
             <span>Admin: {adminEmail}</span>
             <button
               onClick={() => setIsEditingEmail(true)}
-              className="p-1 rounded-lg hover:bg-secondary transition-colors invisible"
+              className="p-1 rounded-lg hover:bg-secondary transition-colors"
               aria-label="Edit admin email"
             >
               <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
@@ -175,16 +176,20 @@ export function TeamInfo({ teamName, adminEmail, memberCount, createdAt, onTeamN
         )}
       </div>
 
-      {/* Member Count Progress */}
-      <div className="flex items-center gap-3">
-        <Users className="w-4 h-4 text-muted-foreground" />
+      {/* Member Count */}
+      <div className="flex items-center gap-2">
+        <Users className="w-4 h-4 text-primary" />
         <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
-          <div 
-            className="h-full bg-gradient-to-r from-warning via-primary to-accent rounded-full transition-all duration-500"
-            style={{ width: `${(memberCount / MAX_MEMBERS) * 100}%` }}
+          <motion.div
+            className="h-full bg-gradient-to-r from-primary to-cyan-400"
+            initial={{ width: 0 }}
+            animate={{ width: `${(memberCount / MAX_MEMBERS) * 100}%` }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
           />
         </div>
-        <span className="text-sm font-medium text-muted-foreground">{memberCount}/{MAX_MEMBERS}</span>
+        <span className="text-sm font-medium text-muted-foreground">
+          {memberCount}/{MAX_MEMBERS}
+        </span>
       </div>
     </motion.div>
   );
