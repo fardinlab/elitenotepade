@@ -70,14 +70,17 @@ const Index = () => {
     }
   };
 
-  const handleCreateNewTeam = async (teamName: string, logo?: SubscriptionType, isYearly?: boolean) => {
-    const team = await createNewTeam(teamName, logo, isYearly);
+  const handleCreateNewTeam = async (teamName: string, logo?: SubscriptionType, isYearly?: boolean, isPlus?: boolean) => {
+    const team = await createNewTeam(teamName, logo, isYearly, isPlus);
     if (team) {
-      toast.success(isYearly ? 'Yearly team created!' : 'New team created!');
-      // Navigate to the appropriate page
       if (isYearly) {
+        toast.success('Yearly team created!');
         navigate(`/yearly-team/${team.id}`);
+      } else if (isPlus) {
+        toast.success('Plus team created!');
+        navigate(`/plus-team/${team.id}`);
       } else {
+        toast.success('New team created!');
         navigate(`/team/${team.id}`);
       }
     }
@@ -93,6 +96,8 @@ const Index = () => {
     setActiveTeam(teamId);
     if (team?.isYearlyTeam) {
       navigate(`/yearly-team/${teamId}`, { state: { highlightMemberId: memberId } });
+    } else if (team?.isPlusTeam) {
+      navigate(`/plus-team/${teamId}`, { state: { highlightMemberId: memberId } });
     } else {
       navigate(`/team/${teamId}`, { state: { highlightMemberId: memberId } });
     }

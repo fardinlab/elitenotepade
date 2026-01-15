@@ -8,6 +8,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import TeamMembers from "./pages/TeamMembers";
 import YearlyTeamMembers from "./pages/YearlyTeamMembers";
+import PlusTeamMembers from "./pages/PlusTeamMembers";
 import DueMembers from "./pages/DueMembers";
 import CurrentMonthMembers from "./pages/CurrentMonthMembers";
 import MemberPayDetails from "./pages/MemberPayDetails";
@@ -47,6 +48,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <YearlyTeamMembers />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/plus-team/:teamId"
+              element={
+                <ProtectedRoute>
+                  <PlusTeamMembers />
                 </ProtectedRoute>
               }
             />

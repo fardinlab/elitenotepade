@@ -34,6 +34,7 @@ export interface Team {
   lastBackup?: string;
   logo?: SubscriptionType;
   isYearlyTeam?: boolean;
+  isPlusTeam?: boolean;
 }
 
 export interface Notepad {
