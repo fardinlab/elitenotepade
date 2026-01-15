@@ -3,11 +3,10 @@ import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
-// Plus teams have unlimited members - no MAX_MEMBERS import needed
 import { TeamInfo } from '@/components/TeamInfo';
-import { MemberCard } from '@/components/MemberCard';
+import { PlusMemberCard } from '@/components/PlusMemberCard';
 import { EmptyState } from '@/components/EmptyState';
-import { AddMemberModal } from '@/components/AddMemberModal';
+import { AddPlusMemberModal } from '@/components/AddPlusMemberModal';
 import { ActionControls } from '@/components/ActionControls';
 import { DeleteConfirmModal } from '@/components/DeleteConfirmModal';
 import { toast } from 'sonner';
@@ -37,12 +36,9 @@ const PlusTeamMembers = () => {
     updateMemberEmail,
     updateMemberPhone,
     updateMemberTelegram,
-    updateMemberPayment,
-    updateMemberSubscriptions,
-    updateMemberPendingAmount,
+    updateMemberEPass,
+    updateMemberGPass,
     updateMemberPushed,
-    updateMemberActiveTeam,
-    canAddMember,
     memberCount,
   } = useSupabaseData();
 
@@ -88,9 +84,24 @@ const PlusTeamMembers = () => {
     }
   }, [highlightMemberId, highlightColorFromState, team]);
 
-  const handleAddMember = async (member: { email: string; phone: string; telegram?: string; joinDate: string }) => {
+  const handleAddMember = async (member: { 
+    email: string; 
+    ePass?: string;
+    gPass?: string;
+    phone?: string; 
+    telegram?: string; 
+    joinDate: string 
+  }) => {
     // Plus teams allow unlimited members, so we bypass the limit check
-    const result = await addMember(member, undefined, true); // skipLimitCheck = true
+    const result = await addMember({
+      email: member.email,
+      phone: member.phone || '',
+      telegram: member.telegram,
+      ePass: member.ePass,
+      gPass: member.gPass,
+      joinDate: member.joinDate,
+    }, undefined, true); // skipLimitCheck = true
+    
     if (result.ok) {
       toast.success('Member added successfully!');
       return true;
@@ -176,22 +187,19 @@ const PlusTeamMembers = () => {
                     key={member.id}
                     ref={(el) => { memberRefs.current[member.id] = el; }}
                   >
-                    <MemberCard
+                    <PlusMemberCard
                       member={member}
                       index={index}
                       isRemoveMode={isRemoveMode}
                       isHighlighted={highlightedMemberId === member.id}
                       highlightColor={highlightColor}
-                      allTeams={sortedTeams}
-                      hideActiveControl={true}
                       onRemove={() => handleRemoveMember(member.id, member.email)}
                       onDateChange={updateMemberDate}
                       onEmailChange={updateMemberEmail}
                       onPhoneChange={updateMemberPhone}
                       onTelegramChange={updateMemberTelegram}
-                      onPaymentChange={updateMemberPayment}
-                      onSubscriptionsChange={updateMemberSubscriptions}
-                      onPendingAmountChange={updateMemberPendingAmount}
+                      onEPassChange={updateMemberEPass}
+                      onGPassChange={updateMemberGPass}
                       onPushedChange={updateMemberPushed}
                     />
                   </div>
@@ -211,7 +219,7 @@ const PlusTeamMembers = () => {
         showMemberLimit={false}
       />
 
-      <AddMemberModal
+      <AddPlusMemberModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
         onAdd={handleAddMember}

@@ -15,6 +15,8 @@ export interface Member {
   telegram?: string;
   twoFA?: string;
   password?: string;
+  ePass?: string;
+  gPass?: string;
   joinDate: string;
   isPaid?: boolean;
   paidAmount?: number;

@@ -32,6 +32,11 @@ interface DbMember {
   otp_secret?: string | null;
 
   password: string | null;
+  
+  // Plus Team specific fields
+  e_pass: string | null;
+  g_pass: string | null;
+  
   join_date: string;
   is_paid: boolean;
   paid_amount: number | null;
@@ -64,6 +69,8 @@ const mapDbMemberToMember = (dbMember: DbMember): Member => ({
   // Prefer the column that actually exists in the DB
   twoFA: dbMember.twofa ?? dbMember.two_fa ?? dbMember.twofa_secret ?? undefined,
   password: dbMember.password || undefined,
+  ePass: dbMember.e_pass || undefined,
+  gPass: dbMember.g_pass || undefined,
   joinDate: dbMember.join_date,
   isPaid: dbMember.is_paid,
   paidAmount: dbMember.paid_amount || undefined,
@@ -304,6 +311,8 @@ export function useSupabaseData() {
         is_paid: member.isPaid || false,
         paid_amount: member.paidAmount || null,
         subscriptions: member.subscriptions || null,
+        e_pass: member.ePass || null,
+        g_pass: member.gPass || null,
       };
 
       const buildPayload = (opts: { includePassword: boolean; includeTwoFA: boolean }) => {
@@ -632,6 +641,56 @@ export function useSupabaseData() {
     );
   }, [activeTeamId]);
 
+  const updateMemberEPass = useCallback(async (id: string, ePass: string) => {
+    const { error } = await supabase
+      .from('members')
+      .update({ e_pass: ePass || null })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating member E-Pass:', error);
+      return;
+    }
+
+    setTeams((prev) =>
+      prev.map((t) =>
+        t.id === activeTeamId
+          ? {
+              ...t,
+              members: t.members.map((m) =>
+                m.id === id ? { ...m, ePass: ePass || undefined } : m
+              ),
+            }
+          : t
+      )
+    );
+  }, [activeTeamId]);
+
+  const updateMemberGPass = useCallback(async (id: string, gPass: string) => {
+    const { error } = await supabase
+      .from('members')
+      .update({ g_pass: gPass || null })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating member G-Pass:', error);
+      return;
+    }
+
+    setTeams((prev) =>
+      prev.map((t) =>
+        t.id === activeTeamId
+          ? {
+              ...t,
+              members: t.members.map((m) =>
+                m.id === id ? { ...m, gPass: gPass || undefined } : m
+              ),
+            }
+          : t
+      )
+    );
+  }, [activeTeamId]);
+
   const updateMemberPushed = useCallback(async (id: string, isPushed: boolean) => {
     const { error } = await supabase
       .from('members')
@@ -751,6 +810,8 @@ export function useSupabaseData() {
     updateMemberTelegram,
     updateMemberTwoFA,
     updateMemberPassword,
+    updateMemberEPass,
+    updateMemberGPass,
     updateMemberPayment,
     updateMemberSubscriptions,
     updateMemberPendingAmount,
