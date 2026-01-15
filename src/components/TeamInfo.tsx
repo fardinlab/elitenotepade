@@ -113,7 +113,7 @@ export function TeamInfo({ teamName, adminEmail, memberCount, createdAt, onTeamN
           <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
             <PopoverTrigger asChild>
               <button
-                className="p-1 rounded-lg hover:bg-secondary transition-colors"
+                className="p-1 rounded-lg hover:bg-secondary transition-colors invisible"
                 aria-label="Edit creation date"
               >
                 <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
@@ -130,6 +130,61 @@ export function TeamInfo({ teamName, adminEmail, memberCount, createdAt, onTeamN
             </PopoverContent>
           </Popover>
         )}
+      </div>
+
+      {/* Admin Email */}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
+        <Mail className="w-4 h-4" />
+        {isEditingEmail ? (
+          <div className="flex items-center gap-2 flex-1">
+            <input
+              type="email"
+              value={editEmailValue}
+              onChange={(e) => setEditEmailValue(e.target.value)}
+              className="flex-1 bg-input rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSaveEmail();
+                if (e.key === 'Escape') handleCancelEmail();
+              }}
+            />
+            <button
+              onClick={handleSaveEmail}
+              className="p-1.5 rounded-lg bg-success/20 text-success hover:bg-success/30 transition-colors"
+            >
+              <Check className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={handleCancelEmail}
+              className="p-1.5 rounded-lg bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        ) : (
+          <>
+            <span>Admin: {adminEmail}</span>
+            <button
+              onClick={() => setIsEditingEmail(true)}
+              className="p-1 rounded-lg hover:bg-secondary transition-colors invisible"
+              aria-label="Edit admin email"
+            >
+              <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Member Count Progress */}
+      <div className="flex items-center gap-3">
+        <Users className="w-4 h-4 text-muted-foreground" />
+        <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
+          <div 
+            className="h-full bg-gradient-to-r from-warning via-primary to-accent rounded-full transition-all duration-500"
+            style={{ width: `${(memberCount / MAX_MEMBERS) * 100}%` }}
+          />
+        </div>
+        <span className="text-sm font-medium text-muted-foreground">{memberCount}/{MAX_MEMBERS}</span>
       </div>
     </motion.div>
   );
