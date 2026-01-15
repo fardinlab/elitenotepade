@@ -131,50 +131,6 @@ export function TeamInfo({ teamName, adminEmail, memberCount, createdAt, onTeamN
           </Popover>
         )}
       </div>
-
-      {/* Admin Email */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-        {isEditingEmail ? (
-          <div className="flex items-center gap-2 flex-1">
-            <Mail className="w-4 h-4 flex-shrink-0" />
-            <input
-              type="email"
-              value={editEmailValue}
-              onChange={(e) => setEditEmailValue(e.target.value)}
-              className="flex-1 bg-input rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-              autoFocus
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleSaveEmail();
-                if (e.key === 'Escape') handleCancelEmail();
-              }}
-            />
-            <button
-              onClick={handleSaveEmail}
-              className="p-1.5 rounded-lg bg-success/20 text-success hover:bg-success/30 transition-colors"
-            >
-              <Check className="w-3.5 h-3.5" />
-            </button>
-            <button
-              onClick={handleCancelEmail}
-              className="p-1.5 rounded-lg bg-destructive/20 text-destructive hover:bg-destructive/30 transition-colors"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        ) : (
-          <>
-            <Mail className="w-4 h-4" />
-            <span>Admin: {adminEmail}</span>
-            <button
-              onClick={() => setIsEditingEmail(true)}
-              className="p-1 rounded-lg hover:bg-secondary transition-colors"
-              aria-label="Edit admin email"
-            >
-              <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
-            </button>
-          </>
-        )}
-      </div>
     </motion.div>
   );
 }
