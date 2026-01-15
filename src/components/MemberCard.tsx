@@ -13,6 +13,7 @@ interface MemberCardProps {
   isHighlighted?: boolean;
   highlightColor?: 'blue' | 'green';
   allTeams?: Team[];
+  hideActiveControl?: boolean;
   onRemove: () => void;
   onDateChange: (id: string, date: string) => void;
   onEmailChange: (id: string, email: string) => void;
@@ -32,6 +33,7 @@ export function MemberCard({
   isHighlighted = false,
   highlightColor = 'blue',
   allTeams = [],
+  hideActiveControl = false,
   onRemove, 
   onDateChange,
   onEmailChange,
@@ -259,7 +261,7 @@ export function MemberCard({
       className={`rounded-xl p-4 card-shadow transition-all duration-300 touch-manipulation ${getCardClasses()}`}
     >
       {/* Pushed and Active Controls */}
-      {!isRemoveMode && (onPushedChange || onActiveTeamChange) && (
+      {!isRemoveMode && (onPushedChange || (onActiveTeamChange && !hideActiveControl)) && (
         <div className="flex items-center gap-3 mb-3 pb-2 border-b border-border/50">
           {/* Pushed Toggle */}
           {onPushedChange && (
@@ -276,8 +278,8 @@ export function MemberCard({
             </button>
           )}
 
-          {/* Active Team */}
-          {onActiveTeamChange && (
+          {/* Active Team - only show if not hidden */}
+          {onActiveTeamChange && !hideActiveControl && (
             <div className="flex items-center gap-1.5">
               <button
                 onClick={handleAutoSetActiveTeam}

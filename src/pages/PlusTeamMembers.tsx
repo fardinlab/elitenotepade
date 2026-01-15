@@ -183,6 +183,7 @@ const PlusTeamMembers = () => {
                       isHighlighted={highlightedMemberId === member.id}
                       highlightColor={highlightColor}
                       allTeams={sortedTeams}
+                      hideActiveControl={true}
                       onRemove={() => handleRemoveMember(member.id, member.email)}
                       onDateChange={updateMemberDate}
                       onEmailChange={updateMemberEmail}
@@ -192,7 +193,6 @@ const PlusTeamMembers = () => {
                       onSubscriptionsChange={updateMemberSubscriptions}
                       onPendingAmountChange={updateMemberPendingAmount}
                       onPushedChange={updateMemberPushed}
-                      onActiveTeamChange={updateMemberActiveTeam}
                     />
                   </div>
                 ))}
