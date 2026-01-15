@@ -170,6 +170,7 @@ const PlusTeamMembers = () => {
           onTeamNameChange={updateTeamName}
           onAdminEmailChange={updateAdminEmail}
           onCreatedAtChange={updateTeamCreatedAt}
+          isPlusTeam={true}
         />
 
         <div className="space-y-3">

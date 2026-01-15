@@ -408,7 +408,7 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                     <div className="flex items-center gap-3 mt-1">
                       <span className="text-xs text-muted-foreground flex items-center gap-1">
                         <Users className="w-3 h-3" />
-                        {team.isYearlyTeam ? `${team.members.length} members` : `${memberCount}/${MAX_MEMBERS}`}
+                        {team.isYearlyTeam || team.isPlusTeam ? `${team.members.length} members` : `${memberCount}/${MAX_MEMBERS}`}
                       </span>
                       <span className="text-xs text-muted-foreground flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
