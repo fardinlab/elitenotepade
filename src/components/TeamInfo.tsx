@@ -175,22 +175,6 @@ export function TeamInfo({ teamName, adminEmail, memberCount, createdAt, onTeamN
           </>
         )}
       </div>
-
-      {/* Member Count */}
-      <div className="flex items-center gap-2">
-        <Users className="w-4 h-4 text-primary" />
-        <div className="flex-1 h-2 bg-secondary rounded-full overflow-hidden">
-          <motion.div
-            className="h-full bg-gradient-to-r from-primary to-cyan-400"
-            initial={{ width: 0 }}
-            animate={{ width: `${(memberCount / MAX_MEMBERS) * 100}%` }}
-            transition={{ duration: 0.5, ease: 'easeOut' }}
-          />
-        </div>
-        <span className="text-sm font-medium text-muted-foreground">
-          {memberCount}/{MAX_MEMBERS}
-        </span>
-      </div>
     </motion.div>
   );
 }
