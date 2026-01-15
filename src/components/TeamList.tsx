@@ -24,13 +24,24 @@ const LOGO_ICONS: Record<SubscriptionType, string> = {
   canva: 'https://static.canva.com/static/images/favicon-1.ico',
 };
 
-// Count members whose join date is 1+ month (30 days) ago - for non-yearly teams
+// Count members whose join date is 1+ month (30 days) ago - for non-yearly, non-plus teams
 const countMembersOverOneMonth = (team: Team): number => {
-  if (team.isYearlyTeam) return 0; // Yearly teams use different logic
+  if (team.isYearlyTeam || team.isPlusTeam) return 0; // Yearly and Plus teams use different logic
   const now = new Date();
   return team.members.filter(member => {
     // Skip pushed members or members with active team - they don't show red indicators
     if (member.isPushed || member.activeTeamId) return false;
+    const joinDate = new Date(member.joinDate);
+    return differenceInDays(now, joinDate) >= 30;
+  }).length;
+};
+
+// Count Plus team members whose join date is 30+ days ago (not pushed)
+const countPlusMembersOverOneMonth = (team: Team): number => {
+  if (!team.isPlusTeam) return 0;
+  const now = new Date();
+  return team.members.filter(member => {
+    if (member.isPushed) return false; // Pushed members don't trigger notification
     const joinDate = new Date(member.joinDate);
     return differenceInDays(now, joinDate) >= 30;
   }).length;
@@ -260,6 +271,7 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
           const isActive = team.id === activeTeamId;
           const membersOverMonth = countMembersOverOneMonth(team);
           const yearlyMembersWithDue = countYearlyMembersWithDue(team);
+          const plusMembersOverMonth = countPlusMembersOverOneMonth(team);
           const totalRedDots = team.isYearlyTeam ? yearlyMembersWithDue : membersOverMonth;
           
           // Check if Normal team is 31+ days old from creation (Yearly and Plus teams never expire)
@@ -325,6 +337,17 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                           <Bell className="w-4 h-4 text-destructive fill-destructive animate-pulse" />
                           <span className="absolute -top-1 -right-1.5 min-w-[14px] h-[14px] px-0.5 bg-destructive text-destructive-foreground text-[9px] font-bold rounded-full flex items-center justify-center">
                             {yearlyMembersWithDue}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    {/* Bell notification badge for Plus teams - members 30+ days since join */}
+                    {!isDeleteMode && team.isPlusTeam && plusMembersOverMonth > 0 && (
+                      <div className="absolute -top-1.5 -right-1.5 flex items-center justify-center">
+                        <div className="relative">
+                          <Bell className="w-4 h-4 text-purple-500 fill-purple-500 animate-pulse" />
+                          <span className="absolute -top-1 -right-1.5 min-w-[14px] h-[14px] px-0.5 bg-purple-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                            {plusMembersOverMonth}
                           </span>
                         </div>
                       </div>
