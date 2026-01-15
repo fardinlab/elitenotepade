@@ -262,8 +262,8 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
           const yearlyMembersWithDue = countYearlyMembersWithDue(team);
           const totalRedDots = team.isYearlyTeam ? yearlyMembersWithDue : membersOverMonth;
           
-          // Check if Normal team is 31+ days old from creation
-          const isTeamExpired = !team.isYearlyTeam && differenceInDays(new Date(), new Date(team.createdAt)) >= 31;
+          // Check if Normal team is 31+ days old from creation (Yearly and Plus teams never expire)
+          const isTeamExpired = !team.isYearlyTeam && !team.isPlusTeam && differenceInDays(new Date(), new Date(team.createdAt)) >= 31;
 
           return (
             <motion.div
