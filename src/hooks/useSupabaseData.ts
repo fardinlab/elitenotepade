@@ -12,6 +12,7 @@ interface DbTeam {
   created_at: string;
   last_backup: string | null;
   is_yearly: boolean | null;
+  is_plus: boolean | null;
 }
 
 interface DbMember {
@@ -52,6 +53,7 @@ const mapDbTeamToTeam = (dbTeam: DbTeam, members: Member[]): Team => ({
   lastBackup: dbTeam.last_backup || undefined,
   logo: dbTeam.logo as SubscriptionType | undefined,
   isYearlyTeam: dbTeam.is_yearly || false,
+  isPlusTeam: dbTeam.is_plus || false,
 });
 
 const mapDbMemberToMember = (dbMember: DbMember): Member => ({
@@ -161,7 +163,7 @@ export function useSupabaseData() {
     setActiveTeamId(teamId);
   }, []);
 
-  const createNewTeam = useCallback(async (teamName?: string, logo?: SubscriptionType, isYearly?: boolean) => {
+  const createNewTeam = useCallback(async (teamName?: string, logo?: SubscriptionType, isYearly?: boolean, isPlus?: boolean) => {
     if (!user) return null;
 
     const { data, error } = await supabase
@@ -169,9 +171,10 @@ export function useSupabaseData() {
       .insert({
         user_id: user.id,
         team_name: teamName || 'My Elite Team',
-        admin_email: isYearly ? '' : (user.email || 'admin@example.com'),
+        admin_email: (isYearly || isPlus) ? '' : (user.email || 'admin@example.com'),
         logo: logo || null,
         is_yearly: isYearly || false,
+        is_plus: isPlus || false,
       })
       .select()
       .single();

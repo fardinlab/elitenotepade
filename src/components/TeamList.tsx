@@ -11,7 +11,7 @@ interface TeamListProps {
   teams: Team[];
   activeTeamId: string;
   onSelectTeam: (teamId: string) => void;
-  onCreateTeam: (teamName: string, logo?: SubscriptionType, isYearly?: boolean) => void;
+  onCreateTeam: (teamName: string, logo?: SubscriptionType, isYearly?: boolean, isPlus?: boolean) => void;
   onDeleteTeam: (teamId: string) => void;
   onUpdateTeamLogo?: (teamId: string, logo: SubscriptionType) => void;
 }
@@ -63,6 +63,7 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
   const [teamToDelete, setTeamToDelete] = useState<Team | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [isYearlyModal, setIsYearlyModal] = useState(false);
+  const [isPlusModal, setIsPlusModal] = useState(false);
   const [newTeamName, setNewTeamName] = useState('');
   const [selectedLogo, setSelectedLogo] = useState<SubscriptionType | null>(null);
   const [teamToAddLogo, setTeamToAddLogo] = useState<Team | null>(null);
@@ -142,21 +143,23 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
     }
   };
 
-  const handleCreateClick = (isYearly: boolean = false) => {
+  const handleCreateClick = (isYearly: boolean = false, isPlus: boolean = false) => {
     setNewTeamName('');
     setSelectedLogo(null);
     setIsYearlyModal(isYearly);
+    setIsPlusModal(isPlus);
     setShowCreateModal(true);
   };
 
   const confirmCreate = () => {
     const trimmedName = newTeamName.trim();
     if (trimmedName && trimmedName.length <= 50) {
-      onCreateTeam(trimmedName, selectedLogo || undefined, isYearlyModal);
+      onCreateTeam(trimmedName, selectedLogo || undefined, isYearlyModal, isPlusModal);
       setShowCreateModal(false);
       setNewTeamName('');
       setSelectedLogo(null);
       setIsYearlyModal(false);
+      setIsPlusModal(false);
     }
   };
 
@@ -166,32 +169,48 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
     } else {
       onSelectTeam(team.id);
       // Navigate to different page based on team type
-      navigate(team.isYearlyTeam ? `/yearly-team/${team.id}` : `/team/${team.id}`);
+      if (team.isYearlyTeam) {
+        navigate(`/yearly-team/${team.id}`);
+      } else if (team.isPlusTeam) {
+        navigate(`/plus-team/${team.id}`);
+      } else {
+        navigate(`/team/${team.id}`);
+      }
     }
   };
 
   return (
     <div className="space-y-3">
       {/* Action Buttons Row */}
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1">
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          onClick={() => handleCreateClick(false)}
-          className="flex-1 flex items-center justify-center gap-1 px-2.5 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors touch-manipulation active:scale-95"
+          onClick={() => handleCreateClick(false, false)}
+          className="flex-1 flex items-center justify-center gap-1 px-2 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-medium hover:bg-primary/90 transition-colors touch-manipulation active:scale-95"
         >
           <Plus className="w-3 h-3" />
-          New Team
+          New
         </motion.button>
 
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          onClick={() => handleCreateClick(true)}
-          className="flex-1 flex items-center justify-center gap-1 px-2.5 py-2 bg-accent text-accent-foreground rounded-lg text-xs font-medium hover:bg-accent/90 transition-colors touch-manipulation active:scale-95 border border-primary/30"
+          onClick={() => handleCreateClick(true, false)}
+          className="flex-1 flex items-center justify-center gap-1 px-2 py-2 bg-accent text-accent-foreground rounded-lg text-xs font-medium hover:bg-accent/90 transition-colors touch-manipulation active:scale-95 border border-primary/30"
         >
           <Plus className="w-3 h-3" />
-          Yearly Team
+          Yearly
+        </motion.button>
+
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => handleCreateClick(false, true)}
+          className="flex-1 flex items-center justify-center gap-1 px-2 py-2 bg-purple-500/20 text-purple-400 rounded-lg text-xs font-medium hover:bg-purple-500/30 transition-colors touch-manipulation active:scale-95 border border-purple-500/30"
+        >
+          <Plus className="w-3 h-3" />
+          Plus
         </motion.button>
         
         <motion.button
@@ -352,7 +371,12 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                           YEARLY
                         </span>
                       )}
-                      {isFull && !team.isYearlyTeam && (
+                      {team.isPlusTeam && (
+                        <span className="px-1.5 py-0.5 bg-purple-500/20 text-purple-400 text-[10px] font-medium rounded">
+                          PLUS
+                        </span>
+                      )}
+                      {isFull && !team.isYearlyTeam && !team.isPlusTeam && (
                         <span className="px-1.5 py-0.5 bg-amber-500/20 text-amber-500 text-[10px] font-medium rounded">
                           FULL
                         </span>
@@ -449,16 +473,22 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
               className="w-full max-w-sm bg-card border border-border rounded-2xl p-6 space-y-4"
             >
               <div className="text-center space-y-2">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto ${isYearlyModal ? 'bg-cyan-500/20' : 'bg-primary/20'}`}>
-                  <Plus className={`w-6 h-6 ${isYearlyModal ? 'text-cyan-500' : 'text-primary'}`} />
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center mx-auto ${
+                  isYearlyModal ? 'bg-cyan-500/20' : isPlusModal ? 'bg-purple-500/20' : 'bg-primary/20'
+                }`}>
+                  <Plus className={`w-6 h-6 ${
+                    isYearlyModal ? 'text-cyan-500' : isPlusModal ? 'text-purple-400' : 'text-primary'
+                  }`} />
                 </div>
                 <h3 className="text-lg font-semibold text-foreground">
-                  {isYearlyModal ? 'Create Yearly Team' : 'Create New Team'}
+                  {isYearlyModal ? 'Create Yearly Team' : isPlusModal ? 'Create Plus Team' : 'Create New Team'}
                 </h3>
                 <p className="text-sm text-muted-foreground">
                   {isYearlyModal 
                     ? 'Yearly teams have unlimited members and no admin' 
-                    : 'Enter a name and select a logo for your team'}
+                    : isPlusModal
+                      ? 'Plus teams have 8 members limit like normal teams'
+                      : 'Enter a name and select a logo for your team'}
                 </p>
               </div>
 
