@@ -96,7 +96,7 @@ export function TeamInfo({ teamName, adminEmail, memberCount, createdAt, onTeamN
             <h2 className="font-display text-xl font-bold text-foreground">{teamName}</h2>
             <button
               onClick={() => setIsEditingName(true)}
-              className="p-1.5 rounded-lg hover:bg-secondary transition-colors"
+              className="p-1.5 rounded-lg hover:bg-secondary transition-colors invisible"
               aria-label="Edit team name"
             >
               <Pencil className="w-4 h-4 text-muted-foreground" />
