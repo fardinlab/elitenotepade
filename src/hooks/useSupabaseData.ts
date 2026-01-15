@@ -280,7 +280,8 @@ export function useSupabaseData() {
   const addMember = useCallback(
     async (
       member: Omit<Member, 'id'>,
-      targetTeamId?: string
+      targetTeamId?: string,
+      skipLimitCheck?: boolean
     ): Promise<{ ok: boolean; error?: string; code?: string }> => {
       const teamIdToUse = targetTeamId || activeTeamId;
       if (!user || !teamIdToUse) return { ok: false, error: 'Not authenticated' };
@@ -288,8 +289,8 @@ export function useSupabaseData() {
       const team = teams.find((t) => t.id === teamIdToUse);
       if (!team) return { ok: false, error: 'Team not found' };
 
-      // No limit for yearly teams
-      if (!team.isYearlyTeam && team.members.length + 1 >= MAX_MEMBERS) {
+      // No limit for yearly teams or plus teams (skipLimitCheck)
+      if (!team.isYearlyTeam && !team.isPlusTeam && !skipLimitCheck && team.members.length + 1 >= MAX_MEMBERS) {
         return { ok: false, error: `Maximum ${MAX_MEMBERS} members allowed` };
       }
 

@@ -7,7 +7,8 @@ interface ActionControlsProps {
   onAddClick: () => void;
   onRemoveModeToggle: () => void;
   memberCount: number;
-  maxMembers: number;
+  maxMembers?: number;
+  showMemberLimit?: boolean;
 }
 
 export function ActionControls({
@@ -16,7 +17,8 @@ export function ActionControls({
   onAddClick,
   onRemoveModeToggle,
   memberCount,
-  maxMembers,
+  maxMembers = 8,
+  showMemberLimit = true,
 }: ActionControlsProps) {
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
@@ -47,14 +49,14 @@ export function ActionControls({
           >
             <Plus className="w-6 h-6" />
           </button>
-        ) : (
+        ) : showMemberLimit ? (
           <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-muted">
             <AlertTriangle className="w-5 h-5 text-yellow-500" />
             <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
               Max {maxMembers} members
             </span>
           </div>
-        )}
+        ) : null}
       </motion.div>
     </div>
   );
