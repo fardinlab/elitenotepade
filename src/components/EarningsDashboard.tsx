@@ -64,7 +64,8 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
           .eq('user_id', user.id)
           .in('member_id', memberIds)
           .eq('status', 'paid')
-          .ilike('month', currentMonthNameEn),
+          .ilike('month', currentMonthNameEn)
+          .eq('year', currentYear),
         supabase
           .from('members')
           .select('id, total_amount')
