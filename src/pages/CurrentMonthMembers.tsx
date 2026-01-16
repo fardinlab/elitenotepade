@@ -15,6 +15,7 @@ interface MemberWithTeam {
   teamId: string;
   teamName: string;
   isYearlyTeam: boolean;
+  isPlusTeam?: boolean;
   paidAmount?: number;
 }
 
@@ -36,7 +37,7 @@ export default function CurrentMonthMembers() {
         // Fetch all teams
         const { data: teamsData, error: teamsError } = await supabase
           .from('teams')
-          .select('id, team_name, is_yearly')
+          .select('id, team_name, is_yearly, is_plus')
           .eq('user_id', user.id);
 
         if (teamsError) throw teamsError;
@@ -49,9 +50,10 @@ export default function CurrentMonthMembers() {
 
         if (membersError) throw membersError;
 
-        // Get yearly team IDs
+        // Get yearly and plus team IDs
         const yearlyTeamIds = (teamsData || []).filter(t => t.is_yearly).map(t => t.id);
-        const normalTeamIds = (teamsData || []).filter(t => !t.is_yearly).map(t => t.id);
+        const plusTeamIds = (teamsData || []).filter(t => t.is_plus).map(t => t.id);
+        const normalTeamIds = (teamsData || []).filter(t => !t.is_yearly && !t.is_plus).map(t => t.id);
 
         // Filter normal team members who paid in current month
         const paidMembers: MemberWithTeam[] = [];
@@ -76,6 +78,28 @@ export default function CurrentMonthMembers() {
                 teamId: team.id,
                 teamName: team.team_name,
                 isYearlyTeam: false,
+                isPlusTeam: false,
+                paidAmount: member.paid_amount,
+              });
+            }
+          }
+
+          // Plus team members: check if paid_amount > 0 and join_date is current month
+          if (plusTeamIds.includes(member.team_id) && 
+              memberMonth === currentMonth && 
+              memberYear === currentYear && 
+              member.paid_amount > 0) {
+            const team = teamsData?.find(t => t.id === member.team_id);
+            if (team) {
+              paidMembers.push({
+                id: member.id,
+                email: member.email,
+                phone: member.phone,
+                joinDate: member.join_date,
+                teamId: team.id,
+                teamName: team.team_name,
+                isYearlyTeam: false,
+                isPlusTeam: true,
                 paidAmount: member.paid_amount,
               });
             }
@@ -150,6 +174,8 @@ export default function CurrentMonthMembers() {
   const handleMemberClick = (member: MemberWithTeam) => {
     if (member.isYearlyTeam) {
       navigate(`/yearly-team/${member.teamId}?highlight=${member.id}`);
+    } else if (member.isPlusTeam) {
+      navigate(`/plus-team/${member.teamId}?highlight=${member.id}`);
     } else {
       navigate(`/team/${member.teamId}?highlight=${member.id}`);
     }
@@ -263,6 +289,11 @@ export default function CurrentMonthMembers() {
                         <Badge variant="secondary" className="bg-amber-500/20 text-amber-500 text-[10px] px-1.5 py-0.5">
                           <Crown className="w-2.5 h-2.5 mr-0.5" />
                           YEARLY
+                        </Badge>
+                      )}
+                      {member.isPlusTeam && (
+                        <Badge variant="secondary" className="bg-purple-500/20 text-purple-500 text-[10px] px-1.5 py-0.5">
+                          PLUS
                         </Badge>
                       )}
                       <span className="text-[10px] text-muted-foreground bg-muted px-2 py-0.5 rounded-full max-w-[100px] truncate">
