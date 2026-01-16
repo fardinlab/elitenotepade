@@ -142,9 +142,9 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
     // Get all members from all teams
     const allMembers = teams.flatMap(team => team.members);
 
-    // Calculate current month and last 3 months earnings from regular teams
+    // Calculate current month and all time earnings from regular teams (non-yearly, non-plus)
     // Also calculate regular team due only
-    const regularMembers = teams.filter(team => !team.isYearlyTeam).flatMap(team => team.members);
+    const regularMembers = teams.filter(team => !team.isYearlyTeam && !team.isPlusTeam).flatMap(team => team.members);
     
     regularMembers.forEach(member => {
       const joinDate = new Date(member.joinDate);
@@ -168,6 +168,31 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
       }
     });
 
+    // Calculate Plus Team earnings
+    const plusMembers = teams.filter(team => team.isPlusTeam).flatMap(team => team.members);
+    
+    plusMembers.forEach(member => {
+      const joinDate = new Date(member.joinDate);
+      const memberMonth = joinDate.getMonth();
+      const memberYear = joinDate.getFullYear();
+
+      // Add to due from pending amount
+      if (member.pendingAmount) {
+        regularDue += member.pendingAmount;
+      }
+
+      // Check if member has paid amount
+      if (member.paidAmount) {
+        // Current month earnings - check if payment was in current month
+        if (memberMonth === currentMonth && memberYear === currentYear) {
+          currentMonthEarnings += member.paidAmount;
+        }
+
+        // All time earnings - sum all paid amounts
+        allTimeEarnings += member.paidAmount;
+      }
+    });
+
     // Add yearly team current month paid to current month earnings
     currentMonthEarnings += currentMonthYearlyPaid;
     
@@ -176,7 +201,7 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
 
     return {
       currentMonth: currentMonthEarnings,
-      totalDue: regularDue, // Only regular due in display
+      totalDue: regularDue, // Regular + Plus due in display
       allTimeEarnings: allTimeEarnings,
       totalMembers: allMembers.length,
     };

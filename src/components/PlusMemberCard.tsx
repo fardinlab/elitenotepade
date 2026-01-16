@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Phone, Trash2, Calendar, Pencil, Check, X, Send, Copy, Pause, Play } from 'lucide-react';
+import { Phone, Trash2, Calendar, Pencil, Check, X, Send, Copy, Pause, Play, DollarSign } from 'lucide-react';
 import { Member } from '@/types/member';
 import { toast } from 'sonner';
 
@@ -18,6 +18,8 @@ interface PlusMemberCardProps {
   onEPassChange: (id: string, ePass: string) => void;
   onGPassChange: (id: string, gPass: string) => void;
   onPushedChange?: (id: string, isPushed: boolean) => void;
+  onPaymentChange?: (id: string, isPaid: boolean, paidAmount?: number) => void;
+  onPendingAmountChange?: (id: string, pendingAmount?: number) => void;
 }
 
 export function PlusMemberCard({ 
@@ -33,7 +35,9 @@ export function PlusMemberCard({
   onTelegramChange,
   onEPassChange,
   onGPassChange,
-  onPushedChange
+  onPushedChange,
+  onPaymentChange,
+  onPendingAmountChange
 }: PlusMemberCardProps) {
   const [isEditingDate, setIsEditingDate] = useState(false);
   const [editDateValue, setEditDateValue] = useState(member.joinDate);
@@ -47,6 +51,10 @@ export function PlusMemberCard({
   const [editEPassValue, setEditEPassValue] = useState(member.ePass || '');
   const [isEditingGPass, setIsEditingGPass] = useState(false);
   const [editGPassValue, setEditGPassValue] = useState(member.gPass || '');
+  const [showPaidInput, setShowPaidInput] = useState(false);
+  const [paidAmountInput, setPaidAmountInput] = useState(member.paidAmount?.toString() || '');
+  const [showDueInput, setShowDueInput] = useState(false);
+  const [dueAmountInput, setDueAmountInput] = useState(member.pendingAmount?.toString() || '');
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -122,6 +130,26 @@ export function PlusMemberCard({
   const handleSaveGPass = () => {
     onGPassChange(member.id, editGPassValue.trim());
     setIsEditingGPass(false);
+  };
+
+  const handleSavePaid = () => {
+    const amount = parseFloat(paidAmountInput);
+    if (!isNaN(amount) && amount > 0 && onPaymentChange) {
+      onPaymentChange(member.id, true, amount);
+      toast.success(`Paid ৳${amount} recorded!`);
+    }
+    setShowPaidInput(false);
+    setPaidAmountInput('');
+  };
+
+  const handleSaveDue = () => {
+    const amount = parseFloat(dueAmountInput);
+    if (!isNaN(amount) && amount >= 0 && onPendingAmountChange) {
+      onPendingAmountChange(member.id, amount > 0 ? amount : undefined);
+      toast.success(amount > 0 ? `Due ৳${amount} recorded!` : 'Due cleared!');
+    }
+    setShowDueInput(false);
+    setDueAmountInput('');
   };
 
   // Card classes with glassmorphism
@@ -455,6 +483,91 @@ export function PlusMemberCard({
           )}
         </div>
       </div>
+
+      {/* Paid/Due Buttons */}
+      {!isRemoveMode && onPaymentChange && onPendingAmountChange && (
+        <div className="mt-4 pt-3 border-t border-white/5 space-y-3">
+          {/* Payment Status Display */}
+          <div className="flex items-center gap-2">
+            {member.paidAmount && member.paidAmount > 0 && (
+              <span className="px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-medium">
+                Paid: ৳{member.paidAmount}
+              </span>
+            )}
+            {member.pendingAmount && member.pendingAmount > 0 && (
+              <span className="px-2 py-1 rounded-full bg-orange-500/20 text-orange-400 text-[10px] font-medium">
+                Due: ৳{member.pendingAmount}
+              </span>
+            )}
+          </div>
+
+          {/* Paid Input */}
+          {showPaidInput ? (
+            <div className="flex items-center gap-2">
+              <DollarSign className="w-4 h-4 text-emerald-400" />
+              <input
+                type="number"
+                value={paidAmountInput}
+                onChange={(e) => setPaidAmountInput(e.target.value)}
+                placeholder="Enter paid amount"
+                className="flex-1 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/50 border border-white/10"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSavePaid();
+                  if (e.key === 'Escape') setShowPaidInput(false);
+                }}
+              />
+              <motion.button whileTap={{ scale: 0.9 }} onClick={handleSavePaid} className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400">
+                <Check className="w-4 h-4" />
+              </motion.button>
+              <motion.button whileTap={{ scale: 0.9 }} onClick={() => setShowPaidInput(false)} className="p-2 rounded-lg bg-red-500/20 text-red-400">
+                <X className="w-4 h-4" />
+              </motion.button>
+            </div>
+          ) : showDueInput ? (
+            <div className="flex items-center gap-2">
+              <DollarSign className="w-4 h-4 text-orange-400" />
+              <input
+                type="number"
+                value={dueAmountInput}
+                onChange={(e) => setDueAmountInput(e.target.value)}
+                placeholder="Enter due amount"
+                className="flex-1 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-orange-500/50 border border-white/10"
+                autoFocus
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleSaveDue();
+                  if (e.key === 'Escape') setShowDueInput(false);
+                }}
+              />
+              <motion.button whileTap={{ scale: 0.9 }} onClick={handleSaveDue} className="p-2 rounded-lg bg-emerald-500/20 text-emerald-400">
+                <Check className="w-4 h-4" />
+              </motion.button>
+              <motion.button whileTap={{ scale: 0.9 }} onClick={() => setShowDueInput(false)} className="p-2 rounded-lg bg-red-500/20 text-red-400">
+                <X className="w-4 h-4" />
+              </motion.button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowPaidInput(true)}
+                className="flex-1 px-3 py-2 rounded-lg bg-emerald-500/20 text-emerald-400 text-xs font-medium border border-emerald-500/30 hover:bg-emerald-500/30 transition-all"
+              >
+                Paid
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setShowDueInput(true)}
+                className="flex-1 px-3 py-2 rounded-lg bg-orange-500/20 text-orange-400 text-xs font-medium border border-orange-500/30 hover:bg-orange-500/30 transition-all"
+              >
+                Due
+              </motion.button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Action Buttons - Bottom */}
       <div className="mt-5 pt-4 border-t border-white/5 flex items-center justify-between">

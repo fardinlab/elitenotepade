@@ -13,6 +13,7 @@ interface DueMember extends Member {
   teamName: string;
   teamId: string;
   isYearly?: boolean;
+  isPlusTeam?: boolean;
   totalAmount?: number;
   totalPaid?: number;
   dueAmount: number;
@@ -100,9 +101,9 @@ const DueMembers = () => {
     fetchYearlyMembersDue();
   }, [user, sortedTeams, isLoaded]);
 
-  // Get regular team members with pending amounts
+  // Get regular team members with pending amounts (excluding plus and yearly teams)
   const regularDueMembers: DueMember[] = sortedTeams
-    .filter(team => !team.isYearlyTeam)
+    .filter(team => !team.isYearlyTeam && !team.isPlusTeam)
     .flatMap(team =>
       team.members
         .filter(member => member.pendingAmount && member.pendingAmount > 0)
@@ -111,12 +112,29 @@ const DueMembers = () => {
           teamName: team.teamName,
           teamId: team.id,
           isYearly: false,
+          isPlusTeam: false,
+          dueAmount: member.pendingAmount || 0,
+        }))
+    );
+
+  // Get Plus Team members with pending amounts
+  const plusDueMembers: DueMember[] = sortedTeams
+    .filter(team => team.isPlusTeam)
+    .flatMap(team =>
+      team.members
+        .filter(member => member.pendingAmount && member.pendingAmount > 0)
+        .map(member => ({
+          ...member,
+          teamName: team.teamName,
+          teamId: team.id,
+          isYearly: false,
+          isPlusTeam: true,
           dueAmount: member.pendingAmount || 0,
         }))
     );
 
   // Combine all due members
-  const allDueMembers = [...yearlyDueMembers, ...regularDueMembers];
+  const allDueMembers = [...yearlyDueMembers, ...regularDueMembers, ...plusDueMembers];
   const totalDue = allDueMembers.reduce((sum, m) => sum + m.dueAmount, 0);
 
   const formatCurrency = (amount: number) => {
@@ -131,6 +149,8 @@ const DueMembers = () => {
   const handleNavigateToMember = (member: DueMember) => {
     if (member.isYearly) {
       navigate(`/yearly-team/${member.teamId}`, { state: { highlightMemberId: member.id } });
+    } else if (member.isPlusTeam) {
+      navigate(`/plus-team/${member.teamId}`, { state: { highlightMemberId: member.id } });
     } else {
       navigate(`/team/${member.teamId}`, { state: { highlightMemberId: member.id } });
     }
@@ -200,6 +220,11 @@ const DueMembers = () => {
                       {member.isYearly && (
                         <span className="text-[9px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 font-medium">
                           YEARLY
+                        </span>
+                      )}
+                      {member.isPlusTeam && (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 font-medium">
+                          PLUS
                         </span>
                       )}
                       <SubscriptionBadges subscriptions={member.subscriptions || []} />
