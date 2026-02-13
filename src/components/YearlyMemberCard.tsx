@@ -164,7 +164,9 @@ const YearlyMemberCard = ({
           ? 'border-blue-500/60 ring-2 ring-blue-500/30 shadow-[0_0_30px_-5px_hsl(217_91%_60%/0.3)]' 
           : isOverdue 
             ? 'border-destructive/60 ring-2 ring-destructive/30 shadow-[0_0_30px_-5px_hsl(0_84%_60%/0.3)]' 
-            : 'border-border/50 shadow-lg hover:shadow-xl hover:border-border/80'
+            : paymentSummary && paymentSummary.totalDue === 0 && paymentSummary.totalPaid > 0
+              ? 'border-green-500/60 ring-2 ring-green-500/30 shadow-[0_0_30px_-5px_hsl(142_71%_45%/0.3)]'
+              : 'border-border/50 shadow-lg hover:shadow-xl hover:border-border/80'
         }
         ${isRemoveMode ? 'border-destructive/40' : ''}
         transition-all duration-300
