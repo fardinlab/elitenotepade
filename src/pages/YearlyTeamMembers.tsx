@@ -162,15 +162,22 @@ const YearlyTeamMembers = () => {
   }, [team, fetchPaymentSummaries]);
 
   // Check if a member should be red highlighted (current month not paid AND join date day has passed or is today)
+  // But NOT if their total due is 0 (fully paid)
   const isMemberOverdue = useCallback((member: { id: string; joinDate: string }) => {
     const now = new Date();
     const currentDay = now.getDate();
     const joinDateDay = new Date(member.joinDate).getDate();
     const isPaid = memberCurrentMonthPaid[member.id] || false;
     
+    // If total due is 0, member is fully paid - never show as overdue
+    const summary = memberPaymentSummaries[member.id];
+    if (summary && summary.totalDue <= 0) {
+      return false;
+    }
+    
     // Red indicator if: current month is NOT paid AND current day >= join date day
     return !isPaid && currentDay >= joinDateDay;
-  }, [memberCurrentMonthPaid]);
+  }, [memberCurrentMonthPaid, memberPaymentSummaries]);
 
   // Handle scroll and highlight for searched member
   useEffect(() => {
