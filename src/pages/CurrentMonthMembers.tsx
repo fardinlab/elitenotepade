@@ -113,10 +113,7 @@ export default function CurrentMonthMembers() {
             .map(m => m.id);
 
           if (yearlyMemberIds.length > 0) {
-            // Get current month name for matching
-            const monthNames = ['january', 'february', 'march', 'april', 'may', 'june', 
-                               'july', 'august', 'september', 'october', 'november', 'december'];
-            const currentMonthNameEn = monthNames[currentMonth];
+            const currentMonthInt = currentMonth + 1; // Convert 0-based to 1-based for DB
 
             const { data: paymentsData, error: paymentsError } = await supabase
               .from('member_payments')
@@ -124,7 +121,7 @@ export default function CurrentMonthMembers() {
               .eq('user_id', user.id)
               .in('member_id', yearlyMemberIds)
               .eq('status', 'paid')
-              .eq('month', currentMonthNameEn)
+              .eq('month', currentMonthInt)
               .eq('year', currentYear);
 
             if (!paymentsError && paymentsData) {
