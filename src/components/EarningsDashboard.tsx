@@ -42,13 +42,9 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
 
       const memberIds = yearlyMembers.map(m => m.id);
 
-      // Get current month and last 3 months info
       const now = new Date();
-      const currentMonth = now.getMonth();
+      const currentMonth = now.getMonth() + 1; // 1-based for DB
       const currentYear = now.getFullYear();
-      const monthNames = ['january', 'february', 'march', 'april', 'may', 'june', 
-                         'july', 'august', 'september', 'october', 'november', 'december'];
-      const currentMonthNameEn = monthNames[currentMonth];
 
       // Fetch all payments, current month payments, and member total_amounts in parallel
       const [paymentsResult, currentMonthPaymentsResult, membersResult] = await Promise.all([
@@ -64,7 +60,7 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
           .eq('user_id', user.id)
           .in('member_id', memberIds)
           .eq('status', 'paid')
-          .ilike('month', currentMonthNameEn)
+          .eq('month', currentMonth)
           .eq('year', currentYear),
         supabase
           .from('members')
