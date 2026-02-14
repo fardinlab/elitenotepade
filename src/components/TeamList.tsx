@@ -582,7 +582,7 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setSelectedLogo(selectedLogo === type ? null : type)}
-                        className={`relative w-14 h-14 rounded-xl flex items-center justify-center transition-all touch-manipulation shrink-0 ${
+                        className={`relative w-16 h-16 rounded-xl flex items-center justify-center transition-all touch-manipulation shrink-0 ${
                           selectedLogo === type
                             ? 'bg-primary/20 border-2 border-primary'
                             : 'bg-secondary border border-border hover:border-primary/50'
@@ -591,7 +591,7 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                         <img 
                           src={LOGO_ICONS[type]} 
                           alt={SUBSCRIPTION_CONFIG[type].name}
-                          className="w-8 h-8 object-contain"
+                          className="w-10 h-10 object-contain"
                         />
                         {selectedLogo === type && (
                           <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
@@ -673,7 +673,7 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setLogoForTeam(logoForTeam === type ? null : type)}
-                      className={`relative w-14 h-14 rounded-xl flex items-center justify-center transition-all touch-manipulation shrink-0 ${
+                      className={`relative w-16 h-16 rounded-xl flex items-center justify-center transition-all touch-manipulation shrink-0 ${
                         logoForTeam === type
                           ? 'bg-primary/20 border-2 border-primary'
                           : 'bg-secondary border border-border hover:border-primary/50'
@@ -682,7 +682,7 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                       <img 
                         src={LOGO_ICONS[type]} 
                         alt={SUBSCRIPTION_CONFIG[type].name}
-                        className="w-8 h-8 object-contain"
+                        className="w-10 h-10 object-contain"
                       />
                       {logoForTeam === type && (
                         <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
