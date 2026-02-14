@@ -593,7 +593,7 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                         <img 
                           src={LOGO_ICONS[type]} 
                           alt={SUBSCRIPTION_CONFIG[type].name}
-                          className={`object-contain ${type === 'quillbot' ? 'w-14 h-14' : 'w-10 h-10'}`}
+className="w-10 h-10 object-contain"
                         />
                         {selectedLogo === type && (
                           <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
@@ -684,7 +684,7 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                       <img 
                         src={LOGO_ICONS[type]} 
                         alt={SUBSCRIPTION_CONFIG[type].name}
-                        className={`object-contain ${type === 'quillbot' ? 'w-14 h-14' : 'w-10 h-10'}`}
+                        className="w-10 h-10 object-contain"
                       />
                       {logoForTeam === type && (
                         <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
