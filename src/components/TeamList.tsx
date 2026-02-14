@@ -593,7 +593,7 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                         <img 
                           src={LOGO_ICONS[type]} 
                           alt={SUBSCRIPTION_CONFIG[type].name}
-className="w-10 h-10 object-contain"
+className="w-8 h-8 object-contain"
                         />
                         {selectedLogo === type && (
                           <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
@@ -684,7 +684,7 @@ className="w-10 h-10 object-contain"
                       <img 
                         src={LOGO_ICONS[type]} 
                         alt={SUBSCRIPTION_CONFIG[type].name}
-                        className="w-10 h-10 object-contain"
+                        className="w-8 h-8 object-contain"
                       />
                       {logoForTeam === type && (
                         <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
