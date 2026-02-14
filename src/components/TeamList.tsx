@@ -572,14 +572,17 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                 {/* Logo Selection */}
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-foreground">Select Team Logo (Optional)</p>
-                  <div className="grid grid-cols-5 gap-2">
-                    {(Object.keys(SUBSCRIPTION_CONFIG) as SubscriptionType[]).map((type) => (
+                  <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                    {(Object.keys(SUBSCRIPTION_CONFIG) as SubscriptionType[]).map((type, i) => (
                       <motion.button
                         key={type}
+                        initial={{ opacity: 0, x: 30 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.07 }}
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => setSelectedLogo(selectedLogo === type ? null : type)}
-                        className={`relative w-12 h-12 rounded-xl flex items-center justify-center transition-all touch-manipulation ${
+                        className={`relative w-14 h-14 rounded-xl flex items-center justify-center transition-all touch-manipulation shrink-0 ${
                           selectedLogo === type
                             ? 'bg-primary/20 border-2 border-primary'
                             : 'bg-secondary border border-border hover:border-primary/50'
@@ -588,7 +591,7 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                         <img 
                           src={LOGO_ICONS[type]} 
                           alt={SUBSCRIPTION_CONFIG[type].name}
-                          className="w-6 h-6 object-contain"
+                          className="w-8 h-8 object-contain"
                         />
                         {selectedLogo === type && (
                           <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
@@ -660,14 +663,17 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
               {/* Logo Selection */}
               <div className="space-y-2">
                 <p className="text-sm font-medium text-foreground text-center">Choose a Logo</p>
-                <div className="grid grid-cols-5 gap-2">
-                  {(Object.keys(SUBSCRIPTION_CONFIG) as SubscriptionType[]).map((type) => (
+                <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                  {(Object.keys(SUBSCRIPTION_CONFIG) as SubscriptionType[]).map((type, i) => (
                     <motion.button
                       key={type}
+                      initial={{ opacity: 0, x: 30 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.07 }}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                       onClick={() => setLogoForTeam(logoForTeam === type ? null : type)}
-                      className={`relative w-12 h-12 rounded-xl flex items-center justify-center transition-all touch-manipulation ${
+                      className={`relative w-14 h-14 rounded-xl flex items-center justify-center transition-all touch-manipulation shrink-0 ${
                         logoForTeam === type
                           ? 'bg-primary/20 border-2 border-primary'
                           : 'bg-secondary border border-border hover:border-primary/50'
@@ -676,7 +682,7 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                       <img 
                         src={LOGO_ICONS[type]} 
                         alt={SUBSCRIPTION_CONFIG[type].name}
-                        className="w-6 h-6 object-contain"
+                        className="w-8 h-8 object-contain"
                       />
                       {logoForTeam === type && (
                         <div className="absolute -top-1 -right-1 w-4 h-4 bg-primary rounded-full flex items-center justify-center">
