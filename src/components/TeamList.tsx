@@ -24,6 +24,7 @@ const LOGO_ICONS: Record<SubscriptionType, string> = {
   canva: 'https://static.canva.com/static/images/favicon-1.ico',
   quillbot: '/images/quillbot-logo.png',
   crunchyroll: '/images/crunchyroll-logo.png',
+  netflix: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg',
 };
 
 // Count members whose join date is 1+ month (30 days) ago - for non-yearly, non-plus teams
