@@ -1,4 +1,4 @@
-export type SubscriptionType = 'chatgpt' | 'gemini' | 'perplexity' | 'youtube' | 'canva' | 'quillbot';
+export type SubscriptionType = 'chatgpt' | 'gemini' | 'perplexity' | 'youtube' | 'canva' | 'quillbot' | 'crunchyroll';
 
 export const SUBSCRIPTION_CONFIG: Record<SubscriptionType, { name: string; color: string }> = {
   chatgpt: { name: 'ChatGPT', color: '#10A37F' },
@@ -7,6 +7,7 @@ export const SUBSCRIPTION_CONFIG: Record<SubscriptionType, { name: string; color
   youtube: { name: 'YouTube', color: '#FF0000' },
   canva: { name: 'Canva', color: '#00C4CC' },
   quillbot: { name: 'QuillBot', color: '#4CAF50' },
+  crunchyroll: { name: 'Crunchyroll', color: '#F47521' },
 };
 
 export interface Member {
