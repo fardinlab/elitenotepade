@@ -22,6 +22,7 @@ const LOGO_ICONS: Record<SubscriptionType, string> = {
   perplexity: 'https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/perplexity-ai-icon.png',
   youtube: 'https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg',
   canva: 'https://static.canva.com/static/images/favicon-1.ico',
+  quillbot: 'https://assets.quillbot.com/images/favicon.png',
 };
 
 // Count members whose join date is 1+ month (30 days) ago - for non-yearly, non-plus teams
