@@ -80,8 +80,9 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
   const [teamToAddLogo, setTeamToAddLogo] = useState<Team | null>(null);
   const [logoForTeam, setLogoForTeam] = useState<SubscriptionType | null>(null);
   const [yearlyCurrentMonthPayments, setYearlyCurrentMonthPayments] = useState<Record<string, boolean>>({});
+  const [yearlyMemberDueStatus, setYearlyMemberDueStatus] = useState<Record<string, boolean>>({});
 
-  // Fetch current month payment status for all yearly team members
+  // Fetch current month payment status and total due for all yearly team members
   const fetchYearlyPayments = useCallback(async () => {
     if (!user) return;
 
@@ -95,39 +96,71 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
     const currentMonth = now.getMonth() + 1;
     const currentYear = now.getFullYear();
 
-    const { data, error } = await supabase
-      .from('member_payments')
-      .select('member_id, status')
-      .eq('user_id', user.id)
-      .eq('year', currentYear)
-      .eq('month', currentMonth)
-      .in('member_id', allMemberIds);
+    const [currentMonthResult, allPaymentsResult, membersResult] = await Promise.all([
+      supabase
+        .from('member_payments')
+        .select('member_id, status')
+        .eq('user_id', user.id)
+        .eq('year', currentYear)
+        .eq('month', currentMonth)
+        .in('member_id', allMemberIds),
+      supabase
+        .from('member_payments')
+        .select('member_id, amount, status')
+        .eq('user_id', user.id)
+        .in('member_id', allMemberIds)
+        .eq('status', 'paid'),
+      supabase
+        .from('members')
+        .select('id, total_amount')
+        .in('id', allMemberIds),
+    ]);
 
-    if (error) {
-      console.error('Error fetching yearly payments:', error);
+    if (currentMonthResult.error || allPaymentsResult.error || membersResult.error) {
+      console.error('Error fetching yearly payments');
       return;
     }
 
     const paymentsMap: Record<string, boolean> = {};
-    (data || []).forEach(p => {
+    (currentMonthResult.data || []).forEach(p => {
       if (p.status === 'paid') {
         paymentsMap[p.member_id] = true;
       }
     });
-
     setYearlyCurrentMonthPayments(paymentsMap);
+
+    // Calculate which members have total_due > 0
+    const totalPaidMap: Record<string, number> = {};
+    (allPaymentsResult.data || []).forEach(p => {
+      totalPaidMap[p.member_id] = (totalPaidMap[p.member_id] || 0) + p.amount;
+    });
+
+    const totalAmountMap: Record<string, number> = {};
+    (membersResult.data || []).forEach(m => {
+      totalAmountMap[m.id] = m.total_amount || 0;
+    });
+
+    const dueStatus: Record<string, boolean> = {};
+    allMemberIds.forEach(id => {
+      const totalAmount = totalAmountMap[id] || 0;
+      const totalPaid = totalPaidMap[id] || 0;
+      dueStatus[id] = (totalAmount - totalPaid) > 0;
+    });
+    setYearlyMemberDueStatus(dueStatus);
   }, [user, teams]);
 
   useEffect(() => {
     fetchYearlyPayments();
   }, [fetchYearlyPayments]);
 
-  // Count yearly team members with due indicators
+  // Count yearly team members with due indicators (exclude fully paid members)
   const countYearlyMembersWithDue = (team: Team): number => {
     if (!team.isYearlyTeam) return 0;
-    return team.members.filter(member => 
-      checkYearlyMemberDue(member, yearlyCurrentMonthPayments)
-    ).length;
+    return team.members.filter(member => {
+      // Skip if member has no remaining due
+      if (yearlyMemberDueStatus[member.id] === false) return false;
+      return checkYearlyMemberDue(member, yearlyCurrentMonthPayments);
+    }).length;
   };
 
   const formatDate = (dateString: string) => {
