@@ -87,6 +87,7 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
   const [logoForTeam, setLogoForTeam] = useState<SubscriptionType | null>(null);
   const [yearlyCurrentMonthPayments, setYearlyCurrentMonthPayments] = useState<Record<string, boolean>>({});
   const [yearlyMemberDueStatus, setYearlyMemberDueStatus] = useState<Record<string, boolean>>({});
+  const [yearlyMemberPaidZero, setYearlyMemberPaidZero] = useState<Record<string, boolean>>({});
 
   // Fetch current month payment status and total due for all yearly team members
   const fetchYearlyPayments = useCallback(async () => {
@@ -147,12 +148,15 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
     });
 
     const dueStatus: Record<string, boolean> = {};
+    const paidZeroStatus: Record<string, boolean> = {};
     allMemberIds.forEach(id => {
       const totalAmount = totalAmountMap[id] || 0;
       const totalPaid = totalPaidMap[id] || 0;
       dueStatus[id] = (totalAmount - totalPaid) > 0;
+      paidZeroStatus[id] = totalPaid === 0 && totalAmount > 0;
     });
     setYearlyMemberDueStatus(dueStatus);
+    setYearlyMemberPaidZero(paidZeroStatus);
   }, [user, teams]);
 
   useEffect(() => {
@@ -165,6 +169,8 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
     return team.members.filter(member => {
       // Skip if member has no remaining due
       if (yearlyMemberDueStatus[member.id] === false) return false;
+      // Include if paid is 0 with outstanding due
+      if (yearlyMemberPaidZero[member.id]) return true;
       return checkYearlyMemberDue(member, yearlyCurrentMonthPayments);
     }).length;
   };
