@@ -229,8 +229,11 @@ export function MemberCard({
 
   const isOverOneMonth = differenceInDays(new Date(), new Date(member.joinDate)) >= 30;
   
+  // Check if member has paid with 0 amount
+  const isPaidZero = member.isPaid && (!member.paidAmount || member.paidAmount === 0);
+  
   // Determine if red indicator should be hidden (when pushed OR has active team)
-  const shouldShowRedIndicator = !member.isPushed && !member.activeTeamId && isOverOneMonth;
+  const shouldShowRedIndicator = !member.isPushed && !member.activeTeamId && (isOverOneMonth || isPaidZero);
 
   // Card highlight classes
   const getCardClasses = () => {
