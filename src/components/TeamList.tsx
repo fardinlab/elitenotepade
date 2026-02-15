@@ -27,15 +27,18 @@ const LOGO_ICONS: Record<SubscriptionType, string> = {
   netflix: 'https://upload.wikimedia.org/wikipedia/commons/0/08/Netflix_2015_logo.svg',
 };
 
-// Count members whose join date is 1+ month (30 days) ago - for non-yearly, non-plus teams
-const countMembersOverOneMonth = (team: Team): number => {
+// Count members who need red indicators - for non-yearly, non-plus teams
+// Includes: 30+ days old OR paid with 0 amount
+const countMembersWithRedIndicator = (team: Team): number => {
   if (team.isYearlyTeam || team.isPlusTeam) return 0; // Yearly and Plus teams use different logic
   const now = new Date();
   return team.members.filter(member => {
     // Skip pushed members or members with active team - they don't show red indicators
     if (member.isPushed || member.activeTeamId) return false;
     const joinDate = new Date(member.joinDate);
-    return differenceInDays(now, joinDate) >= 30;
+    const isOverOneMonth = differenceInDays(now, joinDate) >= 30;
+    const isPaidZero = member.isPaid && (!member.paidAmount || member.paidAmount === 0);
+    return isOverOneMonth || isPaidZero;
   }).length;
 };
 
@@ -305,7 +308,7 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
           const memberCount = team.isYearlyTeam ? team.members.length : team.members.length + 1;
           const isFull = !team.isYearlyTeam && memberCount >= MAX_MEMBERS;
           const isActive = team.id === activeTeamId;
-          const membersOverMonth = countMembersOverOneMonth(team);
+          const membersOverMonth = countMembersWithRedIndicator(team);
           const yearlyMembersWithDue = countYearlyMembersWithDue(team);
           const plusMembersOverMonth = countPlusMembersOverOneMonth(team);
           const totalRedDots = team.isYearlyTeam ? yearlyMembersWithDue : membersOverMonth;
