@@ -12,12 +12,24 @@ interface Profile {
 
 export function useProfile() {
   const { user } = useAuth();
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(() => {
+    // Load cached profile on mount for offline support
+    try {
+      const cached = localStorage.getItem('cachedProfile');
+      return cached ? JSON.parse(cached) : null;
+    } catch { return null; }
+  });
   const [loading, setLoading] = useState(true);
 
   const fetchProfile = useCallback(async () => {
     if (!user) {
       setProfile(null);
+      setLoading(false);
+      return;
+    }
+
+    // If offline, use cached profile
+    if (!navigator.onLine) {
       setLoading(false);
       return;
     }
@@ -39,12 +51,14 @@ export function useProfile() {
 
         if (!insertError && newProfile) {
           setProfile(newProfile);
+          localStorage.setItem('cachedProfile', JSON.stringify(newProfile));
         }
       } else {
         console.error('Error fetching profile:', error);
       }
     } else {
       setProfile(data);
+      localStorage.setItem('cachedProfile', JSON.stringify(data));
     }
 
     setLoading(false);

@@ -23,10 +23,24 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
   const [currentMonthYearlyPaid, setCurrentMonthYearlyPaid] = useState(0);
   const [allTimeYearlyPaid, setAllTimeYearlyPaid] = useState(0);
 
+  // Load cached data on mount
+  useEffect(() => {
+    try {
+      const cached = localStorage.getItem('earningsCache');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed.paymentSummaries) setPaymentSummaries(parsed.paymentSummaries);
+        if (parsed.currentMonthYearlyPaid != null) setCurrentMonthYearlyPaid(parsed.currentMonthYearlyPaid);
+        if (parsed.allTimeYearlyPaid != null) setAllTimeYearlyPaid(parsed.allTimeYearlyPaid);
+      }
+    } catch {}
+  }, []);
+
   // Fetch payment summaries for all yearly team members
   useEffect(() => {
     const fetchPaymentSummaries = async () => {
       if (!user) return;
+      if (!navigator.onLine) return; // Don't fetch when offline, use cached data
 
       // Get all member IDs from yearly teams
       const yearlyMembers = teams
@@ -37,6 +51,7 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
         setPaymentSummaries([]);
         setCurrentMonthYearlyPaid(0);
         setAllTimeYearlyPaid(0);
+        localStorage.setItem('earningsCache', JSON.stringify({ paymentSummaries: [], currentMonthYearlyPaid: 0, allTimeYearlyPaid: 0 }));
         return;
       }
 
@@ -68,18 +83,8 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
           .in('id', memberIds)
       ]);
 
-      if (paymentsResult.error) {
-        console.error('Error fetching payments:', paymentsResult.error);
-        return;
-      }
-
-      if (currentMonthPaymentsResult.error) {
-        console.error('Error fetching current month payments:', currentMonthPaymentsResult.error);
-        return;
-      }
-
-      if (membersResult.error) {
-        console.error('Error fetching members:', membersResult.error);
+      if (paymentsResult.error || currentMonthPaymentsResult.error || membersResult.error) {
+        console.error('Error fetching payments:', paymentsResult.error || currentMonthPaymentsResult.error || membersResult.error);
         return;
       }
 
@@ -114,13 +119,19 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
 
       // Build summaries with total_amount
       const allMemberIds = [...new Set([...Object.keys(memberTotalAmounts), ...Object.keys(paidSummaries)])];
-      setPaymentSummaries(
-        allMemberIds.map(member_id => ({
-          member_id,
-          total_paid: paidSummaries[member_id] || 0,
-          total_amount: memberTotalAmounts[member_id] || 0,
-        }))
-      );
+      const newSummaries = allMemberIds.map(member_id => ({
+        member_id,
+        total_paid: paidSummaries[member_id] || 0,
+        total_amount: memberTotalAmounts[member_id] || 0,
+      }));
+      setPaymentSummaries(newSummaries);
+
+      // Cache for offline use
+      localStorage.setItem('earningsCache', JSON.stringify({
+        paymentSummaries: newSummaries,
+        currentMonthYearlyPaid: yearlyCurrentMonthPaid,
+        allTimeYearlyPaid: yearlyAllTimePaid,
+      }));
     };
 
     fetchPaymentSummaries();
