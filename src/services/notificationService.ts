@@ -155,6 +155,7 @@ export const scheduleExpiryNotifications = async (teams: Team[]): Promise<void> 
         extra: {
           memberId: item.member.id,
           teamId: item.team.id,
+          teamType: item.team.isYearlyTeam ? 'yearly' : item.team.isPlusTeam ? 'plus' : 'normal',
         },
       };
     }),
@@ -213,12 +214,15 @@ export const scheduleDailyCheckNotification = async (): Promise<void> => {
 export const initializeNotifications = async (teams: Team[]): Promise<void> => {
   if (!Capacitor.isNativePlatform()) return;
 
-  // Listen for notification taps — navigate to Renew Subscription page
+  // Listen for notification taps — navigate to the specific member's team page
   await LocalNotifications.addListener('localNotificationActionPerformed', (notification) => {
     console.log('Notification tapped:', notification);
-    // Extract member info from extra data if available
     const extra = notification.notification?.extra;
-    if (extra?.memberId) {
+    if (extra?.memberId && extra?.teamId && extra?.teamType) {
+      const teamType = extra.teamType as string;
+      const route = teamType === 'yearly' ? 'yearly-team' : teamType === 'plus' ? 'plus-team' : 'team';
+      window.location.href = `/${route}/${extra.teamId}?highlightMemberId=${extra.memberId}&highlightColor=rainbow`;
+    } else if (extra?.memberId) {
       window.location.href = `/renew-subscription?memberId=${extra.memberId}`;
     } else {
       window.location.href = '/renew-subscription';

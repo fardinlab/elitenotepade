@@ -30,6 +30,7 @@ interface YearlyMemberCardProps {
   member: Member;
   index: number;
   isHighlighted: boolean;
+  highlightColor?: string;
   isOverdue: boolean;
   isRemoveMode: boolean;
   paymentSummary?: PaymentSummary;
@@ -48,6 +49,7 @@ const YearlyMemberCard = ({
   member,
   index,
   isHighlighted,
+  highlightColor = 'blue',
   isOverdue,
   isRemoveMode,
   paymentSummary,
@@ -161,7 +163,9 @@ const YearlyMemberCard = ({
         bg-gradient-to-br from-card/95 to-card/80 
         backdrop-blur-xl border 
         ${isHighlighted 
-          ? 'border-blue-500/60 ring-2 ring-blue-500/30 shadow-[0_0_30px_-5px_hsl(217_91%_60%/0.3)]' 
+          ? highlightColor === 'rainbow'
+            ? 'rainbow-highlight-card'
+            : 'border-blue-500/60 ring-2 ring-blue-500/30 shadow-[0_0_30px_-5px_hsl(217_91%_60%/0.3)]' 
           : isOverdue 
             ? 'border-destructive/60 ring-2 ring-destructive/30 shadow-[0_0_30px_-5px_hsl(0_84%_60%/0.3)]' 
             : paymentSummary && paymentSummary.totalDue === 0 && paymentSummary.totalPaid > 0

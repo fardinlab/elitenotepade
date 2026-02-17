@@ -11,7 +11,7 @@ interface MemberCardProps {
   index: number;
   isRemoveMode: boolean;
   isHighlighted?: boolean;
-  highlightColor?: 'blue' | 'green';
+  highlightColor?: 'blue' | 'green' | 'rainbow';
   allTeams?: Team[];
   hideActiveControl?: boolean;
   onRemove: () => void;
@@ -241,6 +241,9 @@ export function MemberCard({
   // Card highlight classes
   const getCardClasses = () => {
     if (isHighlighted) {
+      if (highlightColor === 'rainbow') {
+        return 'rainbow-highlight-card';
+      }
       return highlightColor === 'green'
         ? 'bg-emerald-500/20 border-2 border-emerald-500 ring-2 ring-emerald-500/50'
         : 'bg-blue-500/20 border-2 border-blue-500 ring-2 ring-blue-500/50';
