@@ -170,8 +170,8 @@ export const scheduleExpiryNotifications = async (teams: Team[]): Promise<void> 
 };
 
 /**
- * Schedule daily check notification (fires every day at 8 AM)
- * This sets up a repeating notification to remind the app to check
+ * Schedule daily check notification (fires every day at 12:00 AM midnight)
+ * This resets the notification flag and schedules expiry alerts
  */
 export const scheduleDailyCheckNotification = async (): Promise<void> => {
   if (!Capacitor.isNativePlatform()) return;
@@ -179,12 +179,9 @@ export const scheduleDailyCheckNotification = async (): Promise<void> => {
   const hasPermission = await requestNotificationPermission();
   if (!hasPermission) return;
 
-  // Schedule a daily notification at 8 AM
+  // Schedule at midnight (12:00 AM) to reset and check
   const now = new Date();
-  const next8AM = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 0, 0);
-  if (now.getHours() >= 8) {
-    next8AM.setDate(next8AM.getDate() + 1);
-  }
+  const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
 
   try {
     await LocalNotifications.schedule({
@@ -194,7 +191,7 @@ export const scheduleDailyCheckNotification = async (): Promise<void> => {
           title: '📋 Elite Notepade',
           body: 'আজকের মেম্বার আপডেট চেক করুন',
           schedule: {
-            at: next8AM,
+            at: nextMidnight,
             every: 'day',
             allowWhileIdle: true,
           },
@@ -204,7 +201,7 @@ export const scheduleDailyCheckNotification = async (): Promise<void> => {
         },
       ],
     });
-    console.log('Daily check notification scheduled for 8 AM');
+    console.log('Daily check notification scheduled for midnight');
   } catch (error) {
     console.error('Error scheduling daily notification:', error);
   }
