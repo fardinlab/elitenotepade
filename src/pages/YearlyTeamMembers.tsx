@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, Plus, Trash2, X, UserPlus, Mail, Phone, Send, Calendar, Shield, Lock, Check, AlertCircle, Pencil } from 'lucide-react';
 import YearlyMemberCard from '@/components/YearlyMemberCard';
@@ -15,9 +15,12 @@ import { cn } from '@/lib/utils';
 const YearlyTeamMembers = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { teamId } = useParams<{ teamId: string }>();
-  const highlightMemberId = (location.state as { highlightMemberId?: string })?.highlightMemberId;
+  const highlightMemberId = (location.state as { highlightMemberId?: string })?.highlightMemberId || searchParams.get('highlightMemberId');
+  const highlightColorParam = searchParams.get('highlightColor') || 'blue';
   const [highlightedMemberId, setHighlightedMemberId] = useState<string | null>(null);
+  const [highlightColorState, setHighlightColorState] = useState<string>('blue');
   const memberRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   
   const {
@@ -195,6 +198,7 @@ const YearlyTeamMembers = () => {
   useEffect(() => {
     if (highlightMemberId && team) {
       setHighlightedMemberId(highlightMemberId);
+      setHighlightColorState(highlightColorParam);
       
       setTimeout(() => {
         const memberElement = memberRefs.current[highlightMemberId];
@@ -437,6 +441,7 @@ const YearlyTeamMembers = () => {
                       member={member}
                       index={index}
                       isHighlighted={highlightedMemberId === member.id}
+                      highlightColor={highlightColorState}
                       isOverdue={isOverdue}
                       isRemoveMode={isRemoveMode}
                       paymentSummary={memberPaymentSummaries[member.id]}

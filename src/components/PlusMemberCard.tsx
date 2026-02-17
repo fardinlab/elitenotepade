@@ -9,7 +9,7 @@ interface PlusMemberCardProps {
   index: number;
   isRemoveMode: boolean;
   isHighlighted?: boolean;
-  highlightColor?: 'blue' | 'green';
+  highlightColor?: 'blue' | 'green' | 'rainbow';
   onRemove: () => void;
   onDateChange: (id: string, date: string) => void;
   onEmailChange: (id: string, email: string) => void;
@@ -159,6 +159,9 @@ export function PlusMemberCard({
     const borderClasses = 'border-white/10';
     
     if (isHighlighted) {
+      if (highlightColor === 'rainbow') {
+        return `${baseClasses} rainbow-highlight-card`;
+      }
       return highlightColor === 'green'
         ? `${baseClasses} bg-emerald-500/20 border-2 border-emerald-500 ring-2 ring-emerald-500/50 shadow-[0_0_30px_rgba(16,185,129,0.3)]`
         : `${baseClasses} bg-blue-500/20 border-2 border-blue-500 ring-2 ring-blue-500/50 shadow-[0_0_30px_rgba(59,130,246,0.3)]`;

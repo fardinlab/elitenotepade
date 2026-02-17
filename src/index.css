@@ -283,3 +283,20 @@
 .tiptap s {
   text-decoration: line-through;
 }
+
+/* Rainbow highlight animation for notification deep-link */
+@keyframes rainbow-border {
+  0% { border-color: #ff0000; box-shadow: 0 0 15px #ff0000, 0 0 30px #ff000060; }
+  14% { border-color: #ff8800; box-shadow: 0 0 15px #ff8800, 0 0 30px #ff880060; }
+  28% { border-color: #ffff00; box-shadow: 0 0 15px #ffff00, 0 0 30px #ffff0060; }
+  42% { border-color: #00ff00; box-shadow: 0 0 15px #00ff00, 0 0 30px #00ff0060; }
+  57% { border-color: #0088ff; box-shadow: 0 0 15px #0088ff, 0 0 30px #0088ff60; }
+  71% { border-color: #4400ff; box-shadow: 0 0 15px #4400ff, 0 0 30px #4400ff60; }
+  85% { border-color: #ff00ff; box-shadow: 0 0 15px #ff00ff, 0 0 30px #ff00ff60; }
+  100% { border-color: #ff0000; box-shadow: 0 0 15px #ff0000, 0 0 30px #ff000060; }
+}
+
+.rainbow-highlight-card {
+  border: 2px solid #ff0000;
+  animation: rainbow-border 1s linear infinite;
+}

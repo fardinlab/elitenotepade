@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams, useLocation } from 'react-router-dom';
+import { useNavigate, useParams, useLocation, useSearchParams } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft } from 'lucide-react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
@@ -15,12 +15,13 @@ import { toast } from 'sonner';
 const TeamMembers = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { teamId } = useParams<{ teamId: string }>();
-  const locationState = location.state as { highlightMemberId?: string; highlightColor?: 'blue' | 'green' } | null;
-  const highlightMemberId = locationState?.highlightMemberId;
-  const highlightColorFromState = locationState?.highlightColor || 'blue';
+  const locationState = location.state as { highlightMemberId?: string; highlightColor?: 'blue' | 'green' | 'rainbow' } | null;
+  const highlightMemberId = locationState?.highlightMemberId || searchParams.get('highlightMemberId');
+  const highlightColorFromState = (locationState?.highlightColor || searchParams.get('highlightColor') || 'blue') as 'blue' | 'green' | 'rainbow';
   const [highlightedMemberId, setHighlightedMemberId] = useState<string | null>(null);
-  const [highlightColor, setHighlightColor] = useState<'blue' | 'green'>('blue');
+  const [highlightColor, setHighlightColor] = useState<'blue' | 'green' | 'rainbow'>('blue');
   const memberRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   
   const {
