@@ -63,6 +63,26 @@ export const findExpiringPlusMembers = (teams: Team[]): ExpiringMember[] => {
 };
 
 /**
+ * Ensure notification channel exists (required for Android 8+)
+ */
+const ensureNotificationChannel = async (): Promise<void> => {
+  try {
+    await LocalNotifications.createChannel({
+      id: 'expiry-alerts',
+      name: 'Subscription Expiry Alerts',
+      description: 'Alerts for member subscription expiry',
+      importance: 5,
+      visibility: 1,
+      sound: 'default',
+      vibration: true,
+    });
+    console.log('Notification channel created/ensured');
+  } catch (error) {
+    console.error('Error creating notification channel:', error);
+  }
+};
+
+/**
  * Request notification permission
  */
 export const requestNotificationPermission = async (): Promise<boolean> => {
@@ -111,6 +131,7 @@ const buildNotification = (item: ExpiringMember, id: number, scheduleAt: Date) =
     id,
     title: `${emoji} সাবস্ক্রিপশন ${timeLabel} শেষ!`,
     body: `[${teamType}] ${item.team.teamName}\n📧 ${item.member.email}${phone}\n📅 জয়েন: ${joinStr} → শেষ: ${expiryStr}`,
+    channelId: 'expiry-alerts',
     schedule: {
       at: scheduleAt,
       allowWhileIdle: true,
@@ -146,6 +167,9 @@ export const scheduleExpiryNotifications = async (teams: Team[]): Promise<void> 
     console.log('Notification permission denied');
     return;
   }
+
+  // Ensure Android notification channel exists (required for Android 8+)
+  await ensureNotificationChannel();
 
   // Cancel all previous scheduled notifications
   const pending = await LocalNotifications.getPending();
