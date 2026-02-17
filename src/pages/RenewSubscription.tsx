@@ -105,7 +105,10 @@ const RenewSubscription = () => {
               className={`glass-card rounded-2xl p-4 space-y-3 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all ${
                 highlightMemberId === member.id ? 'ring-2 ring-blue-500 bg-blue-500/20' : ''
               }`}
-              onClick={() => navigate(`/team/${team.id}`, { state: { highlightMemberId: member.id } })}
+              onClick={() => {
+                const route = team.isPlusTeam ? `/plus-team/${team.id}` : `/team/${team.id}`;
+                navigate(route, { state: { highlightMemberId: member.id } });
+              }}
             >
               {/* Header: Days + Team */}
               <div className="flex items-center justify-between">
