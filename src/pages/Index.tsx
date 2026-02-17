@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FileText, User } from 'lucide-react';
+import { FileText, RefreshCw } from 'lucide-react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useNotepads } from '@/hooks/useNotepads';
 import { useNotificationScheduler } from '@/hooks/useNotificationScheduler';
@@ -166,22 +166,22 @@ const Index = () => {
                 </div>
               </motion.button>
 
-              {/* Profile Button */}
+              {/* Renew Subscription Button */}
               <motion.button
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.05 }}
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
-                onClick={() => navigate('/profile')}
-                className="p-4 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 hover:border-purple-500/50 transition-all flex items-center gap-3"
+                onClick={() => navigate('/renew-subscription')}
+                className="p-4 rounded-xl bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 hover:border-emerald-500/50 transition-all flex items-center gap-3"
               >
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shrink-0">
-                  <User className="w-5 h-5 text-white" />
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shrink-0">
+                  <RefreshCw className="w-5 h-5 text-white" />
                 </div>
                 <div className="text-left flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground text-sm">Profile</h3>
-                  <p className="text-xs text-muted-foreground truncate">View & edit profile</p>
+                  <h3 className="font-semibold text-foreground text-sm">Renew Subscription</h3>
+                  <p className="text-xs text-muted-foreground truncate">১-২৮ দিনের মেম্বার</p>
                 </div>
               </motion.button>
             </div>

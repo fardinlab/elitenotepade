@@ -13,6 +13,7 @@ import DueMembers from "./pages/DueMembers";
 import CurrentMonthMembers from "./pages/CurrentMonthMembers";
 import MemberPayDetails from "./pages/MemberPayDetails";
 import Profile from "./pages/Profile";
+import RenewSubscription from "./pages/RenewSubscription";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -88,6 +89,14 @@ const App = () => (
               element={
                 <ProtectedRoute>
                   <Profile />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/renew-subscription"
+              element={
+                <ProtectedRoute>
+                  <RenewSubscription />
                 </ProtectedRoute>
               }
             />

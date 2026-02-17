@@ -126,12 +126,16 @@ export const scheduleExpiryNotifications = async (teams: Team[]): Promise<void> 
         title: `⚠️ সাবস্ক্রিপশন ${timeLabel} শেষ!`,
         body: `${teamLabel} ${item.team.teamName} - ${item.member.email} এর সাবস্ক্রিপশনের মেয়াদ ${timeLabel} শেষ হচ্ছে।`,
         schedule: {
-          at: new Date(Date.now() + 1000), // Trigger almost immediately
+          at: new Date(Date.now() + 1000),
           allowWhileIdle: true,
         },
         sound: 'default',
         smallIcon: 'ic_notification',
         largeIcon: 'ic_notification',
+        extra: {
+          memberId: item.member.id,
+          teamId: item.team.id,
+        },
       };
     }),
   };
@@ -191,10 +195,16 @@ export const scheduleDailyCheckNotification = async (): Promise<void> => {
 export const initializeNotifications = async (teams: Team[]): Promise<void> => {
   if (!Capacitor.isNativePlatform()) return;
 
-  // Listen for notification taps
+  // Listen for notification taps — navigate to Renew Subscription page
   await LocalNotifications.addListener('localNotificationActionPerformed', (notification) => {
     console.log('Notification tapped:', notification);
-    // Could navigate to specific team/member here
+    // Extract member info from extra data if available
+    const extra = notification.notification?.extra;
+    if (extra?.memberId) {
+      window.location.href = `/renew-subscription?memberId=${extra.memberId}`;
+    } else {
+      window.location.href = '/renew-subscription';
+    }
   });
 
   // Schedule notifications based on current data
