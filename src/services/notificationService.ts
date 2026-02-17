@@ -152,27 +152,43 @@ const buildNotification = (item: ExpiringMember, id: number, scheduleAt: Date) =
  * These are system-level scheduled notifications that fire even when the app is closed.
  */
 export const scheduleExpiryNotifications = async (teams: Team[]): Promise<void> => {
+  console.log('📢 [NOTIF] scheduleExpiryNotifications called');
+  console.log('📢 [NOTIF] isNativePlatform:', Capacitor.isNativePlatform());
+  console.log('📢 [NOTIF] teams count:', teams.length);
+  
+  // Log all members and their join dates for debugging
+  let totalMembers = 0;
+  teams.forEach(t => {
+    totalMembers += t.members.length;
+    t.members.forEach(m => {
+      const joinDate = parseLocalDate(m.joinDate);
+      const today = getTodayLocal();
+      const daysSince = differenceInDays(today, joinDate);
+      console.log(`📢 [NOTIF] Member: ${m.email}, joinDate: ${m.joinDate}, daysSinceJoin: ${daysSince}, isPushed: ${m.isPushed}`);
+    });
+  });
+  console.log('📢 [NOTIF] total members:', totalMembers);
+
   if (!Capacitor.isNativePlatform()) {
-    console.log('Skipping notifications on web platform');
+    console.log('📢 [NOTIF] Skipping - not native platform');
     return;
   }
 
   if (wasScheduledRecently()) {
-    console.log('Notifications already scheduled today, skipping');
+    console.log('📢 [NOTIF] Already scheduled today, skipping');
     return;
   }
 
   const hasPermission = await requestNotificationPermission();
+  console.log('📢 [NOTIF] hasPermission:', hasPermission);
   if (!hasPermission) {
-    console.log('Notification permission denied');
     return;
   }
 
-  // Ensure Android notification channel exists (required for Android 8+)
   await ensureNotificationChannel();
 
-  // Cancel all previous scheduled notifications
   const pending = await LocalNotifications.getPending();
+  console.log('📢 [NOTIF] Pending notifications to cancel:', pending.notifications.length);
   if (pending.notifications.length > 0) {
     await LocalNotifications.cancel({ notifications: pending.notifications });
   }
@@ -181,23 +197,21 @@ export const scheduleExpiryNotifications = async (teams: Team[]): Promise<void> 
   const allNotifications: any[] = [];
   let notifId = 1;
 
-  // Schedule for next 7 days
   for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
     const targetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + dayOffset);
-
-    // Find expiring members for this future date
     const normalExpiring = findExpiringOnDate(teams, targetDate, false);
     const plusExpiring = findExpiringOnDate(teams, targetDate, true);
     const allExpiring = [...normalExpiring, ...plusExpiring];
 
+    console.log(`📢 [NOTIF] Day +${dayOffset}: ${allExpiring.length} expiring members`);
+
     if (allExpiring.length === 0) continue;
 
-    // Schedule at 12:00 AM (midnight)
     const midnight = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0);
-    // Schedule at 12:00 PM (noon)
     const noon = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 12, 0, 0);
-
     const scheduleTimes = [midnight, noon].filter(t => t.getTime() > now.getTime());
+
+    console.log(`📢 [NOTIF] Day +${dayOffset}: ${scheduleTimes.length} valid schedule times`);
 
     for (const scheduleAt of scheduleTimes) {
       for (const item of allExpiring) {
@@ -206,17 +220,38 @@ export const scheduleExpiryNotifications = async (teams: Team[]): Promise<void> 
     }
   }
 
+  console.log('📢 [NOTIF] Total notifications to schedule:', allNotifications.length);
+
   if (allNotifications.length === 0) {
-    console.log('No upcoming expiring members for next 7 days');
+    console.log('📢 [NOTIF] No expiring members found for next 7 days');
+    
+    // Schedule a TEST notification in 10 seconds to verify system works
+    try {
+      const testTime = new Date(now.getTime() + 10000);
+      await LocalNotifications.schedule({
+        notifications: [{
+          id: 99999,
+          title: '🔔 টেস্ট নোটিফিকেশন',
+          body: 'নোটিফিকেশন সিস্টেম কাজ করছে! কিন্তু কোনো expiring member নেই।',
+          channelId: 'expiry-alerts',
+          schedule: { at: testTime, allowWhileIdle: true },
+          sound: 'default' as const,
+          smallIcon: 'ic_notification',
+        }]
+      });
+      console.log('📢 [NOTIF] Test notification scheduled for 10 seconds from now');
+    } catch (err) {
+      console.error('📢 [NOTIF] Test notification error:', err);
+    }
     return;
   }
 
   try {
     await LocalNotifications.schedule({ notifications: allNotifications });
     markScheduledToday();
-    console.log(`Scheduled ${allNotifications.length} notifications for next 7 days (12AM & 12PM)`);
+    console.log(`📢 [NOTIF] Successfully scheduled ${allNotifications.length} notifications`);
   } catch (error) {
-    console.error('Error scheduling notifications:', error);
+    console.error('📢 [NOTIF] Error scheduling:', error);
   }
 };
 
