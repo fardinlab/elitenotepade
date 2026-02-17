@@ -138,13 +138,25 @@ export const scheduleExpiryNotifications = async (teams: Team[]): Promise<void> 
 
   const notifications: ScheduleOptions = {
     notifications: allExpiring.map((item, index) => {
-      const teamLabel = item.team.isPlusTeam ? '[Plus]' : '';
+      const isPlus = item.team.isPlusTeam;
+      const teamType = isPlus ? '🟣 Plus' : '🔵 Normal';
       const timeLabel = item.daysUntilExpiry === 1 ? 'আগামীকাল' : 'আজকে';
+      const emoji = item.daysUntilExpiry === 0 ? '🔴' : '🟡';
+      
+      // Calculate expiry date
+      const [y, m, d] = item.member.joinDate.split('-').map(Number);
+      const joinDate = new Date(y, m - 1, d);
+      const expiryDate = new Date(joinDate);
+      expiryDate.setDate(expiryDate.getDate() + 30);
+      const expiryStr = `${expiryDate.getDate()}/${expiryDate.getMonth() + 1}/${expiryDate.getFullYear()}`;
+      const joinStr = `${joinDate.getDate()}/${joinDate.getMonth() + 1}/${joinDate.getFullYear()}`;
+
+      const phone = item.member.phone ? `\n📞 ${item.member.phone}` : '';
 
       return {
         id: index + 1,
-        title: `⚠️ সাবস্ক্রিপশন ${timeLabel} শেষ!`,
-        body: `${teamLabel} ${item.team.teamName} - ${item.member.email} এর সাবস্ক্রিপশনের মেয়াদ ${timeLabel} শেষ হচ্ছে।`,
+        title: `${emoji} সাবস্ক্রিপশন ${timeLabel} শেষ!`,
+        body: `[${teamType}] ${item.team.teamName}\n📧 ${item.member.email}${phone}\n📅 জয়েন: ${joinStr} → শেষ: ${expiryStr}`,
         schedule: {
           at: new Date(Date.now() + 1000),
           allowWhileIdle: true,
@@ -155,7 +167,7 @@ export const scheduleExpiryNotifications = async (teams: Team[]): Promise<void> 
         extra: {
           memberId: item.member.id,
           teamId: item.team.id,
-          teamType: item.team.isYearlyTeam ? 'yearly' : item.team.isPlusTeam ? 'plus' : 'normal',
+          teamType: isPlus ? 'plus' : 'normal',
         },
       };
     }),
