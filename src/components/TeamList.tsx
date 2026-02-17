@@ -32,11 +32,13 @@ const LOGO_ICONS: Record<SubscriptionType, string> = {
 const countMembersWithRedIndicator = (team: Team): number => {
   if (team.isYearlyTeam || team.isPlusTeam) return 0; // Yearly and Plus teams use different logic
   const now = new Date();
+  const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   return team.members.filter(member => {
     // Skip pushed members or members with active team - they don't show red indicators
     if (member.isPushed || member.activeTeamId) return false;
-    const joinDate = new Date(member.joinDate);
-    const isOverOneMonth = differenceInDays(now, joinDate) >= 30;
+    const [y, m, d] = member.joinDate.split('-').map(Number);
+    const joinDateLocal = new Date(y, m - 1, d);
+    const isOverOneMonth = differenceInDays(todayLocal, joinDateLocal) >= 30;
     const isPaidZero = member.isPaid && (!member.paidAmount || member.paidAmount === 0);
     return isOverOneMonth || isPaidZero;
   }).length;
@@ -46,10 +48,12 @@ const countMembersWithRedIndicator = (team: Team): number => {
 const countPlusMembersOverOneMonth = (team: Team): number => {
   if (!team.isPlusTeam) return 0;
   const now = new Date();
+  const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   return team.members.filter(member => {
-    if (member.isPushed) return false; // Pushed members don't trigger notification
-    const joinDate = new Date(member.joinDate);
-    return differenceInDays(now, joinDate) >= 30;
+    if (member.isPushed) return false;
+    const [y, m, d] = member.joinDate.split('-').map(Number);
+    const joinDateLocal = new Date(y, m - 1, d);
+    return differenceInDays(todayLocal, joinDateLocal) >= 30;
   }).length;
 };
 
@@ -64,13 +68,13 @@ const checkYearlyMemberDue = (
 ): boolean => {
   const now = new Date();
   const currentDay = now.getDate();
-  const joinDay = new Date(member.joinDate).getDate();
+  const [, , jd] = member.joinDate.split('-').map(Number);
   
   // If current month is paid, no notification
   if (currentMonthPayments[member.id]) return false;
   
   // If due date (join day) has reached or passed, show notification
-  return currentDay >= joinDay;
+  return currentDay >= jd;
 };
 
 export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDeleteTeam, onUpdateTeamLogo }: TeamListProps) {
