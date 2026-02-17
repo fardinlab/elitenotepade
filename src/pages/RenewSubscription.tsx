@@ -29,7 +29,7 @@ const RenewSubscription = () => {
     const results: RenewableMember[] = [];
 
     sortedTeams.forEach((team) => {
-      if (team.isYearlyTeam || team.isPlusTeam) return;
+      if (team.isYearlyTeam) return;
 
       team.members.forEach((member) => {
         if (member.isPushed) return;
