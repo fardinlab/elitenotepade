@@ -1,7 +1,24 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 import { Team, Member, MAX_MEMBERS, SubscriptionType } from '@/types/member';
+import {
+  getLocalTeams,
+  getLocalMembers,
+  putLocalTeam,
+  putLocalMember,
+  deleteLocalTeam,
+  deleteLocalMember,
+  deleteLocalMembersByTeam,
+  addToSyncQueue,
+  localTeamToAppTeam,
+  localMemberToAppMember,
+  teamToLocal,
+  memberToLocal,
+} from '@/services/offlineDb';
+import { fullSync, isOnline, processSyncQueue } from '@/services/syncService';
+
+// ─── DB ↔ App mapping (for direct Supabase responses) ────────────
 
 interface DbTeam {
   id: string;
@@ -22,29 +39,19 @@ interface DbMember {
   email: string;
   phone: string;
   telegram: string | null;
-
-  // Different projects may have different column names for 2FA
   two_fa: string | null;
   twofa: string | null;
   twofa_secret: string | null;
-
-  // Optional OTP secret column (some projects use otp_secret)
   otp_secret?: string | null;
-
   password: string | null;
-  
-  // Plus Team specific fields
   e_pass: string | null;
   g_pass: string | null;
-  
   join_date: string;
   is_paid: boolean;
   paid_amount: number | null;
   pending_amount: number | null;
   subscriptions: string[] | null;
   created_at: string;
-  
-  // Pushed and Active fields
   is_pushed?: boolean | null;
   active_team_id?: string | null;
 }
@@ -66,7 +73,6 @@ const mapDbMemberToMember = (dbMember: DbMember): Member => ({
   email: dbMember.email,
   phone: dbMember.phone,
   telegram: dbMember.telegram || undefined,
-  // Prefer the column that actually exists in the DB
   twoFA: dbMember.twofa ?? dbMember.two_fa ?? dbMember.twofa_secret ?? undefined,
   password: dbMember.password || undefined,
   ePass: dbMember.e_pass || undefined,
@@ -80,13 +86,111 @@ const mapDbMemberToMember = (dbMember: DbMember): Member => ({
   activeTeamId: dbMember.active_team_id || undefined,
 });
 
+// ─── Helper: build teams from local DB ──────────────────────────
+
+const buildTeamsFromLocal = async (userId: string): Promise<Team[]> => {
+  const localTeams = await getLocalTeams(userId);
+  const localMembers = await getLocalMembers(userId);
+
+  const membersByTeam: Record<string, Member[]> = {};
+  localMembers.forEach((lm) => {
+    if (!membersByTeam[lm.team_id]) membersByTeam[lm.team_id] = [];
+    membersByTeam[lm.team_id].push(localMemberToAppMember(lm));
+  });
+
+  return localTeams
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .map((lt) => localTeamToAppTeam(lt, membersByTeam[lt.id] || []));
+};
+
+// ─── Helper: queue + optional remote push ───────────────────────
+
+const queueAndSync = async (
+  userId: string,
+  table: 'teams' | 'members',
+  operation: 'insert' | 'update' | 'delete',
+  recordId: string,
+  payload: Record<string, unknown>
+) => {
+  await addToSyncQueue({
+    table,
+    operation,
+    record_id: recordId,
+    payload,
+    created_at: new Date().toISOString(),
+    user_id: userId,
+  });
+
+  // Try to sync immediately if online
+  if (isOnline()) {
+    processSyncQueue(userId).catch((e) => console.error('[Sync] background error:', e));
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════
+// Main Hook
+// ═══════════════════════════════════════════════════════════════
+
 export function useSupabaseData() {
   const { user } = useAuth();
   const [teams, setTeams] = useState<Team[]>([]);
   const [activeTeamId, setActiveTeamId] = useState<string | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [isOnlineState, setIsOnlineState] = useState(navigator.onLine);
+  const syncIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Fetch all teams and members
+  // ─── Online/Offline listener ───────────────────────────────
+
+  useEffect(() => {
+    const goOnline = () => {
+      setIsOnlineState(true);
+      if (user) {
+        console.log('[Sync] Back online — syncing…');
+        fullSync(user.id).then((result) => {
+          if (result) rebuildFromLocal();
+        });
+      }
+    };
+    const goOffline = () => {
+      setIsOnlineState(false);
+      console.log('[Sync] Went offline');
+    };
+
+    window.addEventListener('online', goOnline);
+    window.addEventListener('offline', goOffline);
+    return () => {
+      window.removeEventListener('online', goOnline);
+      window.removeEventListener('offline', goOffline);
+    };
+  }, [user]);
+
+  // ─── Periodic sync (every 2 min when online) ──────────────
+
+  useEffect(() => {
+    if (!user) return;
+    syncIntervalRef.current = setInterval(() => {
+      if (isOnline() && user) {
+        processSyncQueue(user.id).catch(console.error);
+      }
+    }, 120_000);
+    return () => {
+      if (syncIntervalRef.current) clearInterval(syncIntervalRef.current);
+    };
+  }, [user]);
+
+  // ─── Rebuild UI state from IndexedDB ──────────────────────
+
+  const rebuildFromLocal = useCallback(async () => {
+    if (!user) return;
+    const localTeams = await buildTeamsFromLocal(user.id);
+    setTeams(localTeams);
+    if (localTeams.length > 0 && !activeTeamId) {
+      setActiveTeamId(localTeams[0].id);
+    }
+  }, [user, activeTeamId]);
+
+  // ─── Initial data load ────────────────────────────────────
+
   const fetchData = useCallback(async () => {
     if (!user) {
       setTeams([]);
@@ -95,47 +199,34 @@ export function useSupabaseData() {
       return;
     }
 
-    const { data: dbTeams, error: teamsError } = await supabase
-      .from('teams')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-
-    if (teamsError) {
-      console.error('Error fetching teams:', teamsError);
-      setIsLoaded(true);
-      return;
-    }
-
-    const { data: dbMembers, error: membersError } = await supabase
-      .from('members')
-      .select('*')
-      .eq('user_id', user.id);
-
-    if (membersError) {
-      console.error('Error fetching members:', membersError);
-      setIsLoaded(true);
-      return;
-    }
-
-    const membersByTeam: Record<string, Member[]> = {};
-    (dbMembers || []).forEach((dbMember: DbMember) => {
-      if (!membersByTeam[dbMember.team_id]) {
-        membersByTeam[dbMember.team_id] = [];
+    // Step 1: Load from IndexedDB instantly (offline-first)
+    try {
+      const localTeams = await buildTeamsFromLocal(user.id);
+      if (localTeams.length > 0) {
+        setTeams(localTeams);
+        if (!activeTeamId) setActiveTeamId(localTeams[0].id);
+        setIsLoaded(true);
       }
-      membersByTeam[dbMember.team_id].push(mapDbMemberToMember(dbMember));
-    });
-
-    const mappedTeams = (dbTeams || []).map((dbTeam: DbTeam) =>
-      mapDbTeamToTeam(dbTeam, membersByTeam[dbTeam.id] || [])
-    );
-
-    setTeams(mappedTeams);
-    
-    if (mappedTeams.length > 0 && !activeTeamId) {
-      setActiveTeamId(mappedTeams[0].id);
+    } catch (e) {
+      console.error('[Offline] Failed to load local data:', e);
     }
-    
+
+    // Step 2: Pull from Supabase in background (if online)
+    if (isOnline()) {
+      try {
+        const result = await fullSync(user.id);
+        if (result) {
+          const freshTeams = await buildTeamsFromLocal(user.id);
+          setTeams(freshTeams);
+          if (freshTeams.length > 0 && !activeTeamId) {
+            setActiveTeamId(freshTeams[0].id);
+          }
+        }
+      } catch (e) {
+        console.error('[Sync] Background sync failed:', e);
+      }
+    }
+
     setIsLoaded(true);
   }, [user, activeTeamId]);
 
@@ -143,25 +234,24 @@ export function useSupabaseData() {
     fetchData();
   }, [fetchData]);
 
-  const activeTeam = useMemo(() => {
-    return teams.find((t) => t.id === activeTeamId) || teams[0] || null;
-  }, [teams, activeTeamId]);
+  // ─── Derived state ────────────────────────────────────────
+
+  const activeTeam = useMemo(
+    () => teams.find((t) => t.id === activeTeamId) || teams[0] || null,
+    [teams, activeTeamId]
+  );
 
   const sortedTeams = useMemo(() => {
     const now = new Date();
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
-
     return [...teams].sort((a, b) => {
       const dateA = new Date(a.createdAt);
       const dateB = new Date(b.createdAt);
-
       const isCurrentMonthA = dateA.getMonth() === currentMonth && dateA.getFullYear() === currentYear;
       const isCurrentMonthB = dateB.getMonth() === currentMonth && dateB.getFullYear() === currentYear;
-
       if (isCurrentMonthA && !isCurrentMonthB) return -1;
       if (!isCurrentMonthA && isCurrentMonthB) return 1;
-
       return dateB.getTime() - dateA.getTime();
     });
   }, [teams]);
@@ -170,119 +260,95 @@ export function useSupabaseData() {
     setActiveTeamId(teamId);
   }, []);
 
-  const createNewTeam = useCallback(async (teamName?: string, logo?: SubscriptionType, isYearly?: boolean, isPlus?: boolean) => {
-    if (!user) return null;
+  // ═══════════════════════════════════════════════════════════
+  // CRUD — Local-first: IndexedDB → UI → queue sync
+  // ═══════════════════════════════════════════════════════════
 
-    const { data, error } = await supabase
-      .from('teams')
-      .insert({
+  const createNewTeam = useCallback(
+    async (teamName?: string, logo?: SubscriptionType, isYearly?: boolean, isPlus?: boolean) => {
+      if (!user) return null;
+
+      const id = crypto.randomUUID();
+      const now = new Date().toISOString();
+      const teamPayload = {
+        id,
         user_id: user.id,
         team_name: teamName || 'My Elite Team',
         admin_email: (isYearly || isPlus) ? '' : (user.email || 'admin@example.com'),
         logo: logo || null,
+        created_at: now,
+        last_backup: null,
         is_yearly: isYearly || false,
         is_plus: isPlus || false,
-      })
-      .select()
-      .single();
+      };
 
-    if (error) {
-      console.error('Error creating team:', error);
-      return null;
-    }
+      // Save locally
+      await putLocalTeam(teamPayload);
+      const newTeam = localTeamToAppTeam(teamPayload, []);
+      setTeams((prev) => [newTeam, ...prev]);
+      setActiveTeamId(newTeam.id);
 
-    const newTeam = mapDbTeamToTeam(data, []);
-    setTeams((prev) => [newTeam, ...prev]);
-    setActiveTeamId(newTeam.id);
-    return newTeam;
-  }, [user]);
+      // Queue sync
+      await queueAndSync(user.id, 'teams', 'insert', id, teamPayload);
+      return newTeam;
+    },
+    [user]
+  );
 
-  const deleteTeam = useCallback(async (teamId: string) => {
-    const { error } = await supabase.from('teams').delete().eq('id', teamId);
+  const deleteTeam = useCallback(
+    async (teamId: string) => {
+      if (!user) return;
+      await deleteLocalMembersByTeam(teamId);
+      await deleteLocalTeam(teamId);
 
-    if (error) {
-      console.error('Error deleting team:', error);
-      return;
-    }
+      setTeams((prev) => {
+        const remaining = prev.filter((t) => t.id !== teamId);
+        if (activeTeamId === teamId && remaining.length > 0) setActiveTeamId(remaining[0].id);
+        return remaining;
+      });
 
-    setTeams((prev) => {
-      const remaining = prev.filter((t) => t.id !== teamId);
-      if (activeTeamId === teamId && remaining.length > 0) {
-        setActiveTeamId(remaining[0].id);
+      await queueAndSync(user.id, 'teams', 'delete', teamId, {});
+    },
+    [user, activeTeamId]
+  );
+
+  // ─── Team field updaters (local-first) ─────────────────────
+
+  const updateTeamField = useCallback(
+    async (field: string, dbField: string, value: unknown) => {
+      if (!user || !activeTeamId) return;
+      const localTeams = await getLocalTeams(user.id);
+      const existing = localTeams.find((t) => t.id === activeTeamId);
+      if (existing) {
+        (existing as any)[dbField] = value;
+        await putLocalTeam(existing);
       }
-      return remaining;
-    });
-  }, [activeTeamId]);
+      setTeams((prev) => prev.map((t) => (t.id === activeTeamId ? { ...t, [field]: value } : t)));
+      await queueAndSync(user.id, 'teams', 'update', activeTeamId, { id: activeTeamId, [dbField]: value });
+    },
+    [user, activeTeamId]
+  );
 
-  const updateTeamName = useCallback(async (name: string) => {
-    if (!activeTeamId) return;
+  const updateTeamName = useCallback((name: string) => updateTeamField('teamName', 'team_name', name), [updateTeamField]);
+  const updateAdminEmail = useCallback((email: string) => updateTeamField('adminEmail', 'admin_email', email), [updateTeamField]);
+  const updateTeamCreatedAt = useCallback((createdAt: string) => updateTeamField('createdAt', 'created_at', createdAt), [updateTeamField]);
 
-    const { error } = await supabase
-      .from('teams')
-      .update({ team_name: name })
-      .eq('id', activeTeamId);
+  const updateTeamLogo = useCallback(
+    async (teamId: string, logo: SubscriptionType) => {
+      if (!user) return;
+      const localTeams = await getLocalTeams(user.id);
+      const existing = localTeams.find((t) => t.id === teamId);
+      if (existing) {
+        existing.logo = logo;
+        await putLocalTeam(existing);
+      }
+      setTeams((prev) => prev.map((t) => (t.id === teamId ? { ...t, logo } : t)));
+      await queueAndSync(user.id, 'teams', 'update', teamId, { id: teamId, logo });
+    },
+    [user]
+  );
 
-    if (error) {
-      console.error('Error updating team name:', error);
-      return;
-    }
-
-    setTeams((prev) =>
-      prev.map((t) => (t.id === activeTeamId ? { ...t, teamName: name } : t))
-    );
-  }, [activeTeamId]);
-
-  const updateAdminEmail = useCallback(async (email: string) => {
-    if (!activeTeamId) return;
-
-    const { error } = await supabase
-      .from('teams')
-      .update({ admin_email: email })
-      .eq('id', activeTeamId);
-
-    if (error) {
-      console.error('Error updating admin email:', error);
-      return;
-    }
-
-    setTeams((prev) =>
-      prev.map((t) => (t.id === activeTeamId ? { ...t, adminEmail: email } : t))
-    );
-  }, [activeTeamId]);
-
-  const updateTeamCreatedAt = useCallback(async (createdAt: string) => {
-    if (!activeTeamId) return;
-
-    const { error } = await supabase
-      .from('teams')
-      .update({ created_at: createdAt })
-      .eq('id', activeTeamId);
-
-    if (error) {
-      console.error('Error updating team created at:', error);
-      return;
-    }
-
-    setTeams((prev) =>
-      prev.map((t) => (t.id === activeTeamId ? { ...t, createdAt } : t))
-    );
-  }, [activeTeamId]);
-
-  const updateTeamLogo = useCallback(async (teamId: string, logo: SubscriptionType) => {
-    const { error } = await supabase
-      .from('teams')
-      .update({ logo })
-      .eq('id', teamId);
-
-    if (error) {
-      console.error('Error updating team logo:', error);
-      return;
-    }
-
-    setTeams((prev) =>
-      prev.map((t) => (t.id === teamId ? { ...t, logo } : t))
-    );
-  }, []);
+  // ─── Add Member (local-first) ──────────────────────────────
 
   const addMember = useCallback(
     async (
@@ -296,470 +362,173 @@ export function useSupabaseData() {
       const team = teams.find((t) => t.id === teamIdToUse);
       if (!team) return { ok: false, error: 'Team not found' };
 
-      // No limit for yearly teams or plus teams (skipLimitCheck)
       if (!team.isYearlyTeam && !team.isPlusTeam && !skipLimitCheck && team.members.length + 1 >= MAX_MEMBERS) {
         return { ok: false, error: `Maximum ${MAX_MEMBERS} members allowed` };
       }
 
-      const baseInsert = {
+      const id = crypto.randomUUID();
+      const now = new Date().toISOString();
+      const localMember = {
+        id,
         team_id: teamIdToUse,
         user_id: user.id,
         email: member.email,
         phone: member.phone || '',
         telegram: member.telegram || null,
+        twofa_secret: member.twoFA || null,
+        password: member.password || null,
+        e_pass: member.ePass || null,
+        g_pass: member.gPass || null,
         join_date: member.joinDate,
         is_paid: member.isPaid || false,
         paid_amount: member.paidAmount || null,
-        subscriptions: member.subscriptions || null,
-        e_pass: member.ePass || null,
-        g_pass: member.gPass || null,
+        pending_amount: member.pendingAmount || null,
+        subscriptions: (member.subscriptions as string[]) || null,
+        is_pushed: member.isPushed || false,
+        active_team_id: member.activeTeamId || null,
+        created_at: now,
       };
 
-      const buildPayload = (opts: { includePassword: boolean; includeTwoFA: boolean }) => {
-        const payload: Record<string, unknown> = { ...baseInsert };
-        // Most compatible approach: store 2FA into twofa_secret when available; fallback handled by PostgREST retry
-        if (opts.includeTwoFA) payload.twofa_secret = member.twoFA || null;
-        if (opts.includePassword) payload.password = member.password || null;
-        return payload;
-      };
-
-      const tryInsert = (opts: { includePassword: boolean; includeTwoFA: boolean }) => {
-        const payload = buildPayload(opts);
-        return supabase.from('members').insert(payload).select().maybeSingle();
-      };
-
-      // Some projects don’t have optional columns like `password` or `two_fa` on `members`.
-      // If PostgREST tells us a column doesn’t exist, retry without that column.
-      let opts = { includePassword: true, includeTwoFA: true };
-      let { data, error } = await tryInsert(opts);
-
-      if (error?.code === 'PGRST204') {
-        const msg = error.message || '';
-        if (msg.includes("'two_fa'")) opts = { ...opts, includeTwoFA: false };
-        if (msg.includes("'password'")) opts = { ...opts, includePassword: false };
-
-        ({ data, error } = await tryInsert(opts));
-
-        // If the error mentions the other optional column on retry, drop it too.
-        if (error?.code === 'PGRST204') {
-          const msg2 = error.message || '';
-          if (msg2.includes("'two_fa'")) opts = { ...opts, includeTwoFA: false };
-          if (msg2.includes("'password'")) opts = { ...opts, includePassword: false };
-          ({ data, error } = await tryInsert(opts));
-        }
-      }
-
-      if (error) {
-        console.error('Error adding member:', error);
-        return { ok: false, error: error.message, code: error.code };
-      }
-
-      // In some RLS setups, the insert can succeed but the returning row is not selectable.
-      // In that case, refresh from DB to keep UI in sync.
-      if (!data) {
-        await fetchData();
-        return { ok: true };
-      }
-
-      const newMember = mapDbMemberToMember(data);
+      await putLocalMember(localMember);
+      const appMember = localMemberToAppMember(localMember);
       setTeams((prev) =>
         prev.map((t) =>
-          t.id === teamIdToUse ? { ...t, members: [...t.members, newMember] } : t
+          t.id === teamIdToUse ? { ...t, members: [...t.members, appMember] } : t
         )
       );
+
+      await queueAndSync(user.id, 'members', 'insert', id, localMember);
       return { ok: true };
     },
-    [user, activeTeamId, teams, fetchData]
+    [user, activeTeamId, teams]
   );
 
-  const removeMember = useCallback(async (id: string) => {
-    const { error } = await supabase.from('members').delete().eq('id', id);
+  // ─── Remove Member ─────────────────────────────────────────
 
-    if (error) {
-      console.error('Error removing member:', error);
-      return;
-    }
+  const removeMember = useCallback(
+    async (id: string) => {
+      if (!user) return;
+      await deleteLocalMember(id);
+      setTeams((prev) =>
+        prev.map((t) =>
+          t.id === activeTeamId
+            ? { ...t, members: t.members.filter((m) => m.id !== id) }
+            : t
+        )
+      );
+      await queueAndSync(user.id, 'members', 'delete', id, {});
+    },
+    [user, activeTeamId]
+  );
 
-    setTeams((prev) =>
-      prev.map((t) =>
-        t.id === activeTeamId
-          ? { ...t, members: t.members.filter((m) => m.id !== id) }
-          : t
-      )
-    );
-  }, [activeTeamId]);
+  // ─── Generic member field updater (local-first) ────────────
 
-  const updateMemberDate = useCallback(async (id: string, joinDate: string) => {
-    const { error } = await supabase
-      .from('members')
-      .update({ join_date: joinDate })
-      .eq('id', id);
+  const updateMemberField = useCallback(
+    async (id: string, appField: string, dbField: string, value: unknown, allTeams?: boolean) => {
+      if (!user) return;
 
-    if (error) {
-      console.error('Error updating member date:', error);
-      return;
-    }
+      // Update local DB
+      const localMembers = await getLocalMembers(user.id);
+      const existing = localMembers.find((m) => m.id === id);
+      if (existing) {
+        (existing as any)[dbField] = value;
+        await putLocalMember(existing);
+      }
 
-    setTeams((prev) =>
-      prev.map((t) =>
-        t.id === activeTeamId
-          ? {
-              ...t,
-              members: t.members.map((m) =>
-                m.id === id ? { ...m, joinDate } : m
-              ),
-            }
-          : t
-      )
-    );
-  }, [activeTeamId]);
+      // Update React state
+      const updater = (t: Team) => ({
+        ...t,
+        members: t.members.map((m) => (m.id === id ? { ...m, [appField]: value } : m)),
+      });
 
-  const updateMemberEmail = useCallback(async (id: string, email: string) => {
-    const { error } = await supabase
-      .from('members')
-      .update({ email })
-      .eq('id', id);
+      if (allTeams) {
+        setTeams((prev) => prev.map(updater));
+      } else {
+        setTeams((prev) =>
+          prev.map((t) => (t.id === activeTeamId ? updater(t) : t))
+        );
+      }
 
-    if (error) {
-      console.error('Error updating member email:', error);
-      return;
-    }
+      await queueAndSync(user.id, 'members', 'update', id, { id, [dbField]: value });
+    },
+    [user, activeTeamId]
+  );
 
-    setTeams((prev) =>
-      prev.map((t) =>
-        t.id === activeTeamId
-          ? {
-              ...t,
-              members: t.members.map((m) => (m.id === id ? { ...m, email } : m)),
-            }
-          : t
-      )
-    );
-  }, [activeTeamId]);
+  const updateMemberDate = useCallback((id: string, joinDate: string) => updateMemberField(id, 'joinDate', 'join_date', joinDate), [updateMemberField]);
+  const updateMemberEmail = useCallback((id: string, email: string) => updateMemberField(id, 'email', 'email', email), [updateMemberField]);
+  const updateMemberPhone = useCallback((id: string, phone: string) => updateMemberField(id, 'phone', 'phone', phone), [updateMemberField]);
+  const updateMemberTelegram = useCallback((id: string, telegram: string) => updateMemberField(id, 'telegram', 'telegram', telegram || null), [updateMemberField]);
+  const updateMemberTwoFA = useCallback((id: string, twoFA: string) => updateMemberField(id, 'twoFA', 'twofa_secret', twoFA || null), [updateMemberField]);
+  const updateMemberPassword = useCallback((id: string, password: string) => updateMemberField(id, 'password', 'password', password || null), [updateMemberField]);
+  const updateMemberEPass = useCallback((id: string, ePass: string) => updateMemberField(id, 'ePass', 'e_pass', ePass || null), [updateMemberField]);
+  const updateMemberGPass = useCallback((id: string, gPass: string) => updateMemberField(id, 'gPass', 'g_pass', gPass || null), [updateMemberField]);
+  const updateMemberSubscriptions = useCallback((id: string, subscriptions: SubscriptionType[]) => updateMemberField(id, 'subscriptions', 'subscriptions', subscriptions), [updateMemberField]);
+  const updateMemberPendingAmount = useCallback((id: string, pendingAmount?: number) => updateMemberField(id, 'pendingAmount', 'pending_amount', pendingAmount || null), [updateMemberField]);
+  const updateMemberPushed = useCallback((id: string, isPushed: boolean) => updateMemberField(id, 'isPushed', 'is_pushed', isPushed, true), [updateMemberField]);
+  const updateMemberActiveTeam = useCallback((id: string, activeTeamIdVal?: string) => updateMemberField(id, 'activeTeamId', 'active_team_id', activeTeamIdVal || null, true), [updateMemberField]);
 
-  const updateMemberPhone = useCallback(async (id: string, phone: string) => {
-    const { error } = await supabase
-      .from('members')
-      .update({ phone })
-      .eq('id', id);
+  const updateMemberPayment = useCallback(
+    async (id: string, isPaid: boolean, paidAmount?: number) => {
+      if (!user) return;
 
-    if (error) {
-      console.error('Error updating member phone:', error);
-      return;
-    }
+      const localMembers = await getLocalMembers(user.id);
+      const existing = localMembers.find((m) => m.id === id);
+      if (existing) {
+        existing.is_paid = isPaid;
+        existing.paid_amount = isPaid ? paidAmount || null : null;
+        await putLocalMember(existing);
+      }
 
-    setTeams((prev) =>
-      prev.map((t) =>
-        t.id === activeTeamId
-          ? {
-              ...t,
-              members: t.members.map((m) => (m.id === id ? { ...m, phone } : m)),
-            }
-          : t
-      )
-    );
-  }, [activeTeamId]);
+      setTeams((prev) =>
+        prev.map((t) =>
+          t.id === activeTeamId
+            ? {
+                ...t,
+                members: t.members.map((m) =>
+                  m.id === id ? { ...m, isPaid, paidAmount: isPaid ? paidAmount : undefined } : m
+                ),
+              }
+            : t
+        )
+      );
 
-  const updateMemberTelegram = useCallback(async (id: string, telegram: string) => {
-    const { error } = await supabase
-      .from('members')
-      .update({ telegram: telegram || null })
-      .eq('id', id);
-
-    if (error) {
-      console.error('Error updating member telegram:', error);
-      return;
-    }
-
-    setTeams((prev) =>
-      prev.map((t) =>
-        t.id === activeTeamId
-          ? {
-              ...t,
-              members: t.members.map((m) =>
-                m.id === id ? { ...m, telegram: telegram || undefined } : m
-              ),
-            }
-          : t
-      )
-    );
-  }, [activeTeamId]);
-
-  const updateMemberPayment = useCallback(async (id: string, isPaid: boolean, paidAmount?: number) => {
-    const { error } = await supabase
-      .from('members')
-      .update({
+      await queueAndSync(user.id, 'members', 'update', id, {
+        id,
         is_paid: isPaid,
         paid_amount: isPaid ? paidAmount || null : null,
-      })
-      .eq('id', id);
-
-    if (error) {
-      console.error('Error updating member payment:', error);
-      return;
-    }
-
-    setTeams((prev) =>
-      prev.map((t) =>
-        t.id === activeTeamId
-          ? {
-              ...t,
-              members: t.members.map((m) =>
-                m.id === id
-                  ? { ...m, isPaid, paidAmount: isPaid ? paidAmount : undefined }
-                  : m
-              ),
-            }
-          : t
-      )
-    );
-  }, [activeTeamId]);
-
-  const updateMemberSubscriptions = useCallback(async (id: string, subscriptions: SubscriptionType[]) => {
-    const { error } = await supabase
-      .from('members')
-      .update({ subscriptions })
-      .eq('id', id);
-
-    if (error) {
-      console.error('Error updating member subscriptions:', error);
-      return;
-    }
-
-    setTeams((prev) =>
-      prev.map((t) =>
-        t.id === activeTeamId
-          ? {
-              ...t,
-              members: t.members.map((m) =>
-                m.id === id ? { ...m, subscriptions } : m
-              ),
-            }
-          : t
-      )
-    );
-  }, [activeTeamId]);
-
-  const updateMemberPendingAmount = useCallback(async (id: string, pendingAmount?: number) => {
-    const { error } = await supabase
-      .from('members')
-      .update({ pending_amount: pendingAmount || null })
-      .eq('id', id);
-
-    if (error) {
-      console.error('Error updating member pending amount:', error);
-      return;
-    }
-
-    setTeams((prev) =>
-      prev.map((t) =>
-        t.id === activeTeamId
-          ? {
-              ...t,
-              members: t.members.map((m) =>
-                m.id === id ? { ...m, pendingAmount } : m
-              ),
-            }
-          : t
-      )
-    );
-  }, [activeTeamId]);
-
-  const updateMemberTwoFA = useCallback(async (id: string, twoFA: string) => {
-    // Different DBs have different column names; try in a safe order.
-    const tryUpdate = async (payload: Record<string, unknown>) => {
-      return supabase.from('members').update(payload).eq('id', id);
-    };
-
-    const candidates: Array<Record<string, unknown>> = [
-      { twofa_secret: twoFA || null },
-      { twofa: twoFA || null },
-      { two_fa: twoFA || null },
-    ];
-
-    let lastError: any = null;
-
-    for (const payload of candidates) {
-      const res = await tryUpdate(payload);
-      if (!res.error) {
-        lastError = null;
-        break;
-      }
-
-      // Column missing -> try next
-      if (res.error.code === 'PGRST204') {
-        lastError = res.error;
-        continue;
-      }
-
-      // Any other error (RLS, validation, etc.) stop immediately
-      lastError = res.error;
-      break;
-    }
-
-    if (lastError) {
-      console.error('Error updating member 2FA:', lastError);
-      return;
-    }
-
-    setTeams((prev) =>
-      prev.map((t) =>
-        t.id === activeTeamId
-          ? {
-              ...t,
-              members: t.members.map((m) =>
-                m.id === id ? { ...m, twoFA: twoFA || undefined } : m
-              ),
-            }
-          : t
-      )
-    );
-  }, [activeTeamId]);
-
-  const updateMemberPassword = useCallback(async (id: string, password: string) => {
-    const { error } = await supabase
-      .from('members')
-      .update({ password: password || null })
-      .eq('id', id);
-
-    if (error) {
-      console.error('Error updating member password:', error);
-      return;
-    }
-
-    setTeams((prev) =>
-      prev.map((t) =>
-        t.id === activeTeamId
-          ? {
-              ...t,
-              members: t.members.map((m) =>
-                m.id === id ? { ...m, password: password || undefined } : m
-              ),
-            }
-          : t
-      )
-    );
-  }, [activeTeamId]);
-
-  const updateMemberEPass = useCallback(async (id: string, ePass: string) => {
-    const { error } = await supabase
-      .from('members')
-      .update({ e_pass: ePass || null })
-      .eq('id', id);
-
-    if (error) {
-      console.error('Error updating member E-Pass:', error);
-      return;
-    }
-
-    setTeams((prev) =>
-      prev.map((t) =>
-        t.id === activeTeamId
-          ? {
-              ...t,
-              members: t.members.map((m) =>
-                m.id === id ? { ...m, ePass: ePass || undefined } : m
-              ),
-            }
-          : t
-      )
-    );
-  }, [activeTeamId]);
-
-  const updateMemberGPass = useCallback(async (id: string, gPass: string) => {
-    const { error } = await supabase
-      .from('members')
-      .update({ g_pass: gPass || null })
-      .eq('id', id);
-
-    if (error) {
-      console.error('Error updating member G-Pass:', error);
-      return;
-    }
-
-    setTeams((prev) =>
-      prev.map((t) =>
-        t.id === activeTeamId
-          ? {
-              ...t,
-              members: t.members.map((m) =>
-                m.id === id ? { ...m, gPass: gPass || undefined } : m
-              ),
-            }
-          : t
-      )
-    );
-  }, [activeTeamId]);
-
-  const updateMemberPushed = useCallback(async (id: string, isPushed: boolean) => {
-    const { error } = await supabase
-      .from('members')
-      .update({ is_pushed: isPushed })
-      .eq('id', id);
-
-    if (error) {
-      console.error('Error updating member pushed status:', error);
-      return;
-    }
-
-    setTeams((prev) =>
-      prev.map((t) => ({
-        ...t,
-        members: t.members.map((m) =>
-          m.id === id ? { ...m, isPushed } : m
-        ),
-      }))
-    );
-  }, []);
-
-  const updateMemberActiveTeam = useCallback(async (id: string, activeTeamId?: string) => {
-    const { error } = await supabase
-      .from('members')
-      .update({ active_team_id: activeTeamId || null })
-      .eq('id', id);
-
-    if (error) {
-      console.error('Error updating member active team:', error);
-      return;
-    }
-
-    setTeams((prev) =>
-      prev.map((t) => ({
-        ...t,
-        members: t.members.map((m) =>
-          m.id === id ? { ...m, activeTeamId: activeTeamId || undefined } : m
-        ),
-      }))
-    );
-  }, []);
-
-  const searchMembers = useCallback((query: string) => {
-    if (!query.trim()) return [];
-
-    const normalizedQuery = query.toLowerCase().trim();
-    const results: Array<{ team: Team; member: Member; isAdmin: boolean }> = [];
-
-    teams.forEach((team) => {
-      if (team.adminEmail.toLowerCase().includes(normalizedQuery)) {
-        results.push({
-          team,
-          member: { id: 'admin', email: team.adminEmail, phone: '', joinDate: team.createdAt },
-          isAdmin: true,
-        });
-      }
-
-      team.members.forEach((member) => {
-        if (
-          member.email.toLowerCase().includes(normalizedQuery) ||
-          member.phone.includes(normalizedQuery)
-        ) {
-          results.push({ team, member, isAdmin: false });
-        }
       });
-    });
+    },
+    [user, activeTeamId]
+  );
 
-    return results;
-  }, [teams]);
+  // ─── Search ────────────────────────────────────────────────
+
+  const searchMembers = useCallback(
+    (query: string) => {
+      if (!query.trim()) return [];
+      const normalizedQuery = query.toLowerCase().trim();
+      const results: Array<{ team: Team; member: Member; isAdmin: boolean }> = [];
+
+      teams.forEach((team) => {
+        if (team.adminEmail.toLowerCase().includes(normalizedQuery)) {
+          results.push({
+            team,
+            member: { id: 'admin', email: team.adminEmail, phone: '', joinDate: team.createdAt },
+            isAdmin: true,
+          });
+        }
+        team.members.forEach((member) => {
+          if (member.email.toLowerCase().includes(normalizedQuery) || member.phone.includes(normalizedQuery)) {
+            results.push({ team, member, isAdmin: false });
+          }
+        });
+      });
+      return results;
+    },
+    [teams]
+  );
+
+  // ─── Export / Import / Backup ──────────────────────────────
 
   const canAddMember = activeTeam ? activeTeam.members.length + 1 < MAX_MEMBERS : false;
   const isTeamFull = activeTeam ? activeTeam.members.length + 1 >= MAX_MEMBERS : false;
@@ -777,25 +546,30 @@ export function useSupabaseData() {
   }, [teams]);
 
   const importData = useCallback((jsonString: string) => {
-    // Import is now optional/backup only - data lives in Supabase
     console.log('Import data is available for reference only:', jsonString);
     return true;
   }, []);
 
-  const setLastBackup = useCallback(async (date: string) => {
-    if (!activeTeamId) return;
-
-    await supabase
-      .from('teams')
-      .update({ last_backup: date })
-      .eq('id', activeTeamId);
-  }, [activeTeamId]);
+  const setLastBackup = useCallback(
+    async (date: string) => {
+      if (!user || !activeTeamId) return;
+      const localTeams = await getLocalTeams(user.id);
+      const existing = localTeams.find((t) => t.id === activeTeamId);
+      if (existing) {
+        existing.last_backup = date;
+        await putLocalTeam(existing);
+      }
+      await queueAndSync(user.id, 'teams', 'update', activeTeamId, { id: activeTeamId, last_backup: date });
+    },
+    [user, activeTeamId]
+  );
 
   return {
     data: { teams, activeTeamId: activeTeamId || '' },
     activeTeam,
     sortedTeams,
     isLoaded,
+    isOnline: isOnlineState,
     setActiveTeam,
     createNewTeam,
     deleteTeam,
