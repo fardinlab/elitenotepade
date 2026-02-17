@@ -21,26 +21,23 @@ interface ExpiringMember {
 }
 
 /**
- * Find members whose subscription is expiring (30 days from join date)
- * Returns members expiring today or tomorrow
+ * Find members whose subscription expires on a specific date (30 days from join)
  */
-export const findExpiringMembers = (teams: Team[]): ExpiringMember[] => {
-  const today = getTodayLocal();
+const findExpiringOnDate = (teams: Team[], targetDate: Date, isPlus: boolean): ExpiringMember[] => {
   const results: ExpiringMember[] = [];
 
   teams.forEach((team) => {
-    if (team.isYearlyTeam || team.isPlusTeam) return; // Yearly/Plus have different logic
+    if (isPlus ? !team.isPlusTeam : (team.isYearlyTeam || team.isPlusTeam)) return;
 
     team.members.forEach((member) => {
-      if (member.isPushed || member.activeTeamId) return; // Skip pushed/active
+      if (member.isPushed || (!isPlus && member.activeTeamId)) return;
 
       const joinDate = parseLocalDate(member.joinDate);
-      const daysSinceJoin = differenceInDays(today, joinDate);
+      const daysSinceJoin = differenceInDays(targetDate, joinDate);
 
-      // Expiry at 30 days — notify at 29 (tomorrow) and 30 (today)
       if (daysSinceJoin === 29) {
         results.push({ member, team, daysUntilExpiry: 1 });
-      } else if (daysSinceJoin === 30) {
+      } else if (isPlus ? daysSinceJoin >= 30 : daysSinceJoin === 30) {
         results.push({ member, team, daysUntilExpiry: 0 });
       }
     });
@@ -50,30 +47,19 @@ export const findExpiringMembers = (teams: Team[]): ExpiringMember[] => {
 };
 
 /**
+ * Find members whose subscription is expiring today or tomorrow
+ */
+export const findExpiringMembers = (teams: Team[]): ExpiringMember[] => {
+  const today = getTodayLocal();
+  return findExpiringOnDate(teams, today, false);
+};
+
+/**
  * Find Plus team members whose 30-day period is about to expire
  */
 export const findExpiringPlusMembers = (teams: Team[]): ExpiringMember[] => {
   const today = getTodayLocal();
-  const results: ExpiringMember[] = [];
-
-  teams.forEach((team) => {
-    if (!team.isPlusTeam) return;
-
-    team.members.forEach((member) => {
-      if (member.isPushed) return;
-
-      const joinDate = parseLocalDate(member.joinDate);
-      const daysSinceJoin = differenceInDays(today, joinDate);
-
-      if (daysSinceJoin === 29) {
-        results.push({ member, team, daysUntilExpiry: 1 });
-      } else if (daysSinceJoin >= 30) {
-        results.push({ member, team, daysUntilExpiry: 0 });
-      }
-    });
-  });
-
-  return results;
+  return findExpiringOnDate(teams, today, true);
 };
 
 /**
@@ -90,21 +76,59 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
 };
 
 /**
- * Check if notifications were already sent today
+ * Check if advance notifications were already scheduled recently
  */
-const wasNotifiedToday = (): boolean => {
-  const lastNotified = localStorage.getItem('lastNotificationDate');
+const wasScheduledRecently = (): boolean => {
+  const lastScheduled = localStorage.getItem('lastNotificationSchedule');
+  if (!lastScheduled) return false;
   const today = getTodayLocal().toISOString().split('T')[0];
-  return lastNotified === today;
+  return lastScheduled === today;
 };
 
-const markNotifiedToday = (): void => {
+const markScheduledToday = (): void => {
   const today = getTodayLocal().toISOString().split('T')[0];
-  localStorage.setItem('lastNotificationDate', today);
+  localStorage.setItem('lastNotificationSchedule', today);
 };
 
 /**
- * Schedule local notifications for expiring members
+ * Build a notification object for a member
+ */
+const buildNotification = (item: ExpiringMember, id: number, scheduleAt: Date) => {
+  const isPlus = item.team.isPlusTeam;
+  const teamType = isPlus ? '🟣 Plus' : '🔵 Normal';
+  const timeLabel = item.daysUntilExpiry === 1 ? 'আগামীকাল' : 'আজকে';
+  const emoji = item.daysUntilExpiry === 0 ? '🔴' : '🟡';
+
+  const [y, m, d] = item.member.joinDate.split('-').map(Number);
+  const joinDate = new Date(y, m - 1, d);
+  const expiryDate = new Date(joinDate);
+  expiryDate.setDate(expiryDate.getDate() + 30);
+  const expiryStr = `${expiryDate.getDate()}/${expiryDate.getMonth() + 1}/${expiryDate.getFullYear()}`;
+  const joinStr = `${joinDate.getDate()}/${joinDate.getMonth() + 1}/${joinDate.getFullYear()}`;
+  const phone = item.member.phone ? `\n📞 ${item.member.phone}` : '';
+
+  return {
+    id,
+    title: `${emoji} সাবস্ক্রিপশন ${timeLabel} শেষ!`,
+    body: `[${teamType}] ${item.team.teamName}\n📧 ${item.member.email}${phone}\n📅 জয়েন: ${joinStr} → শেষ: ${expiryStr}`,
+    schedule: {
+      at: scheduleAt,
+      allowWhileIdle: true,
+    },
+    sound: 'default' as const,
+    smallIcon: 'ic_notification',
+    largeIcon: 'ic_notification',
+    extra: {
+      memberId: item.member.id,
+      teamId: item.team.id,
+      teamType: isPlus ? 'plus' : 'normal',
+    },
+  };
+};
+
+/**
+ * Schedule notifications for the next 7 days at 12:00 AM and 12:00 PM.
+ * These are system-level scheduled notifications that fire even when the app is closed.
  */
 export const scheduleExpiryNotifications = async (teams: Team[]): Promise<void> => {
   if (!Capacitor.isNativePlatform()) {
@@ -112,9 +136,8 @@ export const scheduleExpiryNotifications = async (teams: Team[]): Promise<void> 
     return;
   }
 
-  // Skip if already notified today
-  if (wasNotifiedToday()) {
-    console.log('Already sent notifications today, skipping');
+  if (wasScheduledRecently()) {
+    console.log('Notifications already scheduled today, skipping');
     return;
   }
 
@@ -130,93 +153,46 @@ export const scheduleExpiryNotifications = async (teams: Team[]): Promise<void> 
     await LocalNotifications.cancel({ notifications: pending.notifications });
   }
 
-  const normalExpiring = findExpiringMembers(teams);
-  const plusExpiring = findExpiringPlusMembers(teams);
-  const allExpiring = [...normalExpiring, ...plusExpiring];
+  const now = new Date();
+  const allNotifications: any[] = [];
+  let notifId = 1;
 
-  if (allExpiring.length === 0) return;
+  // Schedule for next 7 days
+  for (let dayOffset = 0; dayOffset < 7; dayOffset++) {
+    const targetDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + dayOffset);
 
-  const notifications: ScheduleOptions = {
-    notifications: allExpiring.map((item, index) => {
-      const isPlus = item.team.isPlusTeam;
-      const teamType = isPlus ? '🟣 Plus' : '🔵 Normal';
-      const timeLabel = item.daysUntilExpiry === 1 ? 'আগামীকাল' : 'আজকে';
-      const emoji = item.daysUntilExpiry === 0 ? '🔴' : '🟡';
-      
-      // Calculate expiry date
-      const [y, m, d] = item.member.joinDate.split('-').map(Number);
-      const joinDate = new Date(y, m - 1, d);
-      const expiryDate = new Date(joinDate);
-      expiryDate.setDate(expiryDate.getDate() + 30);
-      const expiryStr = `${expiryDate.getDate()}/${expiryDate.getMonth() + 1}/${expiryDate.getFullYear()}`;
-      const joinStr = `${joinDate.getDate()}/${joinDate.getMonth() + 1}/${joinDate.getFullYear()}`;
+    // Find expiring members for this future date
+    const normalExpiring = findExpiringOnDate(teams, targetDate, false);
+    const plusExpiring = findExpiringOnDate(teams, targetDate, true);
+    const allExpiring = [...normalExpiring, ...plusExpiring];
 
-      const phone = item.member.phone ? `\n📞 ${item.member.phone}` : '';
+    if (allExpiring.length === 0) continue;
 
-      return {
-        id: index + 1,
-        title: `${emoji} সাবস্ক্রিপশন ${timeLabel} শেষ!`,
-        body: `[${teamType}] ${item.team.teamName}\n📧 ${item.member.email}${phone}\n📅 জয়েন: ${joinStr} → শেষ: ${expiryStr}`,
-        schedule: {
-          at: new Date(Date.now() + 1000),
-          allowWhileIdle: true,
-        },
-        sound: 'default',
-        smallIcon: 'ic_notification',
-        largeIcon: 'ic_notification',
-        extra: {
-          memberId: item.member.id,
-          teamId: item.team.id,
-          teamType: isPlus ? 'plus' : 'normal',
-        },
-      };
-    }),
-  };
+    // Schedule at 12:00 AM (midnight)
+    const midnight = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 0, 0, 0);
+    // Schedule at 12:00 PM (noon)
+    const noon = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate(), 12, 0, 0);
+
+    const scheduleTimes = [midnight, noon].filter(t => t.getTime() > now.getTime());
+
+    for (const scheduleAt of scheduleTimes) {
+      for (const item of allExpiring) {
+        allNotifications.push(buildNotification(item, notifId++, scheduleAt));
+      }
+    }
+  }
+
+  if (allNotifications.length === 0) {
+    console.log('No upcoming expiring members for next 7 days');
+    return;
+  }
 
   try {
-    await LocalNotifications.schedule(notifications);
-    markNotifiedToday();
-    console.log(`Scheduled ${allExpiring.length} expiry notifications`);
+    await LocalNotifications.schedule({ notifications: allNotifications });
+    markScheduledToday();
+    console.log(`Scheduled ${allNotifications.length} notifications for next 7 days (12AM & 12PM)`);
   } catch (error) {
     console.error('Error scheduling notifications:', error);
-  }
-};
-
-/**
- * Schedule daily check notification (fires every day at 12:00 AM midnight)
- * This resets the notification flag and schedules expiry alerts
- */
-export const scheduleDailyCheckNotification = async (): Promise<void> => {
-  if (!Capacitor.isNativePlatform()) return;
-
-  const hasPermission = await requestNotificationPermission();
-  if (!hasPermission) return;
-
-  // Schedule at midnight (12:00 AM) to reset and check
-  const now = new Date();
-  const nextMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0);
-
-  try {
-    await LocalNotifications.schedule({
-      notifications: [
-        {
-          id: 9999,
-          title: '📋 Elite Notepade',
-          body: 'আজকের মেম্বার আপডেট চেক করুন',
-          schedule: {
-            at: nextMidnight,
-            every: 'day',
-            allowWhileIdle: true,
-          },
-          sound: 'default',
-          smallIcon: 'ic_notification',
-          largeIcon: 'ic_notification',
-        },
-      ],
-    });
-    console.log('Daily check notification scheduled for midnight');
-  } catch (error) {
-    console.error('Error scheduling daily notification:', error);
   }
 };
 
@@ -243,5 +219,4 @@ export const initializeNotifications = async (teams: Team[]): Promise<void> => {
 
   // Schedule notifications based on current data
   await scheduleExpiryNotifications(teams);
-  await scheduleDailyCheckNotification();
 };
