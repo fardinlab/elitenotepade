@@ -1,13 +1,16 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, Plus, Trash2, X, UserPlus, Mail, Phone, Send, Calendar, Shield, Lock, Check, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, X, UserPlus, Mail, Phone, Send, Calendar, Shield, Lock, Check, AlertCircle, Pencil } from 'lucide-react';
 import YearlyMemberCard from '@/components/YearlyMemberCard';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
 
 const YearlyTeamMembers = () => {
   const navigate = useNavigate();
@@ -33,6 +36,7 @@ const YearlyTeamMembers = () => {
     updateMemberTwoFA,
     updateMemberPassword,
     updateMemberDate,
+    updateTeamCreatedAt,
   } = useSupabaseData();
 
   const { user } = useAuth();
@@ -48,6 +52,7 @@ const YearlyTeamMembers = () => {
   // Inline editing state
   const [editingField, setEditingField] = useState<{ memberId: string; field: string } | null>(null);
   const [editValue, setEditValue] = useState('');
+  const [isDatePickerOpen, setIsDatePickerOpen] = useState(false);
 
   // Form state for add member
   const [email, setEmail] = useState('');
@@ -372,9 +377,30 @@ const YearlyTeamMembers = () => {
           <div className="flex items-center justify-between">
             <div>
               <h2 className="font-display text-xl font-bold text-foreground">{team.teamName}</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                Created: {format(new Date(team.createdAt), 'd MMMM yyyy')}
-              </p>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                <span>Created: {format(new Date(team.createdAt), 'd MMMM yyyy')}</span>
+                <Popover open={isDatePickerOpen} onOpenChange={setIsDatePickerOpen}>
+                  <PopoverTrigger asChild>
+                    <button className="p-1 rounded-lg hover:bg-secondary transition-colors" aria-label="Edit creation date">
+                      <Pencil className="w-3.5 h-3.5 text-muted-foreground" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={new Date(team.createdAt)}
+                      onSelect={(date) => {
+                        if (date) {
+                          updateTeamCreatedAt(date.toISOString());
+                          setIsDatePickerOpen(false);
+                        }
+                      }}
+                      initialFocus
+                      className={cn("p-3 pointer-events-auto")}
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
             </div>
             <div className="text-right">
               <p className="text-2xl font-bold text-primary">{team.members.length}</p>
