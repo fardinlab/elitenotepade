@@ -1,5 +1,6 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, User } from 'lucide-react';
+import { Settings, User, Wifi, WifiOff } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import logo from '@/assets/logo.jpg';
 import { useProfile } from '@/hooks/useProfile';
@@ -12,6 +13,15 @@ interface AppHeaderProps {
 export function AppHeader({ onSettingsClick }: AppHeaderProps) {
   const navigate = useNavigate();
   const { profile } = useProfile();
+  const [online, setOnline] = useState(navigator.onLine);
+
+  useEffect(() => {
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener('online', on);
+    window.addEventListener('offline', off);
+    return () => { window.removeEventListener('online', on); window.removeEventListener('offline', off); };
+  }, []);
 
   const getInitials = () => {
     if (profile?.full_name) {
@@ -37,7 +47,14 @@ export function AppHeader({ onSettingsClick }: AppHeaderProps) {
           <img src={logo} alt="Elite NotePad" className="h-10 w-auto rounded-lg" />
           <div className="flex flex-col">
             <h1 className="font-display text-xl font-bold gradient-text leading-tight">Elite NotePad</h1>
-            <span className="text-xs text-muted-foreground">Powered by Fardin Sagor</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs text-muted-foreground">Powered by Fardin Sagor</span>
+              {online ? (
+                <Wifi className="w-3 h-3 text-green-500" />
+              ) : (
+                <WifiOff className="w-3 h-3 text-destructive" />
+              )}
+            </div>
           </div>
         </div>
         <div className="flex items-center gap-2">
