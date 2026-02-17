@@ -8,6 +8,15 @@ const config: CapacitorConfig = {
     url: 'https://6730b41f-2c79-43df-9728-c1a9aca1ce75.lovableproject.com?forceHideBadge=true',
     cleartext: true,
   },
+  plugins: {
+    Camera: {
+      // Permissions will be requested when camera is used
+    },
+  },
+  android: {
+    // Request permissions at install time
+    useLegacyBridge: false,
+  },
 };
 
 export default config;
