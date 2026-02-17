@@ -31,13 +31,20 @@ const RenewSubscription = () => {
     sortedTeams.forEach((team) => {
       if (team.isYearlyTeam || team.isPlusTeam) return;
 
+      // Skip expired (black & white) teams — 31+ days since creation
+      const teamCreated = parseLocalDate(team.createdAt.split('T')[0]);
+      const teamAge = differenceInDays(todayLocal, teamCreated);
+      if (teamAge >= 31) return;
+
       team.members.forEach((member) => {
-        if (member.isPushed || member.activeTeamId) return;
+        if (member.isPushed) return;
 
         const joinDate = parseLocalDate(member.joinDate);
         const days = differenceInDays(todayLocal, joinDate);
 
-        if (days >= 1 && days <= 28) {
+        // Show members with 1-2 days left until 30 (i.e. 28-29 days since join)
+        // OR members who are 30+ days but still in an active (non-expired) team
+        if (days >= 28) {
           results.push({ member, team, daysSinceJoin: days });
         }
       });
@@ -90,7 +97,7 @@ const RenewSubscription = () => {
             <RefreshCw className="w-12 h-12 text-muted-foreground mx-auto" />
             <h3 className="text-lg font-semibold">কোন মেম্বার নেই</h3>
             <p className="text-sm text-muted-foreground">
-              বর্তমানে ১-২৮ দিনের মধ্যে কোন মেম্বার নেই
+              রিনিউ করার মতো কোন মেম্বার নেই
             </p>
           </motion.div>
         ) : (
@@ -109,13 +116,11 @@ const RenewSubscription = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className={`px-2.5 py-1 rounded-full text-xs font-bold ${
-                    daysSinceJoin >= 25 ? 'bg-red-500/20 text-red-400' :
-                    daysSinceJoin >= 20 ? 'bg-orange-500/20 text-orange-400' :
-                    daysSinceJoin >= 10 ? 'bg-yellow-500/20 text-yellow-400' :
-                    'bg-green-500/20 text-green-400'
+                    daysSinceJoin >= 30 ? 'bg-red-500/20 text-red-400' :
+                    'bg-orange-500/20 text-orange-400'
                   }`}>
                     <Clock className="w-3 h-3 inline mr-1" />
-                    {daysSinceJoin} দিন
+                    {daysSinceJoin >= 30 ? `${daysSinceJoin - 30} দিন অতিরিক্ত` : `${30 - daysSinceJoin} দিন বাকি`}
                   </div>
                 </div>
                 <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-lg">
