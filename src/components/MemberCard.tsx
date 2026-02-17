@@ -227,7 +227,10 @@ export function MemberCard({
     setIsEditingPending(false);
   };
 
-  const isOverOneMonth = differenceInDays(new Date(), new Date(member.joinDate)) >= 30;
+  const [y, mo, d] = member.joinDate.split('-').map(Number);
+  const joinDateLocal = new Date(y, mo - 1, d);
+  const todayLocal = new Date(new Date().getFullYear(), new Date().getMonth(), new Date().getDate());
+  const isOverOneMonth = differenceInDays(todayLocal, joinDateLocal) >= 30;
   
   // Check if member has paid with 0 amount
   const isPaidZero = member.isPaid && (!member.paidAmount || member.paidAmount === 0);
