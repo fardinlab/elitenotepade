@@ -173,7 +173,7 @@ const Index = () => {
               transition={{ delay: 0.05 }}
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
-              onClick={() => navigate('/profile')}
+              onClick={() => navigate('/renew-subscription')}
               className="p-4 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 hover:border-purple-500/50 transition-all flex items-center gap-3">
 
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shrink-0">
