@@ -31,11 +31,6 @@ const RenewSubscription = () => {
     sortedTeams.forEach((team) => {
       if (team.isYearlyTeam || team.isPlusTeam) return;
 
-      // Skip expired (black & white) teams — 31+ days since creation
-      const teamCreated = parseLocalDate(team.createdAt.split('T')[0]);
-      const teamAge = differenceInDays(todayLocal, teamCreated);
-      if (teamAge >= 31) return;
-
       team.members.forEach((member) => {
         if (member.isPushed) return;
 
