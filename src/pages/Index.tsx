@@ -146,27 +146,26 @@ const Index = () => {
         <>
             {/* Top Action Buttons */}
             <div className="grid grid-cols-2 gap-3">
-              {/* Create Blank Notepad Button */}
+              {/* Notepad Button */}
               <motion.button
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
               onClick={() => setShowNotepads(true)}
-              className="p-4 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 hover:border-amber-500/50 transition-all flex items-center gap-3">
-
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shrink-0">
-                  <FileText className="w-5 h-5 text-white" />
+              className="p-3 rounded-xl bg-card border border-border hover:border-amber-500/40 transition-all flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shrink-0">
+                  <FileText className="w-4 h-4 text-white" />
                 </div>
                 <div className="text-left flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground text-sm">Notepad</h3>
-                  <p className="text-xs text-muted-foreground truncate">
+                  <h3 className="font-semibold text-foreground text-xs">Notepad</h3>
+                  <p className="text-[10px] text-muted-foreground truncate">
                     {notepads.length > 0 ? `${notepads.length} note${notepads.length > 1 ? 's' : ''}` : 'Create notes'}
                   </p>
                 </div>
               </motion.button>
 
-              {/* Profile Button */}
+              {/* Renewable Members Button */}
               <motion.button
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -174,14 +173,13 @@ const Index = () => {
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
               onClick={() => navigate('/renew-subscription')}
-              className="p-4 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 hover:border-purple-500/50 transition-all flex items-center gap-3">
-
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shrink-0">
-                  <User className="w-5 h-5 text-white" />
+              className="p-3 rounded-xl bg-card border border-border hover:border-purple-500/40 transition-all flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shrink-0">
+                  <User className="w-4 h-4 text-white" />
                 </div>
                 <div className="text-left flex-1 min-w-0">
-                  <h3 className="text-foreground text-center text-xs font-bold">Renewable Members </h3>
-                  
+                  <h3 className="font-semibold text-foreground text-xs">Renewable</h3>
+                  <p className="text-[10px] text-muted-foreground truncate">Members to renew</p>
                 </div>
               </motion.button>
             </div>
