@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FileText, RefreshCw } from 'lucide-react';
+import { FileText, User } from 'lucide-react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useNotepads } from '@/hooks/useNotepads';
 import { useNotificationScheduler } from '@/hooks/useNotificationScheduler';
@@ -26,7 +26,7 @@ const Index = () => {
     updateTeamLogo,
     exportData,
     importData,
-    searchMembers,
+    searchMembers
   } = useSupabaseData();
 
   const {
@@ -35,7 +35,7 @@ const Index = () => {
     setActiveNotepadId,
     createNotepad,
     updateNotepad,
-    deleteNotepad,
+    deleteNotepad
   } = useNotepads();
 
   // Initialize local push notifications for member expiry alerts (native only)
@@ -58,7 +58,7 @@ const Index = () => {
     return {
       teams: sortedTeams,
       notepads: notepads,
-      exportedAt: new Date().toISOString(),
+      exportedAt: new Date().toISOString()
     };
   };
 
@@ -96,7 +96,7 @@ const Index = () => {
   };
 
   const handleSelectTeam = (teamId: string, memberId?: string) => {
-    const team = sortedTeams.find(t => t.id === teamId);
+    const team = sortedTeams.find((t) => t.id === teamId);
     setActiveTeam(teamId);
     if (team?.isYearlyTeam) {
       navigate(`/yearly-team/${teamId}`, { state: { highlightMemberId: memberId } });
@@ -120,8 +120,8 @@ const Index = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-8 h-8 rounded-full border-2 border-primary border-t-transparent animate-spin" />
-      </div>
-    );
+      </div>);
+
   }
 
   return (
@@ -129,32 +129,32 @@ const Index = () => {
       <AppHeader onSettingsClick={() => setIsSettingsOpen(true)} />
 
       <main className="container mx-auto px-4 py-6 space-y-6">
-        {showNotepads ? (
-          <NotepadSection
-            notepads={notepads}
-            activeNotepad={activeNotepad}
-            onCreateNotepad={handleCreateNotepad}
-            onSelectNotepad={setActiveNotepadId}
-            onUpdateNotepad={updateNotepad}
-            onDeleteNotepad={deleteNotepad}
-            onClose={() => {
-              setShowNotepads(false);
-              setActiveNotepadId(null);
-            }}
-          />
-        ) : (
-          <>
+        {showNotepads ?
+        <NotepadSection
+          notepads={notepads}
+          activeNotepad={activeNotepad}
+          onCreateNotepad={handleCreateNotepad}
+          onSelectNotepad={setActiveNotepadId}
+          onUpdateNotepad={updateNotepad}
+          onDeleteNotepad={deleteNotepad}
+          onClose={() => {
+            setShowNotepads(false);
+            setActiveNotepadId(null);
+          }} /> :
+
+
+        <>
             {/* Top Action Buttons */}
             <div className="grid grid-cols-2 gap-3">
               {/* Create Blank Notepad Button */}
               <motion.button
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                onClick={() => setShowNotepads(true)}
-                className="p-4 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 hover:border-amber-500/50 transition-all flex items-center gap-3"
-              >
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+              onClick={() => setShowNotepads(true)}
+              className="p-4 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 border border-amber-500/30 hover:border-amber-500/50 transition-all flex items-center gap-3">
+
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shrink-0">
                   <FileText className="w-5 h-5 text-white" />
                 </div>
@@ -166,22 +166,22 @@ const Index = () => {
                 </div>
               </motion.button>
 
-              {/* Renew Subscription Button */}
+              {/* Profile Button */}
               <motion.button
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.05 }}
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                onClick={() => navigate('/renew-subscription')}
-                className="p-4 rounded-xl bg-gradient-to-r from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 hover:border-emerald-500/50 transition-all flex items-center gap-3"
-              >
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shrink-0">
-                  <RefreshCw className="w-5 h-5 text-white" />
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.05 }}
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+              onClick={() => navigate('/profile')}
+              className="p-4 rounded-xl bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 hover:border-purple-500/50 transition-all flex items-center gap-3">
+
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shrink-0">
+                  <User className="w-5 h-5 text-white" />
                 </div>
                 <div className="text-left flex-1 min-w-0">
-                  <h3 className="font-semibold text-foreground text-sm">Renew Subscription</h3>
-                  <p className="text-xs text-muted-foreground truncate">১-২৮ দিনের মেম্বার</p>
+                  <h3 className="text-foreground text-center text-xs font-bold">Renewable Members </h3>
+                  
                 </div>
               </motion.button>
             </div>
@@ -194,15 +194,15 @@ const Index = () => {
 
             {/* Team List */}
             <TeamList
-              teams={sortedTeams}
-              activeTeamId={activeTeam?.id || ''}
-              onSelectTeam={handleSelectTeam}
-              onCreateTeam={handleCreateNewTeam}
-              onDeleteTeam={handleDeleteTeam}
-              onUpdateTeamLogo={updateTeamLogo}
-            />
+            teams={sortedTeams}
+            activeTeamId={activeTeam?.id || ''}
+            onSelectTeam={handleSelectTeam}
+            onCreateTeam={handleCreateNewTeam}
+            onDeleteTeam={handleDeleteTeam}
+            onUpdateTeamLogo={updateTeamLogo} />
+
           </>
-        )}
+        }
       </main>
 
       <SettingsModal
@@ -211,10 +211,10 @@ const Index = () => {
         onExport={exportData}
         onImport={handleImport}
         getBackupData={getBackupData}
-        onRestoreData={handleRestoreData}
-      />
-    </div>
-  );
+        onRestoreData={handleRestoreData} />
+
+    </div>);
+
 };
 
 export default Index;
