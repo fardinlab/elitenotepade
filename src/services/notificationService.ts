@@ -225,21 +225,19 @@ export const scheduleExpiryNotifications = async (teams: Team[]): Promise<void> 
   if (allNotifications.length === 0) {
     console.log('📢 [NOTIF] No expiring members found for next 7 days');
     
-    // Schedule a TEST notification in 10 seconds to verify system works
+    // Fire an IMMEDIATE test notification (no schedule delay)
     try {
-      const testTime = new Date(now.getTime() + 10000);
       await LocalNotifications.schedule({
         notifications: [{
           id: 99999,
           title: '🔔 টেস্ট নোটিফিকেশন',
-          body: 'নোটিফিকেশন সিস্টেম কাজ করছে! কিন্তু কোনো expiring member নেই।',
+          body: `নোটিফিকেশন সিস্টেম কাজ করছে! Teams: ${teams.length}, Members: ${totalMembers}`,
           channelId: 'expiry-alerts',
-          schedule: { at: testTime, allowWhileIdle: true },
           sound: 'default' as const,
           smallIcon: 'ic_notification',
         }]
       });
-      console.log('📢 [NOTIF] Test notification scheduled for 10 seconds from now');
+      console.log('📢 [NOTIF] Immediate test notification fired');
     } catch (err) {
       console.error('📢 [NOTIF] Test notification error:', err);
     }
