@@ -92,6 +92,8 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
   const [yearlyCurrentMonthPayments, setYearlyCurrentMonthPayments] = useState<Record<string, boolean>>({});
   const [yearlyMemberDueStatus, setYearlyMemberDueStatus] = useState<Record<string, boolean>>({});
   const [yearlyMemberPaidZero, setYearlyMemberPaidZero] = useState<Record<string, boolean>>({});
+  const [yearlyMemberTotalPaid, setYearlyMemberTotalPaid] = useState<Record<string, number>>({});
+  const [yearlyMemberTotalAmount, setYearlyMemberTotalAmount] = useState<Record<string, number>>({});
 
   // Fetch current month payment status and total due for all yearly team members
   const fetchYearlyPayments = useCallback(async () => {
@@ -161,6 +163,8 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
     });
     setYearlyMemberDueStatus(dueStatus);
     setYearlyMemberPaidZero(paidZeroStatus);
+    setYearlyMemberTotalPaid(totalPaidMap);
+    setYearlyMemberTotalAmount(totalAmountMap);
   }, [user, teams]);
 
   useEffect(() => {
@@ -464,6 +468,38 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                         {formatDate(team.createdAt)}
                       </span>
                     </div>
+                    {/* Paid & Due amounts */}
+                    {!isDeleteMode && (() => {
+                      let teamPaid = 0;
+                      let teamDue = 0;
+                      if (team.isYearlyTeam) {
+                        team.members.forEach(m => {
+                          teamPaid += yearlyMemberTotalPaid[m.id] || 0;
+                          const totalAmt = yearlyMemberTotalAmount[m.id] || 0;
+                          const paid = yearlyMemberTotalPaid[m.id] || 0;
+                          teamDue += Math.max(0, totalAmt - paid);
+                        });
+                      } else {
+                        team.members.forEach(m => {
+                          if (m.isPaid && m.paidAmount) teamPaid += m.paidAmount;
+                          if (m.pendingAmount && m.pendingAmount > 0) teamDue += m.pendingAmount;
+                        });
+                      }
+                      return (teamPaid > 0 || teamDue > 0) ? (
+                        <div className="flex items-center gap-3 mt-1">
+                          {teamPaid > 0 && (
+                            <span className="text-[11px] font-medium text-green-400">
+                              Paid: ৳{teamPaid.toLocaleString()}
+                            </span>
+                          )}
+                          {teamDue > 0 && (
+                            <span className="text-[11px] font-medium text-orange-400">
+                              Due: ৳{teamDue.toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+                      ) : null;
+                    })()}
                   </div>
 
                   <ChevronRight className={`w-5 h-5 transition-colors ${
