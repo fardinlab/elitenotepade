@@ -90,11 +90,31 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
 };
 
 /**
+ * Check if notifications were already sent today
+ */
+const wasNotifiedToday = (): boolean => {
+  const lastNotified = localStorage.getItem('lastNotificationDate');
+  const today = getTodayLocal().toISOString().split('T')[0];
+  return lastNotified === today;
+};
+
+const markNotifiedToday = (): void => {
+  const today = getTodayLocal().toISOString().split('T')[0];
+  localStorage.setItem('lastNotificationDate', today);
+};
+
+/**
  * Schedule local notifications for expiring members
  */
 export const scheduleExpiryNotifications = async (teams: Team[]): Promise<void> => {
   if (!Capacitor.isNativePlatform()) {
     console.log('Skipping notifications on web platform');
+    return;
+  }
+
+  // Skip if already notified today
+  if (wasNotifiedToday()) {
+    console.log('Already sent notifications today, skipping');
     return;
   }
 
@@ -142,6 +162,7 @@ export const scheduleExpiryNotifications = async (teams: Team[]): Promise<void> 
 
   try {
     await LocalNotifications.schedule(notifications);
+    markNotifiedToday();
     console.log(`Scheduled ${allExpiring.length} expiry notifications`);
   } catch (error) {
     console.error('Error scheduling notifications:', error);
