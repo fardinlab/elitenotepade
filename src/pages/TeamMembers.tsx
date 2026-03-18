@@ -71,7 +71,6 @@ const TeamMembers = () => {
       setHighlightedMemberId(highlightMemberId);
       setHighlightColor(highlightColorFromState);
       
-      // Wait for render then scroll
       setTimeout(() => {
         const memberElement = memberRefs.current[highlightMemberId];
         if (memberElement) {
@@ -79,17 +78,29 @@ const TeamMembers = () => {
         }
       }, 100);
 
-      // Remove highlight after 3 seconds
       const timer = setTimeout(() => {
         setHighlightedMemberId(null);
       }, 3000);
 
-      // Clear the location state to prevent re-highlighting on navigation
       window.history.replaceState({}, document.title);
-
       return () => clearTimeout(timer);
     }
   }, [highlightMemberId, highlightColorFromState, team]);
+
+  // Handle multiple member highlights (from monthly earnings)
+  useEffect(() => {
+    if (highlightMemberIds.length > 0 && team) {
+      setHighlightedMemberIds(highlightMemberIds);
+      setHighlightColor(highlightColorFromState);
+
+      const timer = setTimeout(() => {
+        setHighlightedMemberIds([]);
+      }, 4000);
+
+      window.history.replaceState({}, document.title);
+      return () => clearTimeout(timer);
+    }
+  }, [highlightMemberIds, highlightColorFromState, team]);
 
   const handleAddMember = async (member: { email: string; phone: string; telegram?: string; joinDate: string }) => {
     const result = await addMember(member);
