@@ -165,7 +165,9 @@ const YearlyMemberCard = ({
         ${isHighlighted 
           ? highlightColor === 'rainbow'
             ? 'rainbow-highlight-card'
-            : 'border-blue-500/60 ring-2 ring-blue-500/30 shadow-[0_0_30px_-5px_hsl(217_91%_60%/0.3)]' 
+            : highlightColor === 'yellow'
+              ? 'border-yellow-500/60 ring-2 ring-yellow-500/30 shadow-[0_0_30px_-5px_hsl(48_96%_53%/0.3)]'
+              : 'border-blue-500/60 ring-2 ring-blue-500/30 shadow-[0_0_30px_-5px_hsl(217_91%_60%/0.3)]' 
           : isOverdue 
             ? 'border-destructive/60 ring-2 ring-destructive/30 shadow-[0_0_30px_-5px_hsl(0_84%_60%/0.3)]' 
             : paymentSummary && paymentSummary.totalDue === 0 && paymentSummary.totalPaid > 0

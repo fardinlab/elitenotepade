@@ -246,6 +246,8 @@ export function MemberCard({
       }
       return highlightColor === 'green'
         ? 'bg-emerald-500/20 border-2 border-emerald-500 ring-2 ring-emerald-500/50'
+        : highlightColor === 'yellow'
+        ? 'bg-yellow-500/20 border-2 border-yellow-500 ring-2 ring-yellow-500/50'
         : 'bg-blue-500/20 border-2 border-blue-500 ring-2 ring-blue-500/50';
     }
     if (member.isPushed) {

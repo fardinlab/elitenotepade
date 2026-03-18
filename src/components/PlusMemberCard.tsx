@@ -164,6 +164,8 @@ export function PlusMemberCard({
       }
       return highlightColor === 'green'
         ? `${baseClasses} bg-emerald-500/20 border-2 border-emerald-500 ring-2 ring-emerald-500/50 shadow-[0_0_30px_rgba(16,185,129,0.3)]`
+        : highlightColor === 'yellow'
+        ? `${baseClasses} bg-yellow-500/20 border-2 border-yellow-500 ring-2 ring-yellow-500/50 shadow-[0_0_30px_rgba(234,179,8,0.3)]`
         : `${baseClasses} bg-blue-500/20 border-2 border-blue-500 ring-2 ring-blue-500/50 shadow-[0_0_30px_rgba(59,130,246,0.3)]`;
     }
     if (member.isPushed) {
