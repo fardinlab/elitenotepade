@@ -9,7 +9,7 @@ interface PlusMemberCardProps {
   index: number;
   isRemoveMode: boolean;
   isHighlighted?: boolean;
-  highlightColor?: 'blue' | 'green' | 'rainbow';
+  highlightColor?: 'blue' | 'green' | 'rainbow' | 'yellow';
   onRemove: () => void;
   onDateChange: (id: string, date: string) => void;
   onEmailChange: (id: string, email: string) => void;
