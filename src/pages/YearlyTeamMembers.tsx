@@ -17,9 +17,12 @@ const YearlyTeamMembers = () => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { teamId } = useParams<{ teamId: string }>();
-  const highlightMemberId = (location.state as { highlightMemberId?: string })?.highlightMemberId || searchParams.get('highlightMemberId');
-  const highlightColorParam = searchParams.get('highlightColor') || 'blue';
+  const locationState = location.state as { highlightMemberId?: string; highlightMemberIds?: string[]; highlightColor?: string } | null;
+  const highlightMemberId = locationState?.highlightMemberId || searchParams.get('highlightMemberId');
+  const highlightMemberIds = locationState?.highlightMemberIds || [];
+  const highlightColorParam = locationState?.highlightColor || searchParams.get('highlightColor') || 'blue';
   const [highlightedMemberId, setHighlightedMemberId] = useState<string | null>(null);
+  const [highlightedMemberIds, setHighlightedMemberIds] = useState<string[]>([]);
   const [highlightColorState, setHighlightColorState] = useState<string>('blue');
   const memberRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   
@@ -212,10 +215,24 @@ const YearlyTeamMembers = () => {
       }, 3000);
 
       window.history.replaceState({}, document.title);
-
       return () => clearTimeout(timer);
     }
   }, [highlightMemberId, team]);
+
+  // Handle multiple member highlights (from monthly earnings)
+  useEffect(() => {
+    if (highlightMemberIds.length > 0 && team) {
+      setHighlightedMemberIds(highlightMemberIds);
+      setHighlightColorState(highlightColorParam);
+
+      const timer = setTimeout(() => {
+        setHighlightedMemberIds([]);
+      }, 4000);
+
+      window.history.replaceState({}, document.title);
+      return () => clearTimeout(timer);
+    }
+  }, [highlightMemberIds, highlightColorParam, team]);
 
   const validateEmail = (email: string) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -440,7 +457,7 @@ const YearlyTeamMembers = () => {
                       key={member.id}
                       member={member}
                       index={index}
-                      isHighlighted={highlightedMemberId === member.id}
+                      isHighlighted={highlightedMemberId === member.id || highlightedMemberIds.includes(member.id)}
                       highlightColor={highlightColorState}
                       isOverdue={isOverdue}
                       isRemoveMode={isRemoveMode}

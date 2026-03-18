@@ -16,11 +16,13 @@ const PlusTeamMembers = () => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { teamId } = useParams<{ teamId: string }>();
-  const locationState = location.state as { highlightMemberId?: string; highlightColor?: 'blue' | 'green' | 'rainbow' } | null;
+  const locationState = location.state as { highlightMemberId?: string; highlightMemberIds?: string[]; highlightColor?: 'blue' | 'green' | 'rainbow' | 'yellow' } | null;
   const highlightMemberId = locationState?.highlightMemberId || searchParams.get('highlightMemberId');
-  const highlightColorFromState = (locationState?.highlightColor || searchParams.get('highlightColor') || 'blue') as 'blue' | 'green' | 'rainbow';
+  const highlightMemberIds = locationState?.highlightMemberIds || [];
+  const highlightColorFromState = (locationState?.highlightColor || searchParams.get('highlightColor') || 'blue') as 'blue' | 'green' | 'rainbow' | 'yellow';
   const [highlightedMemberId, setHighlightedMemberId] = useState<string | null>(null);
-  const [highlightColor, setHighlightColor] = useState<'blue' | 'green' | 'rainbow'>('blue');
+  const [highlightedMemberIds, setHighlightedMemberIds] = useState<string[]>([]);
+  const [highlightColor, setHighlightColor] = useState<'blue' | 'green' | 'rainbow' | 'yellow'>('blue');
   const memberRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   
   const {
@@ -67,7 +69,6 @@ const PlusTeamMembers = () => {
       setHighlightedMemberId(highlightMemberId);
       setHighlightColor(highlightColorFromState);
       
-      // Wait for render then scroll
       setTimeout(() => {
         const memberElement = memberRefs.current[highlightMemberId];
         if (memberElement) {
@@ -75,17 +76,29 @@ const PlusTeamMembers = () => {
         }
       }, 100);
 
-      // Remove highlight after 3 seconds
       const timer = setTimeout(() => {
         setHighlightedMemberId(null);
       }, 3000);
 
-      // Clear the location state to prevent re-highlighting on navigation
       window.history.replaceState({}, document.title);
-
       return () => clearTimeout(timer);
     }
   }, [highlightMemberId, highlightColorFromState, team]);
+
+  // Handle multiple member highlights (from monthly earnings)
+  useEffect(() => {
+    if (highlightMemberIds.length > 0 && team) {
+      setHighlightedMemberIds(highlightMemberIds);
+      setHighlightColor(highlightColorFromState);
+
+      const timer = setTimeout(() => {
+        setHighlightedMemberIds([]);
+      }, 4000);
+
+      window.history.replaceState({}, document.title);
+      return () => clearTimeout(timer);
+    }
+  }, [highlightMemberIds, highlightColorFromState, team]);
 
   const handleAddMember = async (member: { 
     email: string; 
@@ -195,7 +208,7 @@ const PlusTeamMembers = () => {
                       member={member}
                       index={index}
                       isRemoveMode={isRemoveMode}
-                      isHighlighted={highlightedMemberId === member.id}
+                      isHighlighted={highlightedMemberId === member.id || highlightedMemberIds.includes(member.id)}
                       highlightColor={highlightColor}
                       onRemove={() => handleRemoveMember(member.id, member.email)}
                       onDateChange={updateMemberDate}

@@ -11,6 +11,7 @@ interface TeamEarning {
   teamName: string;
   type: 'regular' | 'yearly' | 'plus';
   amount: number;
+  memberIds: string[];
 }
 
 interface MonthlyData {
@@ -90,24 +91,30 @@ const MonthlyEarnings = () => {
       const type = team.isPlusTeam ? 'plus' : 'regular';
 
       // Aggregate per team per month
-      const teamMonthAmounts = new Map<string, number>();
+      const teamMonthData = new Map<string, { amount: number; memberIds: string[] }>();
       team.members.forEach(member => {
         if (!member.paidAmount) return;
         const d = new Date(member.joinDate);
         const m = d.getMonth();
         const y = d.getFullYear();
         const key = `${y}-${m}`;
-        teamMonthAmounts.set(key, (teamMonthAmounts.get(key) || 0) + member.paidAmount);
+        const existing = teamMonthData.get(key) || { amount: 0, memberIds: [] };
+        existing.amount += member.paidAmount;
+        existing.memberIds.push(member.id);
+        teamMonthData.set(key, existing);
       });
 
-      teamMonthAmounts.forEach((amount, key) => {
+      teamMonthData.forEach((data, key) => {
         const [y, m] = key.split('-').map(Number);
         const entry = getOrCreate(key, m, y);
-        entry[type] += amount;
-        // Add or update team entry
+        entry[type] += data.amount;
         const existing = entry.teams.find(t => t.teamId === team.id);
-        if (existing) existing.amount += amount;
-        else entry.teams.push({ teamId: team.id, teamName: team.teamName, type, amount });
+        if (existing) {
+          existing.amount += data.amount;
+          existing.memberIds.push(...data.memberIds);
+        } else {
+          entry.teams.push({ teamId: team.id, teamName: team.teamName, type, amount: data.amount, memberIds: [...data.memberIds] });
+        }
       });
     });
 
@@ -121,8 +128,12 @@ const MonthlyEarnings = () => {
       const teamInfo = yearlyMemberTeamMap.get(p.member_id);
       if (teamInfo) {
         const existing = entry.teams.find(t => t.teamId === teamInfo.teamId);
-        if (existing) existing.amount += p.amount;
-        else entry.teams.push({ teamId: teamInfo.teamId, teamName: teamInfo.teamName, type: 'yearly', amount: p.amount });
+        if (existing) {
+          existing.amount += p.amount;
+          if (!existing.memberIds.includes(p.member_id)) existing.memberIds.push(p.member_id);
+        } else {
+          entry.teams.push({ teamId: teamInfo.teamId, teamName: teamInfo.teamName, type: 'yearly', amount: p.amount, memberIds: [p.member_id] });
+        }
       }
     });
 
@@ -249,12 +260,13 @@ const MonthlyEarnings = () => {
                           <button
                             key={team.teamId}
                             onClick={() => {
+                              const state = { highlightMemberIds: team.memberIds, highlightColor: 'yellow' };
                               if (team.type === 'yearly') {
-                                navigate(`/yearly-team/${team.teamId}`);
+                                navigate(`/yearly-team/${team.teamId}`, { state });
                               } else if (team.type === 'plus') {
-                                navigate(`/plus-team/${team.teamId}`);
+                                navigate(`/plus-team/${team.teamId}`, { state });
                               } else {
-                                navigate(`/team/${team.teamId}`);
+                                navigate(`/team/${team.teamId}`, { state });
                               }
                             }}
                             className="w-full flex items-center justify-between p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
