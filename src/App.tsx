@@ -15,6 +15,7 @@ import CurrentMonthMembers from "./pages/CurrentMonthMembers";
 import MemberPayDetails from "./pages/MemberPayDetails";
 import Profile from "./pages/Profile";
 import RenewSubscription from "./pages/RenewSubscription";
+import MonthlyEarnings from "./pages/MonthlyEarnings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 

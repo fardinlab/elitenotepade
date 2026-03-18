@@ -257,14 +257,17 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
         <p className="text-[11px] font-bold text-foreground leading-tight">{formatCurrency(earnings.totalDue)}</p>
       </button>
 
-      {/* EMT Earn - Every Month Total */}
-      <div className="p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/30">
+      {/* EMT Earn - Every Month Total - Clickable */}
+      <button
+        onClick={() => navigate('/monthly-earnings')}
+        className="p-2 rounded-lg bg-gradient-to-br from-blue-500/20 to-cyan-500/20 border border-blue-500/30 hover:border-blue-500/60 transition-all text-left"
+      >
         <div className="w-5 h-5 rounded bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center mb-1">
           <TrendingUp className="w-3 h-3 text-white" />
         </div>
         <p className="text-[8px] text-muted-foreground leading-tight">EMT Earn</p>
         <p className={`text-[11px] font-bold text-foreground leading-tight transition-all ${hideEarnings ? 'blur-sm select-none' : ''}`}>{formatCurrency(earnings.allTimeEarnings)}</p>
-      </div>
+      </button>
 
       {/* Total Members - Clickable */}
       <button
