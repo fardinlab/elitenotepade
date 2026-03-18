@@ -17,9 +17,12 @@ const YearlyTeamMembers = () => {
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { teamId } = useParams<{ teamId: string }>();
-  const highlightMemberId = (location.state as { highlightMemberId?: string })?.highlightMemberId || searchParams.get('highlightMemberId');
-  const highlightColorParam = searchParams.get('highlightColor') || 'blue';
+  const locationState = location.state as { highlightMemberId?: string; highlightMemberIds?: string[]; highlightColor?: string } | null;
+  const highlightMemberId = locationState?.highlightMemberId || searchParams.get('highlightMemberId');
+  const highlightMemberIds = locationState?.highlightMemberIds || [];
+  const highlightColorParam = locationState?.highlightColor || searchParams.get('highlightColor') || 'blue';
   const [highlightedMemberId, setHighlightedMemberId] = useState<string | null>(null);
+  const [highlightedMemberIds, setHighlightedMemberIds] = useState<string[]>([]);
   const [highlightColorState, setHighlightColorState] = useState<string>('blue');
   const memberRefs = useRef<{ [key: string]: HTMLDivElement | null }>({});
   
