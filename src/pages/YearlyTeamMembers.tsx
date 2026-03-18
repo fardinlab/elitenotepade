@@ -457,7 +457,7 @@ const YearlyTeamMembers = () => {
                       key={member.id}
                       member={member}
                       index={index}
-                      isHighlighted={highlightedMemberId === member.id}
+                      isHighlighted={highlightedMemberId === member.id || highlightedMemberIds.includes(member.id)}
                       highlightColor={highlightColorState}
                       isOverdue={isOverdue}
                       isRemoveMode={isRemoveMode}
