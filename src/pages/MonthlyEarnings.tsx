@@ -246,9 +246,18 @@ const MonthlyEarnings = () => {
                           <Users className="w-3 h-3" /> টিম ব্রেকডাউন
                         </p>
                         {data.teams.map(team => (
-                          <div
+                          <button
                             key={team.teamId}
-                            className="flex items-center justify-between p-2 rounded-lg bg-muted/50"
+                            onClick={() => {
+                              if (team.type === 'yearly') {
+                                navigate(`/yearly-team/${team.teamId}`);
+                              } else if (team.type === 'plus') {
+                                navigate(`/plus-team/${team.teamId}`);
+                              } else {
+                                navigate(`/team/${team.teamId}`);
+                              }
+                            }}
+                            className="w-full flex items-center justify-between p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
                           >
                             <div className="flex items-center gap-2">
                               <span className="text-xs font-medium text-foreground">{team.teamName}</span>
@@ -257,7 +266,7 @@ const MonthlyEarnings = () => {
                               </span>
                             </div>
                             <span className="text-xs font-bold text-emerald-500">{formatCurrency(team.amount)}</span>
-                          </div>
+                          </button>
                         ))}
                       </div>
                     </motion.div>
