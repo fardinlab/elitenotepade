@@ -260,12 +260,13 @@ const MonthlyEarnings = () => {
                           <button
                             key={team.teamId}
                             onClick={() => {
+                              const state = { highlightMemberIds: team.memberIds, highlightColor: 'yellow' };
                               if (team.type === 'yearly') {
-                                navigate(`/yearly-team/${team.teamId}`);
+                                navigate(`/yearly-team/${team.teamId}`, { state });
                               } else if (team.type === 'plus') {
-                                navigate(`/plus-team/${team.teamId}`);
+                                navigate(`/plus-team/${team.teamId}`, { state });
                               } else {
-                                navigate(`/team/${team.teamId}`);
+                                navigate(`/team/${team.teamId}`, { state });
                               }
                             }}
                             className="w-full flex items-center justify-between p-2 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
