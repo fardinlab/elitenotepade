@@ -215,10 +215,24 @@ const YearlyTeamMembers = () => {
       }, 3000);
 
       window.history.replaceState({}, document.title);
-
       return () => clearTimeout(timer);
     }
   }, [highlightMemberId, team]);
+
+  // Handle multiple member highlights (from monthly earnings)
+  useEffect(() => {
+    if (highlightMemberIds.length > 0 && team) {
+      setHighlightedMemberIds(highlightMemberIds);
+      setHighlightColorState(highlightColorParam);
+
+      const timer = setTimeout(() => {
+        setHighlightedMemberIds([]);
+      }, 4000);
+
+      window.history.replaceState({}, document.title);
+      return () => clearTimeout(timer);
+    }
+  }, [highlightMemberIds, highlightColorParam, team]);
 
   const validateEmail = (email: string) => {
     const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
