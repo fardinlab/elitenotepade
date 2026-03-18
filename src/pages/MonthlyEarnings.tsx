@@ -1,10 +1,17 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowLeft, TrendingUp, Calendar } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowLeft, TrendingUp, Calendar, ChevronDown, Users } from 'lucide-react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+
+interface TeamEarning {
+  teamId: string;
+  teamName: string;
+  type: 'regular' | 'yearly' | 'plus';
+  amount: number;
+}
 
 interface MonthlyData {
   month: number;
@@ -14,6 +21,7 @@ interface MonthlyData {
   yearly: number;
   plus: number;
   total: number;
+  teams: TeamEarning[];
 }
 
 const MONTH_NAMES_BN = [
@@ -21,13 +29,20 @@ const MONTH_NAMES_BN = [
   'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
 ];
 
+const TYPE_LABELS: Record<string, string> = { regular: 'Regular', yearly: 'Yearly', plus: 'Plus' };
+const TYPE_COLORS: Record<string, string> = {
+  regular: 'bg-blue-500/20 text-blue-400',
+  yearly: 'bg-amber-500/20 text-amber-400',
+  plus: 'bg-purple-500/20 text-purple-400',
+};
+
 const MonthlyEarnings = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { sortedTeams, isLoaded } = useSupabaseData();
   const [yearlyPayments, setYearlyPayments] = useState<{ member_id: string; amount: number; month: number; year: number }[]>([]);
+  const [expandedMonth, setExpandedMonth] = useState<string | null>(null);
 
-  // Fetch yearly team payments
   useEffect(() => {
     const fetchYearlyPayments = async () => {
       if (!user) return;
@@ -36,10 +51,7 @@ const MonthlyEarnings = () => {
         .flatMap(t => t.members)
         .map(m => m.id);
 
-      if (yearlyMemberIds.length === 0) {
-        setYearlyPayments([]);
-        return;
-      }
+      if (yearlyMemberIds.length === 0) { setYearlyPayments([]); return; }
 
       const { data, error } = await supabase
         .from('member_payments')
@@ -48,59 +60,82 @@ const MonthlyEarnings = () => {
         .in('member_id', yearlyMemberIds)
         .eq('status', 'paid');
 
-      if (!error && data) {
-        setYearlyPayments(data);
-      }
+      if (!error && data) setYearlyPayments(data);
     };
-
     if (isLoaded) fetchYearlyPayments();
   }, [user, sortedTeams, isLoaded]);
+
+  // Build a map of member_id -> team info for yearly teams
+  const yearlyMemberTeamMap = useMemo(() => {
+    const map = new Map<string, { teamId: string; teamName: string }>();
+    sortedTeams.filter(t => t.isYearlyTeam).forEach(team => {
+      team.members.forEach(m => map.set(m.id, { teamId: team.id, teamName: team.teamName }));
+    });
+    return map;
+  }, [sortedTeams]);
 
   const monthlyData = useMemo(() => {
     const dataMap = new Map<string, MonthlyData>();
 
-    // Regular & Plus teams - use joinDate month as earning month
+    const getOrCreate = (key: string, m: number, y: number): MonthlyData => {
+      if (!dataMap.has(key)) {
+        dataMap.set(key, { month: m, year: y, label: '', regular: 0, yearly: 0, plus: 0, total: 0, teams: [] });
+      }
+      return dataMap.get(key)!;
+    };
+
+    // Regular & Plus teams
     sortedTeams.forEach(team => {
       if (team.isYearlyTeam) return;
       const type = team.isPlusTeam ? 'plus' : 'regular';
 
+      // Aggregate per team per month
+      const teamMonthAmounts = new Map<string, number>();
       team.members.forEach(member => {
         if (!member.paidAmount) return;
         const d = new Date(member.joinDate);
         const m = d.getMonth();
         const y = d.getFullYear();
         const key = `${y}-${m}`;
+        teamMonthAmounts.set(key, (teamMonthAmounts.get(key) || 0) + member.paidAmount);
+      });
 
-        if (!dataMap.has(key)) {
-          dataMap.set(key, { month: m, year: y, label: '', regular: 0, yearly: 0, plus: 0, total: 0 });
-        }
-        const entry = dataMap.get(key)!;
-        entry[type] += member.paidAmount;
+      teamMonthAmounts.forEach((amount, key) => {
+        const [y, m] = key.split('-').map(Number);
+        const entry = getOrCreate(key, m, y);
+        entry[type] += amount;
+        // Add or update team entry
+        const existing = entry.teams.find(t => t.teamId === team.id);
+        if (existing) existing.amount += amount;
+        else entry.teams.push({ teamId: team.id, teamName: team.teamName, type, amount });
       });
     });
 
-    // Yearly teams - use member_payments month/year
+    // Yearly teams
     yearlyPayments.forEach(p => {
-      const m = p.month - 1; // convert 1-based to 0-based
+      const m = p.month - 1;
       const key = `${p.year}-${m}`;
-
-      if (!dataMap.has(key)) {
-        dataMap.set(key, { month: m, year: p.year, label: '', regular: 0, yearly: 0, plus: 0, total: 0 });
-      }
-      const entry = dataMap.get(key)!;
+      const entry = getOrCreate(key, m, p.year);
       entry.yearly += p.amount;
+
+      const teamInfo = yearlyMemberTeamMap.get(p.member_id);
+      if (teamInfo) {
+        const existing = entry.teams.find(t => t.teamId === teamInfo.teamId);
+        if (existing) existing.amount += p.amount;
+        else entry.teams.push({ teamId: teamInfo.teamId, teamName: teamInfo.teamName, type: 'yearly', amount: p.amount });
+      }
     });
 
-    // Calculate totals and labels, sort descending
     const result = Array.from(dataMap.values()).map(d => ({
       ...d,
       label: `${MONTH_NAMES_BN[d.month]} ${d.year}`,
       total: d.regular + d.yearly + d.plus,
+      teams: d.teams.sort((a, b) => b.amount - a.amount),
     }));
 
     result.sort((a, b) => b.year - a.year || b.month - a.month);
     return result;
-  }, [sortedTeams, yearlyPayments]);
+  }, [sortedTeams, yearlyPayments, yearlyMemberTeamMap]);
 
   const grandTotal = monthlyData.reduce((sum, d) => sum + d.total, 0);
 
@@ -141,52 +176,96 @@ const MonthlyEarnings = () => {
             <p className="text-sm">কোনো আয়ের রেকর্ড নেই</p>
           </div>
         ) : (
-          monthlyData.map((data, index) => (
-            <motion.div
-              key={`${data.year}-${data.month}`}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.03 }}
-              className="p-3 rounded-xl bg-card border border-border"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
-                    <Calendar className="w-3.5 h-3.5 text-white" />
+          monthlyData.map((data, index) => {
+            const key = `${data.year}-${data.month}`;
+            const isExpanded = expandedMonth === key;
+
+            return (
+              <motion.div
+                key={key}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.03 }}
+                className="rounded-xl bg-card border border-border overflow-hidden"
+              >
+                <button
+                  onClick={() => setExpandedMonth(isExpanded ? null : key)}
+                  className="w-full p-3 text-left"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                        <Calendar className="w-3.5 h-3.5 text-white" />
+                      </div>
+                      <span className="text-sm font-semibold text-foreground">{data.label}</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-sm font-bold text-emerald-500">{formatCurrency(data.total)}</span>
+                      <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                    </div>
                   </div>
-                  <span className="text-sm font-semibold text-foreground">{data.label}</span>
-                </div>
-                <span className="text-sm font-bold text-emerald-500">{formatCurrency(data.total)}</span>
-              </div>
 
-              {/* Breakdown */}
-              <div className="flex gap-3 text-[10px]">
-                {data.regular > 0 && (
-                  <span className="text-muted-foreground">
-                    Regular: <span className="text-foreground font-medium">{formatCurrency(data.regular)}</span>
-                  </span>
-                )}
-                {data.yearly > 0 && (
-                  <span className="text-muted-foreground">
-                    Yearly: <span className="text-foreground font-medium">{formatCurrency(data.yearly)}</span>
-                  </span>
-                )}
-                {data.plus > 0 && (
-                  <span className="text-muted-foreground">
-                    Plus: <span className="text-foreground font-medium">{formatCurrency(data.plus)}</span>
-                  </span>
-                )}
-              </div>
+                  <div className="flex gap-3 text-[10px]">
+                    {data.regular > 0 && (
+                      <span className="text-muted-foreground">
+                        Regular: <span className="text-foreground font-medium">{formatCurrency(data.regular)}</span>
+                      </span>
+                    )}
+                    {data.yearly > 0 && (
+                      <span className="text-muted-foreground">
+                        Yearly: <span className="text-foreground font-medium">{formatCurrency(data.yearly)}</span>
+                      </span>
+                    )}
+                    {data.plus > 0 && (
+                      <span className="text-muted-foreground">
+                        Plus: <span className="text-foreground font-medium">{formatCurrency(data.plus)}</span>
+                      </span>
+                    )}
+                  </div>
 
-              {/* Progress bar */}
-              <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all"
-                  style={{ width: `${Math.min((data.total / Math.max(grandTotal, 1)) * 100 * monthlyData.length, 100)}%` }}
-                />
-              </div>
-            </motion.div>
-          ))
+                  <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 transition-all"
+                      style={{ width: `${Math.min((data.total / Math.max(grandTotal, 1)) * 100 * monthlyData.length, 100)}%` }}
+                    />
+                  </div>
+                </button>
+
+                {/* Expanded team list */}
+                <AnimatePresence>
+                  {isExpanded && data.teams.length > 0 && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="px-3 pb-3 space-y-1.5 border-t border-border pt-2">
+                        <p className="text-[10px] text-muted-foreground font-medium flex items-center gap-1">
+                          <Users className="w-3 h-3" /> টিম ব্রেকডাউন
+                        </p>
+                        {data.teams.map(team => (
+                          <div
+                            key={team.teamId}
+                            className="flex items-center justify-between p-2 rounded-lg bg-muted/50"
+                          >
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-medium text-foreground">{team.teamName}</span>
+                              <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-medium ${TYPE_COLORS[team.type]}`}>
+                                {TYPE_LABELS[team.type]}
+                              </span>
+                            </div>
+                            <span className="text-xs font-bold text-emerald-500">{formatCurrency(team.amount)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+            );
+          })
         )}
       </main>
     </div>
