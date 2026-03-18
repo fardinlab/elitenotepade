@@ -11,7 +11,7 @@ interface MemberCardProps {
   index: number;
   isRemoveMode: boolean;
   isHighlighted?: boolean;
-  highlightColor?: 'blue' | 'green' | 'rainbow';
+  highlightColor?: 'blue' | 'green' | 'rainbow' | 'yellow';
   allTeams?: Team[];
   hideActiveControl?: boolean;
   onRemove: () => void;
