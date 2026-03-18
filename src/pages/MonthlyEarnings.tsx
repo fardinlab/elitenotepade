@@ -11,6 +11,7 @@ interface TeamEarning {
   teamName: string;
   type: 'regular' | 'yearly' | 'plus';
   amount: number;
+  memberIds: string[];
 }
 
 interface MonthlyData {
