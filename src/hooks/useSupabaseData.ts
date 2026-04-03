@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
-import { Team, Member, MAX_MEMBERS, SubscriptionType } from '@/types/member';
+import { Team, Member, MAX_MEMBERS, SubscriptionType, SUBSCRIPTION_CONFIG } from '@/types/member';
 import {
   getLocalTeams,
   getLocalMembers,
