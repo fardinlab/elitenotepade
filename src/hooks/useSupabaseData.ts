@@ -412,6 +412,11 @@ export function useSupabaseData() {
               teamName: team.teamName,
               subscriptionName,
               joinDate: member.joinDate,
+              expiryDate: (() => {
+                const d = new Date(member.joinDate);
+                d.setDate(d.getDate() + 30);
+                return d.toISOString().split('T')[0];
+              })(),
               memberEmail: member.email,
             },
           },
