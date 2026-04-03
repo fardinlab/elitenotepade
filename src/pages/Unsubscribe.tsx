@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 
 const supabaseUrl = 'https://zpwmeoujlgglwttsebup.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpwd21lb3VqbGdnbHd0dHNlYnVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMzk3MzEsImV4cCI6MjA5MDgxNTczMX0.YY7aCZccFInxa5_jxHc9IJq_Fbm7LQoMfrs5tBOR19o';
 
 type Status = 'loading' | 'valid' | 'already_unsubscribed' | 'invalid' | 'success' | 'error';
 
