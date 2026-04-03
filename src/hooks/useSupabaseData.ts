@@ -403,7 +403,7 @@ export function useSupabaseData() {
       // Send welcome email after 1 minute (Normal + Plus teams only, skip pushed members)
       if (!team.isYearlyTeam && member.email && !member.isPushed) {
         const subscriptionName = team.logo ? SUBSCRIPTION_CONFIG[team.logo]?.name : undefined;
-        supabase.functions.invoke('send-transactional-email', {
+        cloudSupabase.functions.invoke('send-transactional-email', {
           body: {
             templateName: 'welcome-member',
             recipientEmail: member.email,
