@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { supabase as cloudSupabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Team, Member, MAX_MEMBERS, SubscriptionType, SUBSCRIPTION_CONFIG } from '@/types/member';
+import { isValidEmailAddress, normalizeEmail } from '@/lib/emailValidation';
 import {
   getLocalTeams,
   getLocalMembers,
