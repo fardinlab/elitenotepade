@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { supabase as cloudSupabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Team, Member, MAX_MEMBERS, SubscriptionType, SUBSCRIPTION_CONFIG } from '@/types/member';
+import { isValidEmailAddress, normalizeEmail } from '@/lib/emailValidation';
 import {
   getLocalTeams,
   getLocalMembers,
@@ -367,13 +368,18 @@ export function useSupabaseData() {
         return { ok: false, error: `Maximum ${MAX_MEMBERS} members allowed` };
       }
 
+      const normalizedEmail = normalizeEmail(member.email);
+      if (!isValidEmailAddress(normalizedEmail)) {
+        return { ok: false, error: 'Please enter a valid email address' };
+      }
+
       const id = crypto.randomUUID();
       const now = new Date().toISOString();
       const localMember = {
         id,
         team_id: teamIdToUse,
         user_id: user.id,
-        email: member.email,
+        email: normalizedEmail,
         phone: member.phone || '',
         telegram: member.telegram || null,
         twofa_secret: member.twoFA || null,
@@ -400,13 +406,12 @@ export function useSupabaseData() {
 
       await queueAndSync(user.id, 'members', 'insert', id, localMember);
 
-      // Send welcome email after 1 minute (Normal + Plus teams only, skip pushed members)
-      if (!team.isYearlyTeam && member.email && !member.isPushed) {
+      if (!team.isYearlyTeam && normalizedEmail && !member.isPushed) {
         const subscriptionName = team.logo ? SUBSCRIPTION_CONFIG[team.logo]?.name : undefined;
         cloudSupabase.functions.invoke('send-transactional-email', {
           body: {
             templateName: 'welcome-member',
-            recipientEmail: member.email,
+            recipientEmail: normalizedEmail,
             idempotencyKey: `welcome-${id}`,
             templateData: {
               teamName: team.teamName,
@@ -417,11 +422,11 @@ export function useSupabaseData() {
                 d.setDate(d.getDate() + 30);
                 return d.toISOString().split('T')[0];
               })(),
-              memberEmail: member.email,
+              memberEmail: normalizedEmail,
             },
           },
         }).then(() => {
-          console.log('[Email] Welcome email queued for', member.email);
+          console.log('[Email] Welcome email queued for', normalizedEmail);
         }).catch((e) => {
           console.error('[Email] Failed to send welcome email:', e);
         });
