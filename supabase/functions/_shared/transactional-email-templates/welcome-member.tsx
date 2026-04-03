@@ -34,52 +34,52 @@ const WelcomeMemberEmail = ({
   return (
     <Html lang="en" dir="ltr">
       <Head />
-      <Preview>🎉 স্বাগতম! {planLabel} সফলভাবে সক্রিয় করা হয়েছে!</Preview>
+      <Preview>{`Welcome! ${planLabel} has been activated successfully!`}</Preview>
       <Body style={main}>
         <Container style={container}>
           {/* Header */}
           <Section style={headerSection}>
-            <Text style={headerEmoji}>🎉</Text>
-            <Heading style={h1}>স্বাগতম | Welcome!</Heading>
+            <Text style={headerEmoji}>&#127881;</Text>
+            <Heading style={h1}>Welcome!</Heading>
             <Text style={headerSubtext}>Your subscription is now active</Text>
           </Section>
 
           {/* Greeting */}
           <Section style={contentSection}>
             <Text style={greetingText}>
-              প্রিয় {memberName || 'Valued Customer'},
+              Dear {memberName || 'Valued Customer'},
             </Text>
             <Text style={text}>
-              আপনাকে <strong>Tech Subx BD</strong>-তে স্বাগতম! আপনার সাবস্ক্রিপশন সফলভাবে সক্রিয় করা হয়েছে।
+              Welcome to <strong>Tech Subx BD</strong>! Your subscription has been activated successfully.
             </Text>
 
             {/* Subscription Details Card */}
             <Section style={detailsCard}>
-              <Text style={detailsHeader}>📌 Subscription Details</Text>
+              <Text style={detailsHeader}>Subscription Details</Text>
               <Hr style={detailsDivider} />
 
               <Section style={detailRow}>
-                <Text style={detailLabel}>📅 Join Date</Text>
+                <Text style={detailLabel}>Join Date</Text>
                 <Text style={detailValue}>{joinDate || 'N/A'}</Text>
               </Section>
 
               <Section style={detailRow}>
-                <Text style={detailLabel}>📧 Email</Text>
+                <Text style={detailLabel}>Email</Text>
                 <Text style={detailValue}>{memberEmail || 'N/A'}</Text>
               </Section>
 
               <Section style={detailRow}>
-                <Text style={detailLabel}>📦 Plan Name</Text>
+                <Text style={detailLabel}>Plan Name</Text>
                 <Text style={detailValue}>{planLabel}</Text>
               </Section>
 
               <Section style={detailRow}>
-                <Text style={detailLabel}>⏳ মেয়াদ / Duration</Text>
+                <Text style={detailLabel}>Duration</Text>
                 <Text style={detailValue}>{duration}</Text>
               </Section>
 
               <Section style={detailRow}>
-                <Text style={detailLabel}>📆 Expiry Date</Text>
+                <Text style={detailLabel}>Expiry Date</Text>
                 <Text style={detailValue}>{expiryDate || 'N/A'}</Text>
               </Section>
             </Section>
@@ -87,32 +87,32 @@ const WelcomeMemberEmail = ({
             {/* Active Status */}
             <Section style={statusBanner}>
               <Text style={statusText}>
-                ✅ আপনার <strong>{serviceName}</strong> এখন সক্রিয়।
+                Your <strong>{serviceName}</strong> is now active.
               </Text>
               <Text style={statusSubtext}>
-                ⏰ নির্ধারিত সময়ের আগে রিনিউ করতে ভুলবেন না, যাতে কোনো সার্ভিস বন্ধ না হয়।
+                Please remember to renew before expiry to avoid any service interruption.
               </Text>
             </Section>
 
             {/* Security Info */}
             <Section style={securityCard}>
-              <Text style={securityHeader}>🔐 Important তথ্য</Text>
+              <Text style={securityHeader}>Important Information</Text>
               <Hr style={securityDivider} />
               <Text style={securityItem}>
-                • আপনার লগইন তথ্য অন্য কারো সাথে শেয়ার করবেন না
+                &#8226; Do not share your login credentials with anyone
               </Text>
               <Text style={securityItem}>
-                • কোনো সমস্যা হলে আমাদের সাথে যোগাযোগ করুন
+                &#8226; Contact us if you face any issues
               </Text>
             </Section>
 
             {/* Contact Info */}
             <Section style={contactSection}>
               <Text style={contactItem}>
-                📞 WhatsApp: <Link href="https://wa.me/8801322230857" style={contactLink}>01322230857</Link>
+                WhatsApp: <Link href="https://wa.me/8801322230857" style={contactLink}>01322230857</Link>
               </Text>
               <Text style={contactItem}>
-                🌐 Website: <Link href="https://myproduct.tech" style={contactLink}>myproduct.tech</Link>
+                Website: <Link href="https://myproduct.tech" style={contactLink}>myproduct.tech</Link>
               </Text>
             </Section>
 
@@ -120,7 +120,7 @@ const WelcomeMemberEmail = ({
 
             {/* Footer */}
             <Text style={footer}>
-              ধন্যবাদান্তে,<br />
+              Thank you,<br />
               <strong>Tech Subx BD Team</strong>
             </Text>
             <Text style={footerSub}>
