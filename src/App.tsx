@@ -18,6 +18,7 @@ import RenewSubscription from "./pages/RenewSubscription";
 import MonthlyEarnings from "./pages/MonthlyEarnings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
+import Unsubscribe from "./pages/Unsubscribe";
 
 const queryClient = new QueryClient();
 
