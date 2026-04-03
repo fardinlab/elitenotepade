@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, UserPlus, Mail, Phone, Calendar, Send } from 'lucide-react';
+import { isValidEmailAddress, normalizeEmail } from '@/lib/emailValidation';
 
 interface AddMemberModalProps {
   isOpen: boolean;
@@ -15,11 +16,6 @@ export function AddMemberModal({ isOpen, onClose, onAdd }: AddMemberModalProps) 
   const [joinDate, setJoinDate] = useState(new Date().toISOString().split('T')[0]);
   const [errors, setErrors] = useState<{ email?: string; phone?: string }>({});
 
-  const validateEmail = (email: string) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
-  };
-
   const validatePhone = (phone: string) => {
     const re = /^[+]?[\d\s\-()]{7,}$/;
     return re.test(phone);
@@ -27,9 +23,10 @@ export function AddMemberModal({ isOpen, onClose, onAdd }: AddMemberModalProps) 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmedEmail = normalizeEmail(email);
     const newErrors: { email?: string; phone?: string } = {};
 
-    if (!validateEmail(email)) {
+    if (!isValidEmailAddress(trimmedEmail)) {
       newErrors.email = 'Please enter a valid email address';
     }
     if (phone && !validatePhone(phone)) {
@@ -42,7 +39,7 @@ export function AddMemberModal({ isOpen, onClose, onAdd }: AddMemberModalProps) 
     }
 
     const success = await onAdd({ 
-      email, 
+      email: trimmedEmail,
       phone: phone.trim() || undefined, 
       telegram: telegram.trim() || undefined,
       joinDate 

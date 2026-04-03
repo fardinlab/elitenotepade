@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, UserPlus, Mail, Phone, Calendar, Send, Key, Lock } from 'lucide-react';
+import { isValidEmailAddress, normalizeEmail } from '@/lib/emailValidation';
 
 interface AddPlusMemberModalProps {
   isOpen: boolean;
@@ -24,16 +25,12 @@ export function AddPlusMemberModal({ isOpen, onClose, onAdd }: AddPlusMemberModa
   const [joinDate, setJoinDate] = useState(new Date().toISOString().split('T')[0]);
   const [errors, setErrors] = useState<{ email?: string }>({});
 
-  const validateEmail = (email: string) => {
-    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return re.test(email);
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmedEmail = normalizeEmail(email);
     const newErrors: { email?: string } = {};
 
-    if (!validateEmail(email)) {
+    if (!isValidEmailAddress(trimmedEmail)) {
       newErrors.email = 'Please enter a valid email address';
     }
 
@@ -43,7 +40,7 @@ export function AddPlusMemberModal({ isOpen, onClose, onAdd }: AddPlusMemberModa
     }
 
     const success = await onAdd({ 
-      email, 
+      email: trimmedEmail,
       ePass: ePass.trim() || undefined,
       gPass: gPass.trim() || undefined,
       phone: phone.trim() || undefined, 
