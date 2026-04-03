@@ -6,6 +6,7 @@ import YearlyMemberCard from '@/components/YearlyMemberCard';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
+import { isValidEmailAddress, normalizeEmail } from '@/lib/emailValidation';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
