@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import { supabase as cloudSupabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Team, Member, MAX_MEMBERS, SubscriptionType, SUBSCRIPTION_CONFIG } from '@/types/member';
 import {
@@ -402,7 +403,7 @@ export function useSupabaseData() {
       // Send welcome email after 1 minute (Normal + Plus teams only, skip pushed members)
       if (!team.isYearlyTeam && member.email && !member.isPushed) {
         const subscriptionName = team.logo ? SUBSCRIPTION_CONFIG[team.logo]?.name : undefined;
-        supabase.functions.invoke('send-transactional-email', {
+        cloudSupabase.functions.invoke('send-transactional-email', {
           body: {
             templateName: 'welcome-member',
             recipientEmail: member.email,
