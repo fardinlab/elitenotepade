@@ -402,26 +402,23 @@ export function useSupabaseData() {
       // Send welcome email after 1 minute (Normal + Plus teams only, skip pushed members)
       if (!team.isYearlyTeam && member.email && !member.isPushed) {
         const subscriptionName = team.logo ? SUBSCRIPTION_CONFIG[team.logo]?.name : undefined;
-        setTimeout(async () => {
-          try {
-            await supabase.functions.invoke('send-transactional-email', {
-              body: {
-                templateName: 'welcome-member',
-                recipientEmail: member.email,
-                idempotencyKey: `welcome-${id}`,
-                templateData: {
-                  teamName: team.teamName,
-                  subscriptionName,
-                  joinDate: member.joinDate,
-                  memberEmail: member.email,
-                },
-              },
-            });
-            console.log('[Email] Welcome email queued for', member.email);
-          } catch (e) {
-            console.error('[Email] Failed to send welcome email:', e);
-          }
-        }, 60_000); // 1 minute delay
+        supabase.functions.invoke('send-transactional-email', {
+          body: {
+            templateName: 'welcome-member',
+            recipientEmail: member.email,
+            idempotencyKey: `welcome-${id}`,
+            templateData: {
+              teamName: team.teamName,
+              subscriptionName,
+              joinDate: member.joinDate,
+              memberEmail: member.email,
+            },
+          },
+        }).then(() => {
+          console.log('[Email] Welcome email queued for', member.email);
+        }).catch((e) => {
+          console.error('[Email] Failed to send welcome email:', e);
+        });
       }
 
       return { ok: true };
