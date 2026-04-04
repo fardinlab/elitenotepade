@@ -41,6 +41,7 @@ const Index = () => {
 
   // Initialize local push notifications for member expiry alerts (native only)
   useNotificationScheduler(sortedTeams, isLoaded);
+  useDueReminders(sortedTeams, isLoaded);
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showNotepads, setShowNotepads] = useState(false);
