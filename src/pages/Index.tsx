@@ -5,6 +5,7 @@ import { FileText, User } from 'lucide-react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useNotepads } from '@/hooks/useNotepads';
 import { useNotificationScheduler } from '@/hooks/useNotificationScheduler';
+import { useDueReminders } from '@/hooks/useDueReminders';
 import { SubscriptionType } from '@/types/member';
 import { AppHeader } from '@/components/AppHeader';
 import { SettingsModal } from '@/components/SettingsModal';
