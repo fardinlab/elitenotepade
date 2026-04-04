@@ -26,9 +26,15 @@ const WelcomeMemberEmail = ({
   memberName,
   duration = '30 Days / 1 Month',
 }: WelcomeMemberProps) => {
-  const isGemini = subscriptionName?.toLowerCase().includes('gemini')
+  const subType = (() => {
+    const name = subscriptionName?.toLowerCase() || ''
+    if (name.includes('gemini')) return 'Pro'
+    if (name.includes('canva')) return 'Pro'
+    if (name.includes('youtube')) return 'Premium'
+    return 'Business'
+  })()
   const planLabel = subscriptionName
-    ? `${subscriptionName} ${isGemini ? 'Pro' : 'Business'} Subscription`
+    ? `${subscriptionName} ${subType} Subscription`
     : 'Subscription'
   const serviceName = subscriptionName || 'Service'
 
