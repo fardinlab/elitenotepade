@@ -122,7 +122,8 @@ export const template = {
   component: DueReminderEmail,
   subject: (data: Record<string, any>) => {
     const service = data.subscriptionName || 'Tech Subx BD'
-    return `Payment Reminder - ${service} | Pending: ${data.pendingAmount || '0'} BDT`
+    const currencySymbol = data.isUsdt === 'true' ? '$' : '৳'
+    return `Payment Reminder - ${service} | Pending: ${currencySymbol}${data.pendingAmount || '0'}`
   },
   displayName: 'Due Payment Reminder',
   previewData: {
