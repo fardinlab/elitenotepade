@@ -277,19 +277,38 @@ export function PlusMemberCard({
         {/* Top row: Pushed badge */}
         {!isRemoveMode && onPushedChange && (
           <div className="flex items-center justify-between">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleTogglePushed}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${
-                member.isPushed
-                  ? 'bg-muted/50 text-muted-foreground border border-muted-foreground/20'
-                  : 'bg-purple-500/20 text-purple-300 border border-purple-500/30 hover:bg-purple-500/30'
-              }`}
-            >
-              {member.isPushed ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-              <span>Pushed</span>
-            </motion.button>
+            <div className="flex items-center gap-2">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleTogglePushed}
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${
+                  member.isPushed
+                    ? 'bg-muted/50 text-muted-foreground border border-muted-foreground/20'
+                    : 'bg-purple-500/20 text-purple-300 border border-purple-500/30 hover:bg-purple-500/30'
+                }`}
+              >
+                {member.isPushed ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                <span>Pushed</span>
+              </motion.button>
+
+              {/* USDT Toggle */}
+              {onUsdtChange && (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => onUsdtChange(member.id, !member.isUsdt)}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${
+                    member.isUsdt
+                      ? 'bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30'
+                      : 'bg-muted/50 text-muted-foreground border border-muted-foreground/20 hover:bg-muted/70'
+                  }`}
+                >
+                  <DollarSign className="w-3 h-3" />
+                  <span>USDT</span>
+                </motion.button>
+              )}
+            </div>
 
             {isRemoveMode && (
               <motion.button
