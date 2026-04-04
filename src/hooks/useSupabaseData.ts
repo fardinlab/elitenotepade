@@ -86,6 +86,7 @@ const mapDbMemberToMember = (dbMember: DbMember): Member => ({
   subscriptions: (dbMember.subscriptions as SubscriptionType[]) || undefined,
   isPushed: dbMember.is_pushed || false,
   activeTeamId: dbMember.active_team_id || undefined,
+  isUsdt: (dbMember as any).is_usdt || false,
 });
 
 // ─── Helper: build teams from local DB ──────────────────────────
