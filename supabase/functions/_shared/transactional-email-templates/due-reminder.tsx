@@ -80,7 +80,7 @@ const DueReminderEmail = ({
 
               <Section style={amountRow}>
                 <Text style={amountLabel}>Pending Amount</Text>
-                <Text style={amountValue}>{pendingAmount || '0'} BDT</Text>
+                <Text style={amountValue}>{currencySymbol}{pendingAmount || '0'}</Text>
               </Section>
             </Section>
 
