@@ -44,7 +44,8 @@ export function MemberCard({
   onSubscriptionsChange,
   onPendingAmountChange,
   onPushedChange,
-  onActiveTeamChange
+  onActiveTeamChange,
+  onUsdtChange
 }: MemberCardProps) {
   const navigate = useNavigate();
   const [isEditingDate, setIsEditingDate] = useState(false);
