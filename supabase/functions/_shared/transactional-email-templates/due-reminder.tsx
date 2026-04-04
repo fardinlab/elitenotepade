@@ -22,7 +22,11 @@ const DueReminderEmail = ({
   memberEmail,
   pendingAmount,
   joinDate,
+  isUsdt,
 }: DueReminderProps) => {
+  const isUsdtCustomer = isUsdt === 'true'
+  const currencySymbol = isUsdtCustomer ? '$' : '৳'
+  const currencyLabel = isUsdtCustomer ? 'USD' : 'BDT'
   const planLabel = subscriptionName
     ? `${subscriptionName} Subscription`
     : 'Subscription'
