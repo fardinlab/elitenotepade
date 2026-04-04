@@ -273,9 +273,9 @@ export function MemberCard({
       transition={{ delay: index * 0.05 }}
       className={`rounded-xl p-4 card-shadow transition-all duration-300 touch-manipulation ${getCardClasses()}`}
     >
-      {/* Pushed and Active Controls */}
-      {!isRemoveMode && (onPushedChange || (onActiveTeamChange && !hideActiveControl)) && (
-        <div className="flex items-center gap-3 mb-3 pb-2 border-b border-border/50">
+      {/* Pushed, Active, and USDT Controls */}
+      {!isRemoveMode && (onPushedChange || (onActiveTeamChange && !hideActiveControl) || onUsdtChange) && (
+        <div className="flex items-center gap-3 mb-3 pb-2 border-b border-border/50 flex-wrap">
           {/* Pushed Toggle */}
           {onPushedChange && (
             <button
@@ -288,6 +288,21 @@ export function MemberCard({
             >
               {member.isPushed ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
               <span>Pushed</span>
+            </button>
+          )}
+
+          {/* USDT Toggle */}
+          {onUsdtChange && (
+            <button
+              onClick={() => onUsdtChange(member.id, !member.isUsdt)}
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-all ${
+                member.isUsdt
+                  ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                  : 'bg-muted/30 text-muted-foreground hover:bg-muted/50'
+              }`}
+            >
+              <DollarSign className="w-3 h-3" />
+              <span>USDT</span>
             </button>
           )}
 
