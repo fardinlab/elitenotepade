@@ -497,7 +497,49 @@ export function useSupabaseData() {
   const updateMemberEPass = useCallback((id: string, ePass: string) => updateMemberField(id, 'ePass', 'e_pass', ePass || null), [updateMemberField]);
   const updateMemberGPass = useCallback((id: string, gPass: string) => updateMemberField(id, 'gPass', 'g_pass', gPass || null), [updateMemberField]);
   const updateMemberSubscriptions = useCallback((id: string, subscriptions: SubscriptionType[]) => updateMemberField(id, 'subscriptions', 'subscriptions', subscriptions), [updateMemberField]);
-  const updateMemberPendingAmount = useCallback((id: string, pendingAmount?: number) => updateMemberField(id, 'pendingAmount', 'pending_amount', pendingAmount || null), [updateMemberField]);
+  const updateMemberPendingAmount = useCallback(
+    async (id: string, pendingAmount?: number) => {
+      await updateMemberField(id, 'pendingAmount', 'pending_amount', pendingAmount || null);
+
+      // Send due reminder email immediately when amount > 0
+      if (pendingAmount && pendingAmount > 0) {
+        const team = teams.find(t => t.members.some(m => m.id === id));
+        const member = team?.members.find(m => m.id === id);
+        if (team && member && member.email && !team.isYearlyTeam) {
+          const subName = team.logo
+            ? (await import('@/types/member')).SUBSCRIPTION_CONFIG[team.logo]?.name
+            : undefined;
+          const todayStr = new Date().toISOString().split('T')[0];
+          try {
+            await cloudSupabase.functions.invoke('send-transactional-email', {
+              body: {
+                templateName: 'due-reminder',
+                recipientEmail: member.email,
+                idempotencyKey: `due-reminder-${id}-${todayStr}`,
+                templateData: {
+                  teamName: team.teamName,
+                  subscriptionName: subName,
+                  memberEmail: member.email,
+                  pendingAmount: String(pendingAmount),
+                  joinDate: member.joinDate,
+                },
+              },
+            });
+            // Update local tracking for 3-day interval
+            try {
+              const records = JSON.parse(localStorage.getItem('dueRemindersSent') || '{}');
+              records[member.email] = todayStr;
+              localStorage.setItem('dueRemindersSent', JSON.stringify(records));
+            } catch {}
+            console.log(`[DueReminder] Sent immediately to ${member.email}`);
+          } catch (e) {
+            console.error('[DueReminder] Failed:', e);
+          }
+        }
+      }
+    },
+    [updateMemberField, teams]
+  );
   const updateMemberPushed = useCallback((id: string, isPushed: boolean) => updateMemberField(id, 'isPushed', 'is_pushed', isPushed, true), [updateMemberField]);
   const updateMemberActiveTeam = useCallback((id: string, activeTeamIdVal?: string) => updateMemberField(id, 'activeTeamId', 'active_team_id', activeTeamIdVal || null, true), [updateMemberField]);
 
