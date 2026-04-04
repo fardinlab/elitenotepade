@@ -202,6 +202,7 @@ const TeamMembers = () => {
                       onPendingAmountChange={updateMemberPendingAmount}
                       onPushedChange={updateMemberPushed}
                       onActiveTeamChange={updateMemberActiveTeam}
+                      onUsdtChange={updateMemberUsdt}
                     />
                   </div>
                 ))}
