@@ -38,7 +38,8 @@ export function PlusMemberCard({
   onGPassChange,
   onPushedChange,
   onPaymentChange,
-  onPendingAmountChange
+  onPendingAmountChange,
+  onUsdtChange
 }: PlusMemberCardProps) {
   const [isEditingDate, setIsEditingDate] = useState(false);
   const [editDateValue, setEditDateValue] = useState(member.joinDate);

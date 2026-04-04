@@ -591,7 +591,7 @@ export function MemberCard({
               {member.pendingAmount && member.pendingAmount > 0 ? (
                 <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400">
                   <AlertCircle className="w-3 h-3" />
-                  Due ৳{member.pendingAmount}
+                  Due {member.isUsdt ? '$' : '৳'}{member.pendingAmount}
                 </span>
               ) : (
                 <button
