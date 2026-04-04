@@ -5,6 +5,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// External Supabase project where teams/members data lives
+const EXTERNAL_SUPABASE_URL = 'https://evcxopgdkkivlinjltdz.supabase.co'
+const EXTERNAL_SUPABASE_KEY = 'sb_publishable_vbMguK56zKwjTAzgy8bbbw_qDY3Vw3h'
+
 const SUBSCRIPTION_NAMES: Record<string, string> = {
   chatgpt: 'ChatGPT',
   gemini: 'Gemini AI',
@@ -21,26 +25,31 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
+  // Cloud Supabase for sending emails
+  const cloudUrl = Deno.env.get('SUPABASE_URL')!
+  const cloudKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  const cloudSupabase = createClient(cloudUrl, cloudKey)
 
-  // Get all Normal + Plus teams (not Yearly)
-  const { data: teams, error: teamsError } = await supabase
+  // External Supabase for reading teams/members
+  const extSupabase = createClient(EXTERNAL_SUPABASE_URL, EXTERNAL_SUPABASE_KEY)
+
+  // We need auth to read from external DB - use service role approach
+  // Since anon key might have RLS, let's try fetching
+  const { data: teams, error: teamsError } = await extSupabase
     .from('teams')
     .select('id, team_name, logo, is_yearly, is_plus')
     .or('is_yearly.is.null,is_yearly.eq.false')
 
   if (teamsError) {
     console.error('Failed to fetch teams', teamsError)
-    return new Response(JSON.stringify({ error: 'Failed to fetch teams' }), {
+    return new Response(JSON.stringify({ error: 'Failed to fetch teams', details: teamsError.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }
 
   if (!teams || teams.length === 0) {
-    return new Response(JSON.stringify({ processed: 0 }), {
+    return new Response(JSON.stringify({ processed: 0, message: 'No qualifying teams' }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
@@ -50,7 +59,7 @@ Deno.serve(async (req) => {
   const teamMap = new Map(teams.map(t => [t.id, t]))
 
   // Get members with pending_amount > 0, not pushed
-  const { data: members, error: membersError } = await supabase
+  const { data: members, error: membersError } = await extSupabase
     .from('members')
     .select('id, email, team_id, join_date, pending_amount, is_pushed')
     .in('team_id', teamIds)
@@ -59,7 +68,7 @@ Deno.serve(async (req) => {
 
   if (membersError) {
     console.error('Failed to fetch members', membersError)
-    return new Response(JSON.stringify({ error: 'Failed to fetch members' }), {
+    return new Response(JSON.stringify({ error: 'Failed to fetch members', details: membersError.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
@@ -67,14 +76,12 @@ Deno.serve(async (req) => {
 
   if (!members || members.length === 0) {
     console.log('No members with pending dues')
-    return new Response(JSON.stringify({ processed: 0 }), {
+    return new Response(JSON.stringify({ processed: 0, message: 'No members with pending dues' }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }
 
-  // Check email_send_log to see last due reminder sent per member
-  // Only send if last reminder was 3+ days ago
   const today = new Date()
   const todayStr = today.toISOString().split('T')[0]
 
@@ -85,8 +92,8 @@ Deno.serve(async (req) => {
     const team = teamMap.get(member.team_id)
     if (!team) continue
 
-    // Check last due-reminder sent to this member
-    const { data: lastSent } = await supabase
+    // Check last due-reminder sent to this member (from Cloud Supabase)
+    const { data: lastSent } = await cloudSupabase
       .from('email_send_log')
       .select('created_at')
       .eq('template_name', 'due-reminder')
@@ -106,7 +113,7 @@ Deno.serve(async (req) => {
     const subscriptionName = team.logo ? SUBSCRIPTION_NAMES[team.logo] : undefined
 
     try {
-      await supabase.functions.invoke('send-transactional-email', {
+      await cloudSupabase.functions.invoke('send-transactional-email', {
         body: {
           templateName: 'due-reminder',
           recipientEmail: member.email,
