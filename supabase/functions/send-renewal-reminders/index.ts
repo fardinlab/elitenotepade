@@ -5,7 +5,10 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Subscription logo name mapping
+// External Supabase project where teams/members data lives
+const EXTERNAL_SUPABASE_URL = 'https://evcxopgdkkivlinjltdz.supabase.co'
+const EXTERNAL_SUPABASE_KEY = 'sb_publishable_vbMguK56zKwjTAzgy8bbbw_qDY3Vw3h'
+
 const SUBSCRIPTION_NAMES: Record<string, string> = {
   chatgpt: 'ChatGPT',
   gemini: 'Gemini AI',
@@ -22,20 +25,20 @@ Deno.serve(async (req) => {
     return new Response(null, { headers: corsHeaders })
   }
 
-  const supabaseUrl = Deno.env.get('SUPABASE_URL')!
-  const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-  const supabase = createClient(supabaseUrl, supabaseServiceKey)
+  // Cloud Supabase for sending emails
+  const cloudUrl = Deno.env.get('SUPABASE_URL')!
+  const cloudKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+  const cloudSupabase = createClient(cloudUrl, cloudKey)
 
-  // Find members whose join_date is exactly 29 days ago
-  // Only from Normal (is_yearly=false, is_plus=false) and Plus (is_plus=true) teams
-  // Exclude pushed members
+  // External Supabase for reading teams/members
+  const extSupabase = createClient(EXTERNAL_SUPABASE_URL, EXTERNAL_SUPABASE_KEY)
+
   const today = new Date()
   const targetDate = new Date(today)
   targetDate.setDate(targetDate.getDate() - 29)
   const targetDateStr = targetDate.toISOString().split('T')[0]
 
-  // Get all qualifying teams (Normal + Plus, not Yearly)
-  const { data: teams, error: teamsError } = await supabase
+  const { data: teams, error: teamsError } = await extSupabase
     .from('teams')
     .select('id, team_name, logo, is_yearly, is_plus')
     .or('is_yearly.is.null,is_yearly.eq.false')
@@ -58,8 +61,7 @@ Deno.serve(async (req) => {
   const teamIds = teams.map(t => t.id)
   const teamMap = new Map(teams.map(t => [t.id, t]))
 
-  // Get members with join_date = 29 days ago, not pushed
-  const { data: members, error: membersError } = await supabase
+  const { data: members, error: membersError } = await extSupabase
     .from('members')
     .select('id, email, team_id, join_date, is_pushed')
     .in('team_id', teamIds)
@@ -95,7 +97,7 @@ Deno.serve(async (req) => {
     const expiryDateStr = expiryDate.toISOString().split('T')[0]
 
     try {
-      await supabase.functions.invoke('send-transactional-email', {
+      await cloudSupabase.functions.invoke('send-transactional-email', {
         body: {
           templateName: 'renewal-reminder',
           recipientEmail: member.email,
