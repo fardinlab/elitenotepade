@@ -44,6 +44,7 @@ const PlusTeamMembers = () => {
     updateMemberPushed,
     updateMemberPayment,
     updateMemberPendingAmount,
+    updateMemberUsdt,
     memberCount,
   } = useSupabaseData();
 
