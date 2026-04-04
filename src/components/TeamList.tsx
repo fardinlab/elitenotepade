@@ -481,8 +481,9 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                         });
                       } else {
                         team.members.forEach(m => {
-                          if (m.isPaid && m.paidAmount) teamPaid += m.paidAmount;
-                          if (m.pendingAmount && m.pendingAmount > 0) teamDue += m.pendingAmount;
+                          const rate = m.isUsdt ? USDT_TO_BDT_RATE : 1;
+                          if (m.isPaid && m.paidAmount) teamPaid += m.paidAmount * rate;
+                          if (m.pendingAmount && m.pendingAmount > 0) teamDue += m.pendingAmount * rate;
                         });
                       }
                       return (teamPaid > 0 || teamDue > 0) ? (
