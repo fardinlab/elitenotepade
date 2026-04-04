@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Phone, Trash2, Calendar, Pencil, Check, X, Send, DollarSign, AlertCircle, Copy, Pause, Play } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
-import { Member, SubscriptionType, Team } from '@/types/member';
+import { Member, SubscriptionType, Team, USDT_TO_BDT_RATE } from '@/types/member';
 import { SubscriptionBadges } from './SubscriptionBadges';
 
 interface MemberCardProps {
