@@ -534,6 +534,7 @@ export function useSupabaseData() {
           const todayStr = new Date().toISOString().split('T')[0];
           
           console.log(`[DueReminder] Sending email to ${memberRecord.email} (team: ${teamRecord.team_name})...`);
+          const isUsdtMember = (memberRecord as any).is_usdt === true;
           const result = await cloudSupabase.functions.invoke('send-transactional-email', {
             body: {
               templateName: 'due-reminder',
@@ -545,6 +546,7 @@ export function useSupabaseData() {
                 memberEmail: memberRecord.email,
                 pendingAmount: String(pendingAmount),
                 joinDate: memberRecord.join_date,
+                isUsdt: isUsdtMember ? 'true' : 'false',
               },
             },
           });
