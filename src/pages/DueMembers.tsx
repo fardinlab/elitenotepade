@@ -242,7 +242,7 @@ const DueMembers = () => {
                   </div>
                   <div className="text-right flex-shrink-0">
                     <p className="text-xs text-muted-foreground">Due</p>
-                    <p className="text-lg font-bold text-orange-400">৳{member.dueAmount}</p>
+                    <p className="text-lg font-bold text-orange-400">{member.isUsdt ? '$' : '৳'}{member.dueAmount}</p>
                   </div>
                 </div>
               </motion.div>
