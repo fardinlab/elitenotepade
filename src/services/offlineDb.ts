@@ -231,6 +231,7 @@ export const memberToLocal = (
   subscriptions: dbMember.subscriptions || null,
   is_pushed: dbMember.is_pushed || false,
   active_team_id: dbMember.active_team_id || null,
+  is_usdt: dbMember.is_usdt || false,
   created_at: dbMember.created_at || new Date().toISOString(),
 });
 
