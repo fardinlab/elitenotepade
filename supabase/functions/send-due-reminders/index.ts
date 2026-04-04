@@ -113,6 +113,7 @@ Deno.serve(async (req) => {
     const subscriptionName = team.logo ? SUBSCRIPTION_NAMES[team.logo] : undefined
 
     try {
+      const isUsdtMember = (member as any).is_usdt === true;
       await cloudSupabase.functions.invoke('send-transactional-email', {
         body: {
           templateName: 'due-reminder',
@@ -124,6 +125,7 @@ Deno.serve(async (req) => {
             memberEmail: member.email,
             pendingAmount: String(member.pending_amount),
             joinDate: member.join_date,
+            isUsdt: isUsdtMember ? 'true' : 'false',
           },
         },
       })
