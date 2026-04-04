@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.send-renewal-reminders]
 verify_jwt = false
+
+[functions.send-due-reminders]
+verify_jwt = false
