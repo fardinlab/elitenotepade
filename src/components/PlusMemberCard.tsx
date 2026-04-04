@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Phone, Trash2, Calendar, Pencil, Check, X, Send, Copy, Pause, Play, DollarSign } from 'lucide-react';
-import { Member } from '@/types/member';
+import { Member, USDT_TO_BDT_RATE } from '@/types/member';
 import { toast } from 'sonner';
 
 interface PlusMemberCardProps {
