@@ -24,6 +24,7 @@ interface MemberCardProps {
   onPendingAmountChange: (id: string, pendingAmount?: number) => void;
   onPushedChange?: (id: string, isPushed: boolean) => void;
   onActiveTeamChange?: (id: string, activeTeamId?: string) => void;
+  onUsdtChange?: (id: string, isUsdt: boolean) => void;
 }
 
 export function MemberCard({ 
