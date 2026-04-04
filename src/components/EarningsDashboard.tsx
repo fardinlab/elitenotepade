@@ -2,7 +2,7 @@ import { useMemo, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { DollarSign, Clock, TrendingUp, Users, Eye, EyeOff } from 'lucide-react';
-import { Team } from '@/types/member';
+import { Team, USDT_TO_BDT_RATE } from '@/types/member';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
 
