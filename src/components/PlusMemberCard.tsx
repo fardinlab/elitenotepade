@@ -20,6 +20,7 @@ interface PlusMemberCardProps {
   onPushedChange?: (id: string, isPushed: boolean) => void;
   onPaymentChange?: (id: string, isPaid: boolean, paidAmount?: number) => void;
   onPendingAmountChange?: (id: string, pendingAmount?: number) => void;
+  onUsdtChange?: (id: string, isUsdt: boolean) => void;
 }
 
 export function PlusMemberCard({ 
