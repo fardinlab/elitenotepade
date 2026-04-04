@@ -535,7 +535,7 @@ export function MemberCard({
               {member.isPaid ? (
                 <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-success/20 text-success">
                   <DollarSign className="w-3 h-3" />
-                  Paid {member.paidAmount ? `৳${member.paidAmount}` : ''}
+                  Paid {member.paidAmount ? `${member.isUsdt ? '$' : '৳'}${member.paidAmount}` : ''}
                 </span>
               ) : (
               <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400">
