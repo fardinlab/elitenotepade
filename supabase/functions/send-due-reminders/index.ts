@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
   // Get members with pending_amount > 0, not pushed
   const { data: members, error: membersError } = await extSupabase
     .from('members')
-    .select('id, email, team_id, join_date, pending_amount, is_pushed')
+    .select('id, email, team_id, join_date, pending_amount, is_pushed, is_usdt')
     .in('team_id', teamIds)
     .gt('pending_amount', 0)
     .or('is_pushed.is.null,is_pushed.eq.false')
