@@ -34,7 +34,7 @@ const DueReminderEmail = ({
   return (
     <Html lang="en" dir="ltr">
       <Head />
-      <Preview>{`Payment Reminder - ${planLabel} has a pending balance of ${pendingAmount || '0'} BDT`}</Preview>
+      <Preview>{`Payment Reminder - ${planLabel} has a pending balance of ${currencySymbol}${pendingAmount || '0'}`}</Preview>
       <Body style={main}>
         <Container style={container}>
           {/* Header */}
