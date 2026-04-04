@@ -138,7 +138,7 @@ export function PlusMemberCard({
     const amount = parseFloat(paidAmountInput);
     if (!isNaN(amount) && amount > 0 && onPaymentChange) {
       onPaymentChange(member.id, true, amount);
-      toast.success(`Paid ৳${amount} recorded!`);
+      toast.success(`Paid ${member.isUsdt ? '$' : '৳'}${amount} recorded!`);
     }
     setShowPaidInput(false);
     setPaidAmountInput('');
