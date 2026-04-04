@@ -76,6 +76,7 @@ async function sendDueReminders(teams: Team[]) {
               memberEmail: member.email,
               pendingAmount: String(member.pendingAmount),
               joinDate: member.joinDate,
+              isUsdt: member.isUsdt ? 'true' : 'false',
             },
           },
         });

@@ -175,12 +175,12 @@ const RenewSubscription = () => {
               <div className="flex items-center gap-3 text-xs">
                 {member.isPaid && (
                   <span className="text-green-400">
-                    Paid: ৳{member.paidAmount || 0}
+                    Paid: {member.isUsdt ? '$' : '৳'}{member.paidAmount || 0}
                   </span>
                 )}
                 {(member.pendingAmount ?? 0) > 0 && (
                   <span className="text-red-400">
-                    Due: ৳{member.pendingAmount}
+                    Due: {member.isUsdt ? '$' : '৳'}{member.pendingAmount}
                   </span>
                 )}
               </div>

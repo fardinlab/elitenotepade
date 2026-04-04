@@ -86,6 +86,7 @@ const mapDbMemberToMember = (dbMember: DbMember): Member => ({
   subscriptions: (dbMember.subscriptions as SubscriptionType[]) || undefined,
   isPushed: dbMember.is_pushed || false,
   activeTeamId: dbMember.active_team_id || undefined,
+  isUsdt: (dbMember as any).is_usdt || false,
 });
 
 // ─── Helper: build teams from local DB ──────────────────────────
@@ -393,6 +394,7 @@ export function useSupabaseData() {
         subscriptions: (member.subscriptions as string[]) || null,
         is_pushed: member.isPushed || false,
         active_team_id: member.activeTeamId || null,
+        is_usdt: member.isUsdt || false,
         created_at: now,
       };
 
@@ -532,6 +534,7 @@ export function useSupabaseData() {
           const todayStr = new Date().toISOString().split('T')[0];
           
           console.log(`[DueReminder] Sending email to ${memberRecord.email} (team: ${teamRecord.team_name})...`);
+          const isUsdtMember = (memberRecord as any).is_usdt === true;
           const result = await cloudSupabase.functions.invoke('send-transactional-email', {
             body: {
               templateName: 'due-reminder',
@@ -543,6 +546,7 @@ export function useSupabaseData() {
                 memberEmail: memberRecord.email,
                 pendingAmount: String(pendingAmount),
                 joinDate: memberRecord.join_date,
+                isUsdt: isUsdtMember ? 'true' : 'false',
               },
             },
           });
@@ -561,6 +565,7 @@ export function useSupabaseData() {
     },
     [updateMemberField, user]
   );
+  const updateMemberUsdt = useCallback((id: string, isUsdt: boolean) => updateMemberField(id, 'isUsdt', 'is_usdt', isUsdt, true), [updateMemberField]);
   const updateMemberPushed = useCallback((id: string, isPushed: boolean) => updateMemberField(id, 'isPushed', 'is_pushed', isPushed, true), [updateMemberField]);
   const updateMemberActiveTeam = useCallback((id: string, activeTeamIdVal?: string) => updateMemberField(id, 'activeTeamId', 'active_team_id', activeTeamIdVal || null, true), [updateMemberField]);
 
@@ -688,6 +693,7 @@ export function useSupabaseData() {
     updateMemberPendingAmount,
     updateMemberPushed,
     updateMemberActiveTeam,
+    updateMemberUsdt,
     updateTeamLogo,
     canAddMember,
     isTeamFull,

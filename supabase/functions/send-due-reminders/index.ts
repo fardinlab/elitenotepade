@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
   // Get members with pending_amount > 0, not pushed
   const { data: members, error: membersError } = await extSupabase
     .from('members')
-    .select('id, email, team_id, join_date, pending_amount, is_pushed')
+    .select('id, email, team_id, join_date, pending_amount, is_pushed, is_usdt')
     .in('team_id', teamIds)
     .gt('pending_amount', 0)
     .or('is_pushed.is.null,is_pushed.eq.false')
@@ -113,6 +113,7 @@ Deno.serve(async (req) => {
     const subscriptionName = team.logo ? SUBSCRIPTION_NAMES[team.logo] : undefined
 
     try {
+      const isUsdtMember = (member as any).is_usdt === true;
       await cloudSupabase.functions.invoke('send-transactional-email', {
         body: {
           templateName: 'due-reminder',
@@ -124,6 +125,7 @@ Deno.serve(async (req) => {
             memberEmail: member.email,
             pendingAmount: String(member.pending_amount),
             joinDate: member.join_date,
+            isUsdt: isUsdtMember ? 'true' : 'false',
           },
         },
       })

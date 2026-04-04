@@ -44,6 +44,7 @@ const PlusTeamMembers = () => {
     updateMemberPushed,
     updateMemberPayment,
     updateMemberPendingAmount,
+    updateMemberUsdt,
     memberCount,
   } = useSupabaseData();
 
@@ -220,6 +221,7 @@ const PlusTeamMembers = () => {
                       onPushedChange={updateMemberPushed}
                       onPaymentChange={updateMemberPayment}
                       onPendingAmountChange={updateMemberPendingAmount}
+                      onUsdtChange={updateMemberUsdt}
                     />
                   </div>
                 ))}

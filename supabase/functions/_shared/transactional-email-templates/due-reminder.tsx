@@ -13,6 +13,7 @@ interface DueReminderProps {
   memberEmail?: string
   pendingAmount?: string
   joinDate?: string
+  isUsdt?: string
 }
 
 const DueReminderEmail = ({
@@ -21,7 +22,11 @@ const DueReminderEmail = ({
   memberEmail,
   pendingAmount,
   joinDate,
+  isUsdt,
 }: DueReminderProps) => {
+  const isUsdtCustomer = isUsdt === 'true'
+  const currencySymbol = isUsdtCustomer ? '$' : '৳'
+  const currencyLabel = isUsdtCustomer ? 'USD' : 'BDT'
   const planLabel = subscriptionName
     ? `${subscriptionName} Subscription`
     : 'Subscription'
@@ -29,7 +34,7 @@ const DueReminderEmail = ({
   return (
     <Html lang="en" dir="ltr">
       <Head />
-      <Preview>{`Payment Reminder - ${planLabel} has a pending balance of ${pendingAmount || '0'} BDT`}</Preview>
+      <Preview>{`Payment Reminder - ${planLabel} has a pending balance of ${currencySymbol}${pendingAmount || '0'}`}</Preview>
       <Body style={main}>
         <Container style={container}>
           {/* Header */}
@@ -75,7 +80,7 @@ const DueReminderEmail = ({
 
               <Section style={amountRow}>
                 <Text style={amountLabel}>Pending Amount</Text>
-                <Text style={amountValue}>{pendingAmount || '0'} BDT</Text>
+                <Text style={amountValue}>{currencySymbol}{pendingAmount || '0'}</Text>
               </Section>
             </Section>
 
@@ -117,7 +122,8 @@ export const template = {
   component: DueReminderEmail,
   subject: (data: Record<string, any>) => {
     const service = data.subscriptionName || 'Tech Subx BD'
-    return `Payment Reminder - ${service} | Pending: ${data.pendingAmount || '0'} BDT`
+    const currencySymbol = data.isUsdt === 'true' ? '$' : '৳'
+    return `Payment Reminder - ${service} | Pending: ${currencySymbol}${data.pendingAmount || '0'}`
   },
   displayName: 'Due Payment Reminder',
   previewData: {

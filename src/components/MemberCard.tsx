@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Phone, Trash2, Calendar, Pencil, Check, X, Send, DollarSign, AlertCircle, Copy, Pause, Play } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
-import { Member, SubscriptionType, Team } from '@/types/member';
+import { Member, SubscriptionType, Team, USDT_TO_BDT_RATE } from '@/types/member';
 import { SubscriptionBadges } from './SubscriptionBadges';
 
 interface MemberCardProps {
@@ -24,6 +24,7 @@ interface MemberCardProps {
   onPendingAmountChange: (id: string, pendingAmount?: number) => void;
   onPushedChange?: (id: string, isPushed: boolean) => void;
   onActiveTeamChange?: (id: string, activeTeamId?: string) => void;
+  onUsdtChange?: (id: string, isUsdt: boolean) => void;
 }
 
 export function MemberCard({ 
@@ -43,7 +44,8 @@ export function MemberCard({
   onSubscriptionsChange,
   onPendingAmountChange,
   onPushedChange,
-  onActiveTeamChange
+  onActiveTeamChange,
+  onUsdtChange
 }: MemberCardProps) {
   const navigate = useNavigate();
   const [isEditingDate, setIsEditingDate] = useState(false);
@@ -271,9 +273,9 @@ export function MemberCard({
       transition={{ delay: index * 0.05 }}
       className={`rounded-xl p-4 card-shadow transition-all duration-300 touch-manipulation ${getCardClasses()}`}
     >
-      {/* Pushed and Active Controls */}
-      {!isRemoveMode && (onPushedChange || (onActiveTeamChange && !hideActiveControl)) && (
-        <div className="flex items-center gap-3 mb-3 pb-2 border-b border-border/50">
+      {/* Pushed, Active, and USDT Controls */}
+      {!isRemoveMode && (onPushedChange || (onActiveTeamChange && !hideActiveControl) || onUsdtChange) && (
+        <div className="flex items-center gap-3 mb-3 pb-2 border-b border-border/50 flex-wrap">
           {/* Pushed Toggle */}
           {onPushedChange && (
             <button
@@ -286,6 +288,21 @@ export function MemberCard({
             >
               {member.isPushed ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
               <span>Pushed</span>
+            </button>
+          )}
+
+          {/* USDT Toggle */}
+          {onUsdtChange && (
+            <button
+              onClick={() => onUsdtChange(member.id, !member.isUsdt)}
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-xs font-medium transition-all ${
+                member.isUsdt
+                  ? 'bg-green-500/20 text-green-400 hover:bg-green-500/30'
+                  : 'bg-muted/30 text-muted-foreground hover:bg-muted/50'
+              }`}
+            >
+              <DollarSign className="w-3 h-3" />
+              <span>USDT</span>
             </button>
           )}
 
@@ -518,7 +535,7 @@ export function MemberCard({
               {member.isPaid ? (
                 <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-success/20 text-success">
                   <DollarSign className="w-3 h-3" />
-                  Paid {member.paidAmount ? `৳${member.paidAmount}` : ''}
+                  Paid {member.paidAmount ? `${member.isUsdt ? '$' : '৳'}${member.paidAmount}` : ''}
                 </span>
               ) : (
               <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400">
@@ -574,7 +591,7 @@ export function MemberCard({
               {member.pendingAmount && member.pendingAmount > 0 ? (
                 <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400">
                   <AlertCircle className="w-3 h-3" />
-                  Due ৳{member.pendingAmount}
+                  Due {member.isUsdt ? '$' : '৳'}{member.pendingAmount}
                 </span>
               ) : (
                 <button
