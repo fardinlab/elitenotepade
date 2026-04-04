@@ -13,6 +13,7 @@ interface DueReminderProps {
   memberEmail?: string
   pendingAmount?: string
   joinDate?: string
+  isUsdt?: string
 }
 
 const DueReminderEmail = ({
