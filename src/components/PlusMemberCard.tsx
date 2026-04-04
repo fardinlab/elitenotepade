@@ -148,7 +148,7 @@ export function PlusMemberCard({
     const amount = parseFloat(dueAmountInput);
     if (!isNaN(amount) && amount >= 0 && onPendingAmountChange) {
       onPendingAmountChange(member.id, amount > 0 ? amount : undefined);
-      toast.success(amount > 0 ? `Due ৳${amount} recorded!` : 'Due cleared!');
+      toast.success(amount > 0 ? `Due ${member.isUsdt ? '$' : '৳'}${amount} recorded!` : 'Due cleared!');
     }
     setShowDueInput(false);
     setDueAmountInput('');
