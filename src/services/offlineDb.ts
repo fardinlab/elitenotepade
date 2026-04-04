@@ -39,6 +39,7 @@ interface EliteDB extends DBSchema {
       subscriptions: string[] | null;
       is_pushed: boolean;
       active_team_id: string | null;
+      is_usdt: boolean;
       created_at: string;
     };
     indexes: { 'by-user': string; 'by-team': string };
