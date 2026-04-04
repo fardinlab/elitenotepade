@@ -268,4 +268,5 @@ export const localMemberToAppMember = (
   subscriptions: (localMember.subscriptions as SubscriptionType[]) || undefined,
   isPushed: localMember.is_pushed || false,
   activeTeamId: localMember.active_team_id || undefined,
+  isUsdt: localMember.is_usdt || false,
 });
