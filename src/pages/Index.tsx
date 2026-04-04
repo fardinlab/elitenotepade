@@ -5,6 +5,7 @@ import { FileText, User } from 'lucide-react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useNotepads } from '@/hooks/useNotepads';
 import { useNotificationScheduler } from '@/hooks/useNotificationScheduler';
+import { useDueReminders } from '@/hooks/useDueReminders';
 import { SubscriptionType } from '@/types/member';
 import { AppHeader } from '@/components/AppHeader';
 import { SettingsModal } from '@/components/SettingsModal';
@@ -40,6 +41,7 @@ const Index = () => {
 
   // Initialize local push notifications for member expiry alerts (native only)
   useNotificationScheduler(sortedTeams, isLoaded);
+  useDueReminders(sortedTeams, isLoaded);
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showNotepads, setShowNotepads] = useState(false);

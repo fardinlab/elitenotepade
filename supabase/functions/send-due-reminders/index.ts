@@ -33,11 +33,8 @@ Deno.serve(async (req) => {
   // External Supabase for reading teams/members
   const extSupabase = createClient(EXTERNAL_SUPABASE_URL, EXTERNAL_SUPABASE_KEY)
 
-  const today = new Date()
-  const targetDate = new Date(today)
-  targetDate.setDate(targetDate.getDate() - 29)
-  const targetDateStr = targetDate.toISOString().split('T')[0]
-
+  // We need auth to read from external DB - use service role approach
+  // Since anon key might have RLS, let's try fetching
   const { data: teams, error: teamsError } = await extSupabase
     .from('teams')
     .select('id, team_name, logo, is_yearly, is_plus')
@@ -45,14 +42,14 @@ Deno.serve(async (req) => {
 
   if (teamsError) {
     console.error('Failed to fetch teams', teamsError)
-    return new Response(JSON.stringify({ error: 'Failed to fetch teams' }), {
+    return new Response(JSON.stringify({ error: 'Failed to fetch teams', details: teamsError.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }
 
   if (!teams || teams.length === 0) {
-    return new Response(JSON.stringify({ processed: 0 }), {
+    return new Response(JSON.stringify({ processed: 0, message: 'No qualifying teams' }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
@@ -61,28 +58,32 @@ Deno.serve(async (req) => {
   const teamIds = teams.map(t => t.id)
   const teamMap = new Map(teams.map(t => [t.id, t]))
 
+  // Get members with pending_amount > 0, not pushed
   const { data: members, error: membersError } = await extSupabase
     .from('members')
-    .select('id, email, team_id, join_date, is_pushed')
+    .select('id, email, team_id, join_date, pending_amount, is_pushed')
     .in('team_id', teamIds)
-    .eq('join_date', targetDateStr)
+    .gt('pending_amount', 0)
     .or('is_pushed.is.null,is_pushed.eq.false')
 
   if (membersError) {
     console.error('Failed to fetch members', membersError)
-    return new Response(JSON.stringify({ error: 'Failed to fetch members' }), {
+    return new Response(JSON.stringify({ error: 'Failed to fetch members', details: membersError.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }
 
   if (!members || members.length === 0) {
-    console.log('No members need renewal reminder today')
-    return new Response(JSON.stringify({ processed: 0 }), {
+    console.log('No members with pending dues')
+    return new Response(JSON.stringify({ processed: 0, message: 'No members with pending dues' }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })
   }
+
+  const today = new Date()
+  const todayStr = today.toISOString().split('T')[0]
 
   let sent = 0
   for (const member of members) {
@@ -91,33 +92,49 @@ Deno.serve(async (req) => {
     const team = teamMap.get(member.team_id)
     if (!team) continue
 
+    // Check last due-reminder sent to this member (from Cloud Supabase)
+    const { data: lastSent } = await cloudSupabase
+      .from('email_send_log')
+      .select('created_at')
+      .eq('template_name', 'due-reminder')
+      .eq('recipient_email', member.email)
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    if (lastSent && lastSent.length > 0) {
+      const lastSentDate = new Date(lastSent[0].created_at)
+      const daysSinceLast = Math.floor((today.getTime() - lastSentDate.getTime()) / (1000 * 60 * 60 * 24))
+      if (daysSinceLast < 3) {
+        console.log(`Skipping ${member.email} - last reminder ${daysSinceLast} day(s) ago`)
+        continue
+      }
+    }
+
     const subscriptionName = team.logo ? SUBSCRIPTION_NAMES[team.logo] : undefined
-    const expiryDate = new Date(member.join_date)
-    expiryDate.setDate(expiryDate.getDate() + 30)
-    const expiryDateStr = expiryDate.toISOString().split('T')[0]
 
     try {
       await cloudSupabase.functions.invoke('send-transactional-email', {
         body: {
-          templateName: 'renewal-reminder',
+          templateName: 'due-reminder',
           recipientEmail: member.email,
-          idempotencyKey: `renewal-${member.id}-${targetDateStr}`,
+          idempotencyKey: `due-reminder-${member.id}-${todayStr}`,
           templateData: {
             teamName: team.team_name,
             subscriptionName,
-            expiryDate: expiryDateStr,
             memberEmail: member.email,
+            pendingAmount: String(member.pending_amount),
+            joinDate: member.join_date,
           },
         },
       })
       sent++
-      console.log(`Renewal reminder sent to ${member.email}`)
+      console.log(`Due reminder sent to ${member.email} (pending: ${member.pending_amount})`)
     } catch (e) {
-      console.error(`Failed to send renewal to ${member.email}:`, e)
+      console.error(`Failed to send due reminder to ${member.email}:`, e)
     }
   }
 
-  console.log(`Renewal reminders: ${sent}/${members.length} sent`)
+  console.log(`Due reminders: ${sent}/${members.length} sent`)
   return new Response(JSON.stringify({ processed: sent, total: members.length }), {
     status: 200,
     headers: { ...corsHeaders, 'Content-Type': 'application/json' },
