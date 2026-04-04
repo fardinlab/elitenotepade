@@ -183,21 +183,22 @@ export const EarningsDashboard = ({ teams }: EarningsDashboardProps) => {
       const joinDate = new Date(member.joinDate);
       const memberMonth = joinDate.getMonth();
       const memberYear = joinDate.getFullYear();
+      const rate = member.isUsdt ? USDT_TO_BDT_RATE : 1;
 
       // Add to due from pending amount
       if (member.pendingAmount) {
-        regularDue += member.pendingAmount;
+        regularDue += member.pendingAmount * rate;
       }
 
       // Check if member has paid amount
       if (member.paidAmount) {
         // Current month earnings - check if payment was in current month
         if (memberMonth === currentMonth && memberYear === currentYear) {
-          currentMonthEarnings += member.paidAmount;
+          currentMonthEarnings += member.paidAmount * rate;
         }
 
         // All time earnings - sum all paid amounts
-        allTimeEarnings += member.paidAmount;
+        allTimeEarnings += member.paidAmount * rate;
       }
     });
 
