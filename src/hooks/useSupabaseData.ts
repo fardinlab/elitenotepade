@@ -691,6 +691,7 @@ export function useSupabaseData() {
     updateMemberPendingAmount,
     updateMemberPushed,
     updateMemberActiveTeam,
+    updateMemberUsdt,
     updateTeamLogo,
     canAddMember,
     isTeamFull,
