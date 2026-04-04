@@ -563,6 +563,7 @@ export function useSupabaseData() {
     },
     [updateMemberField, user]
   );
+  const updateMemberUsdt = useCallback((id: string, isUsdt: boolean) => updateMemberField(id, 'isUsdt', 'is_usdt', isUsdt, true), [updateMemberField]);
   const updateMemberPushed = useCallback((id: string, isPushed: boolean) => updateMemberField(id, 'isPushed', 'is_pushed', isPushed, true), [updateMemberField]);
   const updateMemberActiveTeam = useCallback((id: string, activeTeamIdVal?: string) => updateMemberField(id, 'activeTeamId', 'active_team_id', activeTeamIdVal || null, true), [updateMemberField]);
 
