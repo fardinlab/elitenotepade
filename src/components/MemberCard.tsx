@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Phone, Trash2, Calendar, Pencil, Check, X, Send, DollarSign, AlertCircle, Copy, Pause, Play } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
-import { Member, SubscriptionType, Team } from '@/types/member';
+import { Member, SubscriptionType, Team, USDT_RATE } from '@/types/member';
 import { SubscriptionBadges } from './SubscriptionBadges';
 
 interface MemberCardProps {
@@ -24,6 +24,7 @@ interface MemberCardProps {
   onPendingAmountChange: (id: string, pendingAmount?: number) => void;
   onPushedChange?: (id: string, isPushed: boolean) => void;
   onActiveTeamChange?: (id: string, activeTeamId?: string) => void;
+  onUsdtChange?: (id: string, isUsdt: boolean) => void;
 }
 
 export function MemberCard({ 
@@ -43,7 +44,8 @@ export function MemberCard({
   onSubscriptionsChange,
   onPendingAmountChange,
   onPushedChange,
-  onActiveTeamChange
+  onActiveTeamChange,
+  onUsdtChange
 }: MemberCardProps) {
   const navigate = useNavigate();
   const [isEditingDate, setIsEditingDate] = useState(false);
@@ -206,7 +208,10 @@ export function MemberCard({
   };
 
   const handleSavePayment = (isPaid: boolean) => {
-    const amount = parseFloat(editPaidAmount) || 0;
+    let amount = parseFloat(editPaidAmount) || 0;
+    if (member.isUsdt && amount > 0) {
+      amount = amount * USDT_RATE;
+    }
     onPaymentChange(member.id, isPaid, isPaid ? amount : undefined);
     setIsEditingPayment(false);
   };
@@ -217,7 +222,10 @@ export function MemberCard({
   };
 
   const handleSavePending = () => {
-    const amount = parseFloat(editPendingAmount) || 0;
+    let amount = parseFloat(editPendingAmount) || 0;
+    if (member.isUsdt && amount > 0) {
+      amount = amount * USDT_RATE;
+    }
     onPendingAmountChange(member.id, amount > 0 ? amount : undefined);
     setIsEditingPending(false);
   };
@@ -271,9 +279,23 @@ export function MemberCard({
       transition={{ delay: index * 0.05 }}
       className={`rounded-xl p-4 card-shadow transition-all duration-300 touch-manipulation ${getCardClasses()}`}
     >
-      {/* Pushed and Active Controls */}
-      {!isRemoveMode && (onPushedChange || (onActiveTeamChange && !hideActiveControl)) && (
+      {/* Pushed, Active, and USDT Controls */}
+      {!isRemoveMode && (onPushedChange || (onActiveTeamChange && !hideActiveControl) || onUsdtChange) && (
         <div className="flex items-center gap-3 mb-3 pb-2 border-b border-border/50">
+          {/* USDT Toggle */}
+          {onUsdtChange && (
+            <button
+              onClick={() => onUsdtChange(member.id, !member.isUsdt)}
+              className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold transition-all ${
+                member.isUsdt
+                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                  : 'bg-muted/30 text-muted-foreground hover:bg-muted/50'
+              }`}
+              title={member.isUsdt ? `USDT ON (1$ = ${USDT_RATE}৳)` : 'Enable USDT mode'}
+            >
+              <DollarSign className="w-3 h-3" />
+            </button>
+          )}
           {/* Pushed Toggle */}
           {onPushedChange && (
             <button
@@ -494,7 +516,7 @@ export function MemberCard({
                 type="number"
                 value={editPaidAmount}
                 onChange={(e) => setEditPaidAmount(e.target.value)}
-                placeholder="Amount"
+                placeholder={member.isUsdt ? 'USD amount' : 'Amount'}
                 className="w-20 bg-input rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
                 autoFocus
                 min="0"
@@ -518,7 +540,7 @@ export function MemberCard({
               {member.isPaid ? (
                 <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-success/20 text-success">
                   <DollarSign className="w-3 h-3" />
-                  Paid {member.paidAmount ? `৳${member.paidAmount}` : ''}
+                  Paid {member.paidAmount ? (member.isUsdt ? `$${(member.paidAmount / USDT_RATE).toFixed(1)} (৳${member.paidAmount})` : `৳${member.paidAmount}`) : ''}
                 </span>
               ) : (
               <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400">
@@ -546,7 +568,7 @@ export function MemberCard({
                 type="number"
                 value={editPendingAmount}
                 onChange={(e) => setEditPendingAmount(e.target.value)}
-                placeholder="Due amount"
+                placeholder={member.isUsdt ? 'USD amount' : 'Due amount'}
                 className="w-20 bg-input rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
                 autoFocus
                 min="0"
@@ -574,7 +596,7 @@ export function MemberCard({
               {member.pendingAmount && member.pendingAmount > 0 ? (
                 <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400">
                   <AlertCircle className="w-3 h-3" />
-                  Due ৳{member.pendingAmount}
+                  Due {member.isUsdt ? `$${(member.pendingAmount / USDT_RATE).toFixed(1)} (৳${member.pendingAmount})` : `৳${member.pendingAmount}`}
                 </span>
               ) : (
                 <button

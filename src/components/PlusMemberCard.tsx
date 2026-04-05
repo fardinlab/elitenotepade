@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Phone, Trash2, Calendar, Pencil, Check, X, Send, Copy, Pause, Play, DollarSign } from 'lucide-react';
-import { Member } from '@/types/member';
+import { Member, USDT_RATE } from '@/types/member';
 import { toast } from 'sonner';
 
 interface PlusMemberCardProps {
@@ -20,6 +20,7 @@ interface PlusMemberCardProps {
   onPushedChange?: (id: string, isPushed: boolean) => void;
   onPaymentChange?: (id: string, isPaid: boolean, paidAmount?: number) => void;
   onPendingAmountChange?: (id: string, pendingAmount?: number) => void;
+  onUsdtChange?: (id: string, isUsdt: boolean) => void;
 }
 
 export function PlusMemberCard({ 
@@ -37,7 +38,8 @@ export function PlusMemberCard({
   onGPassChange,
   onPushedChange,
   onPaymentChange,
-  onPendingAmountChange
+  onPendingAmountChange,
+  onUsdtChange
 }: PlusMemberCardProps) {
   const [isEditingDate, setIsEditingDate] = useState(false);
   const [editDateValue, setEditDateValue] = useState(member.joinDate);
@@ -133,20 +135,28 @@ export function PlusMemberCard({
   };
 
   const handleSavePaid = () => {
-    const amount = parseFloat(paidAmountInput);
+    let amount = parseFloat(paidAmountInput);
     if (!isNaN(amount) && amount > 0 && onPaymentChange) {
+      if (member.isUsdt) {
+        amount = amount * USDT_RATE;
+      }
       onPaymentChange(member.id, true, amount);
-      toast.success(`Paid ৳${amount} recorded!`);
+      toast.success(member.isUsdt ? `Paid $${paidAmountInput} (৳${amount}) recorded!` : `Paid ৳${amount} recorded!`);
     }
     setShowPaidInput(false);
     setPaidAmountInput('');
   };
 
   const handleSaveDue = () => {
-    const amount = parseFloat(dueAmountInput);
+    let amount = parseFloat(dueAmountInput);
     if (!isNaN(amount) && amount >= 0 && onPendingAmountChange) {
+      if (member.isUsdt && amount > 0) {
+        amount = amount * USDT_RATE;
+      }
       onPendingAmountChange(member.id, amount > 0 ? amount : undefined);
-      toast.success(amount > 0 ? `Due ৳${amount} recorded!` : 'Due cleared!');
+      toast.success(amount > 0 
+        ? (member.isUsdt ? `Due $${dueAmountInput} (৳${amount}) recorded!` : `Due ৳${amount} recorded!`)
+        : 'Due cleared!');
     }
     setShowDueInput(false);
     setDueAmountInput('');
@@ -272,22 +282,41 @@ export function PlusMemberCard({
 
       {/* Header: Pushed Badge + Email */}
       <div className="space-y-3">
-        {/* Top row: Pushed badge */}
-        {!isRemoveMode && onPushedChange && (
+        {/* Top row: Pushed badge + USDT toggle */}
+        {!isRemoveMode && (onPushedChange || onUsdtChange) && (
           <div className="flex items-center justify-between">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleTogglePushed}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${
-                member.isPushed
-                  ? 'bg-muted/50 text-muted-foreground border border-muted-foreground/20'
-                  : 'bg-purple-500/20 text-purple-300 border border-purple-500/30 hover:bg-purple-500/30'
-              }`}
-            >
-              {member.isPushed ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-              <span>Pushed</span>
-            </motion.button>
+            <div className="flex items-center gap-2">
+              {onUsdtChange && (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => onUsdtChange(member.id, !member.isUsdt)}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all ${
+                    member.isUsdt
+                      ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                      : 'bg-muted/30 text-muted-foreground border border-muted-foreground/20 hover:bg-muted/50'
+                  }`}
+                  title={member.isUsdt ? `USDT ON (1$ = ${USDT_RATE}৳)` : 'Enable USDT mode'}
+                >
+                  <DollarSign className="w-3 h-3" />
+                </motion.button>
+              )}
+              {onPushedChange && (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleTogglePushed}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${
+                    member.isPushed
+                      ? 'bg-muted/50 text-muted-foreground border border-muted-foreground/20'
+                      : 'bg-purple-500/20 text-purple-300 border border-purple-500/30 hover:bg-purple-500/30'
+                  }`}
+                >
+                  {member.isPushed ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                  <span>Pushed</span>
+                </motion.button>
+              )}
+            </div>
 
             {isRemoveMode && (
               <motion.button
@@ -496,12 +525,12 @@ export function PlusMemberCard({
           <div className="flex items-center gap-2">
             {member.paidAmount && member.paidAmount > 0 && (
               <span className="px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-medium">
-                Paid: ৳{member.paidAmount}
+                Paid: {member.isUsdt ? `$${(member.paidAmount / USDT_RATE).toFixed(1)} (৳${member.paidAmount})` : `৳${member.paidAmount}`}
               </span>
             )}
             {member.pendingAmount && member.pendingAmount > 0 && (
               <span className="px-2 py-1 rounded-full bg-orange-500/20 text-orange-400 text-[10px] font-medium">
-                Due: ৳{member.pendingAmount}
+                Due: {member.isUsdt ? `$${(member.pendingAmount / USDT_RATE).toFixed(1)} (৳${member.pendingAmount})` : `৳${member.pendingAmount}`}
               </span>
             )}
           </div>
@@ -514,7 +543,7 @@ export function PlusMemberCard({
                 type="number"
                 value={paidAmountInput}
                 onChange={(e) => setPaidAmountInput(e.target.value)}
-                placeholder="Enter paid amount"
+                placeholder={member.isUsdt ? 'USD amount' : 'Enter paid amount'}
                 className="flex-1 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/50 border border-white/10"
                 autoFocus
                 onKeyDown={(e) => {

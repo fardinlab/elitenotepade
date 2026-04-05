@@ -54,6 +54,7 @@ interface DbMember {
   created_at: string;
   is_pushed?: boolean | null;
   active_team_id?: string | null;
+  is_usdt?: boolean | null;
 }
 
 const mapDbTeamToTeam = (dbTeam: DbTeam, members: Member[]): Team => ({
@@ -84,6 +85,7 @@ const mapDbMemberToMember = (dbMember: DbMember): Member => ({
   subscriptions: (dbMember.subscriptions as SubscriptionType[]) || undefined,
   isPushed: dbMember.is_pushed || false,
   activeTeamId: dbMember.active_team_id || undefined,
+  isUsdt: dbMember.is_usdt || false,
 });
 
 // ─── Helper: build teams from local DB ──────────────────────────
@@ -386,6 +388,7 @@ export function useSupabaseData() {
         subscriptions: (member.subscriptions as string[]) || null,
         is_pushed: member.isPushed || false,
         active_team_id: member.activeTeamId || null,
+        is_usdt: member.isUsdt || false,
         created_at: now,
       };
 
@@ -466,6 +469,7 @@ export function useSupabaseData() {
   const updateMemberPendingAmount = useCallback((id: string, pendingAmount?: number) => updateMemberField(id, 'pendingAmount', 'pending_amount', pendingAmount || null), [updateMemberField]);
   const updateMemberPushed = useCallback((id: string, isPushed: boolean) => updateMemberField(id, 'isPushed', 'is_pushed', isPushed, true), [updateMemberField]);
   const updateMemberActiveTeam = useCallback((id: string, activeTeamIdVal?: string) => updateMemberField(id, 'activeTeamId', 'active_team_id', activeTeamIdVal || null, true), [updateMemberField]);
+  const updateMemberUsdt = useCallback((id: string, isUsdt: boolean) => updateMemberField(id, 'isUsdt', 'is_usdt', isUsdt), [updateMemberField]);
 
   const updateMemberPayment = useCallback(
     async (id: string, isPaid: boolean, paidAmount?: number) => {
@@ -648,6 +652,7 @@ export function useSupabaseData() {
     updateMemberPendingAmount,
     updateMemberPushed,
     updateMemberActiveTeam,
+    updateMemberUsdt,
     updateTeamLogo,
     canAddMember,
     isTeamFull,
