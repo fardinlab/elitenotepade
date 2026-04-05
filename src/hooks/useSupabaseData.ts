@@ -535,19 +535,21 @@ export function useSupabaseData() {
 
   const exportData = useCallback(async () => {
     try {
-      // Fetch member_payments from Supabase for complete backup
-      let memberPayments: any[] = [];
-      if (user && isOnline()) {
-        const { data: payments } = await supabase
-          .from('member_payments')
-          .select('*')
-          .eq('user_id', user.id);
-        if (payments) memberPayments = payments;
-      }
+      if (!user) return;
+
+      // Fetch ALL raw data from Supabase for complete backup
+      const [teamsRes, membersRes, paymentsRes, notepadsRes] = await Promise.all([
+        supabase.from('teams').select('*').eq('user_id', user.id),
+        supabase.from('members').select('*').eq('user_id', user.id),
+        supabase.from('member_payments').select('*').eq('user_id', user.id),
+        supabase.from('notepads').select('*').eq('user_id', user.id),
+      ]);
 
       const exportObj = {
-        teams,
-        member_payments: memberPayments,
+        teams: teamsRes.data || [],
+        members: membersRes.data || [],
+        member_payments: paymentsRes.data || [],
+        notepads: notepadsRes.data || [],
         exportedAt: new Date().toISOString()
       };
       const json = JSON.stringify(exportObj, null, 2);
@@ -561,7 +563,7 @@ export function useSupabaseData() {
     } catch (err) {
       console.error('Export error:', err);
     }
-  }, [teams, user]);
+  }, [user]);
 
   const importData = useCallback((jsonString: string) => {
     console.log('Import data is available for reference only:', jsonString);
