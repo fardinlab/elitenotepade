@@ -135,20 +135,28 @@ export function PlusMemberCard({
   };
 
   const handleSavePaid = () => {
-    const amount = parseFloat(paidAmountInput);
+    let amount = parseFloat(paidAmountInput);
     if (!isNaN(amount) && amount > 0 && onPaymentChange) {
+      if (member.isUsdt) {
+        amount = amount * USDT_RATE;
+      }
       onPaymentChange(member.id, true, amount);
-      toast.success(`Paid ৳${amount} recorded!`);
+      toast.success(member.isUsdt ? `Paid $${paidAmountInput} (৳${amount}) recorded!` : `Paid ৳${amount} recorded!`);
     }
     setShowPaidInput(false);
     setPaidAmountInput('');
   };
 
   const handleSaveDue = () => {
-    const amount = parseFloat(dueAmountInput);
+    let amount = parseFloat(dueAmountInput);
     if (!isNaN(amount) && amount >= 0 && onPendingAmountChange) {
+      if (member.isUsdt && amount > 0) {
+        amount = amount * USDT_RATE;
+      }
       onPendingAmountChange(member.id, amount > 0 ? amount : undefined);
-      toast.success(amount > 0 ? `Due ৳${amount} recorded!` : 'Due cleared!');
+      toast.success(amount > 0 
+        ? (member.isUsdt ? `Due $${dueAmountInput} (৳${amount}) recorded!` : `Due ৳${amount} recorded!`)
+        : 'Due cleared!');
     }
     setShowDueInput(false);
     setDueAmountInput('');
