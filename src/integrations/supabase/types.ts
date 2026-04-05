@@ -101,6 +101,136 @@ export type Database = {
         }
         Relationships: []
       }
+      member_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          member_id: string
+          month: number
+          note: string | null
+          status: string
+          user_id: string
+          year: number
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          member_id: string
+          month: number
+          note?: string | null
+          status?: string
+          user_id: string
+          year: number
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          member_id?: string
+          month?: number
+          note?: string | null
+          status?: string
+          user_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "member_payments_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "members"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      members: {
+        Row: {
+          active_team_id: string | null
+          created_at: string
+          e_pass: string | null
+          email: string
+          g_pass: string | null
+          id: string
+          is_paid: boolean | null
+          is_pushed: boolean | null
+          is_usdt: boolean | null
+          join_date: string
+          otp_secret: string | null
+          paid_amount: number | null
+          password: string | null
+          pending_amount: number | null
+          phone: string
+          subscriptions: string[] | null
+          team_id: string
+          telegram: string | null
+          total_amount: number | null
+          two_fa: string | null
+          twofa: string | null
+          twofa_secret: string | null
+          user_id: string
+        }
+        Insert: {
+          active_team_id?: string | null
+          created_at?: string
+          e_pass?: string | null
+          email: string
+          g_pass?: string | null
+          id?: string
+          is_paid?: boolean | null
+          is_pushed?: boolean | null
+          is_usdt?: boolean | null
+          join_date?: string
+          otp_secret?: string | null
+          paid_amount?: number | null
+          password?: string | null
+          pending_amount?: number | null
+          phone?: string
+          subscriptions?: string[] | null
+          team_id: string
+          telegram?: string | null
+          total_amount?: number | null
+          two_fa?: string | null
+          twofa?: string | null
+          twofa_secret?: string | null
+          user_id: string
+        }
+        Update: {
+          active_team_id?: string | null
+          created_at?: string
+          e_pass?: string | null
+          email?: string
+          g_pass?: string | null
+          id?: string
+          is_paid?: boolean | null
+          is_pushed?: boolean | null
+          is_usdt?: boolean | null
+          join_date?: string
+          otp_secret?: string | null
+          paid_amount?: number | null
+          password?: string | null
+          pending_amount?: number | null
+          phone?: string
+          subscriptions?: string[] | null
+          team_id?: string
+          telegram?: string | null
+          total_amount?: number | null
+          two_fa?: string | null
+          twofa?: string | null
+          twofa_secret?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "members_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppressed_emails: {
         Row: {
           created_at: string
@@ -122,6 +252,42 @@ export type Database = {
           id?: string
           metadata?: Json | null
           reason?: string
+        }
+        Relationships: []
+      }
+      teams: {
+        Row: {
+          admin_email: string
+          created_at: string
+          id: string
+          is_plus: boolean | null
+          is_yearly: boolean | null
+          last_backup: string | null
+          logo: string | null
+          team_name: string
+          user_id: string
+        }
+        Insert: {
+          admin_email?: string
+          created_at?: string
+          id?: string
+          is_plus?: boolean | null
+          is_yearly?: boolean | null
+          last_backup?: string | null
+          logo?: string | null
+          team_name: string
+          user_id: string
+        }
+        Update: {
+          admin_email?: string
+          created_at?: string
+          id?: string
+          is_plus?: boolean | null
+          is_yearly?: boolean | null
+          last_backup?: string | null
+          logo?: string | null
+          team_name?: string
+          user_id?: string
         }
         Relationships: []
       }
