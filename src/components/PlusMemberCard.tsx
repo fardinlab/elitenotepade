@@ -282,22 +282,41 @@ export function PlusMemberCard({
 
       {/* Header: Pushed Badge + Email */}
       <div className="space-y-3">
-        {/* Top row: Pushed badge */}
-        {!isRemoveMode && onPushedChange && (
+        {/* Top row: Pushed badge + USDT toggle */}
+        {!isRemoveMode && (onPushedChange || onUsdtChange) && (
           <div className="flex items-center justify-between">
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleTogglePushed}
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${
-                member.isPushed
-                  ? 'bg-muted/50 text-muted-foreground border border-muted-foreground/20'
-                  : 'bg-purple-500/20 text-purple-300 border border-purple-500/30 hover:bg-purple-500/30'
-              }`}
-            >
-              {member.isPushed ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-              <span>Pushed</span>
-            </motion.button>
+            <div className="flex items-center gap-2">
+              {onUsdtChange && (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={() => onUsdtChange(member.id, !member.isUsdt)}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold transition-all ${
+                    member.isUsdt
+                      ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                      : 'bg-muted/30 text-muted-foreground border border-muted-foreground/20 hover:bg-muted/50'
+                  }`}
+                  title={member.isUsdt ? `USDT ON (1$ = ${USDT_RATE}৳)` : 'Enable USDT mode'}
+                >
+                  <DollarSign className="w-3 h-3" />
+                </motion.button>
+              )}
+              {onPushedChange && (
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  onClick={handleTogglePushed}
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${
+                    member.isPushed
+                      ? 'bg-muted/50 text-muted-foreground border border-muted-foreground/20'
+                      : 'bg-purple-500/20 text-purple-300 border border-purple-500/30 hover:bg-purple-500/30'
+                  }`}
+                >
+                  {member.isPushed ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+                  <span>Pushed</span>
+                </motion.button>
+              )}
+            </div>
 
             {isRemoveMode && (
               <motion.button
