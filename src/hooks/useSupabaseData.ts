@@ -130,6 +130,15 @@ const queueAndSync = async (
   }
 };
 
+// ─── Plan name helper ───────────────────────────────────────
+
+const getPlanName = (logo?: SubscriptionType | null): string => {
+  if (!logo) return 'Business Subscription';
+  if (logo === 'gemini' || logo === 'canva') return 'Pro Subscription';
+  if (logo === 'youtube') return 'Premium Subscription';
+  return 'Business Subscription';
+};
+
 // ═══════════════════════════════════════════════════════════════
 // Main Hook
 // ═══════════════════════════════════════════════════════════════
