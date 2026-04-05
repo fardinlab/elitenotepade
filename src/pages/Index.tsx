@@ -55,28 +55,30 @@ const Index = () => {
   };
 
   const getBackupData = async () => {
-    // Fetch member_payments for complete backup
-    let memberPayments: any[] = [];
     try {
       const { supabase } = await import('@/lib/supabase');
       const { data: session } = await supabase.auth.getSession();
-      if (session?.session?.user?.id) {
-        const { data: payments } = await supabase
-          .from('member_payments')
-          .select('*')
-          .eq('user_id', session.session.user.id);
-        if (payments) memberPayments = payments;
-      }
-    } catch (err) {
-      console.error('Failed to fetch payments for backup:', err);
-    }
+      const userId = session?.session?.user?.id;
+      if (!userId) return { teams: sortedTeams, notepads, exportedAt: new Date().toISOString() };
 
-    return {
-      teams: sortedTeams,
-      notepads: notepads,
-      member_payments: memberPayments,
-      exportedAt: new Date().toISOString()
-    };
+      const [teamsRes, membersRes, paymentsRes, notepadsRes] = await Promise.all([
+        supabase.from('teams').select('*').eq('user_id', userId),
+        supabase.from('members').select('*').eq('user_id', userId),
+        supabase.from('member_payments').select('*').eq('user_id', userId),
+        supabase.from('notepads').select('*').eq('user_id', userId),
+      ]);
+
+      return {
+        teams: teamsRes.data || [],
+        members: membersRes.data || [],
+        member_payments: paymentsRes.data || [],
+        notepads: notepadsRes.data || [],
+        exportedAt: new Date().toISOString()
+      };
+    } catch (err) {
+      console.error('Failed to fetch backup data:', err);
+      return { teams: sortedTeams, notepads, exportedAt: new Date().toISOString() };
+    }
   };
 
   const handleRestoreData = (data: any) => {
