@@ -14,7 +14,7 @@ interface WelcomeMemberProps {
   teamName?: string
 }
 
-const WelcomeMemberEmail = ({ email, joinDate, planName, isUsdt }: WelcomeMemberProps) => {
+const WelcomeMemberEmail = ({ email, joinDate, planName, isUsdt, teamName }: WelcomeMemberProps) => {
   const lang = isUsdt ? 'en' : 'bn'
   const jd = joinDate || new Date().toISOString().split('T')[0]
   const plan = planName || 'Business Subscription'
@@ -53,6 +53,7 @@ const WelcomeMemberEmail = ({ email, joinDate, planName, isUsdt }: WelcomeMember
                 <Hr style={detailsDivider} />
                 <Text style={detailRow}><span style={detailLabel}>Join Date:</span> {formatDate(jd)}</Text>
                 <Text style={detailRow}><span style={detailLabel}>Email:</span> {email || '—'}</Text>
+              {teamName && <Text style={detailRow}><span style={detailLabel}>Team:</span> {teamName}</Text>}
                 <Text style={detailRow}><span style={detailLabel}>Plan:</span> {plan}</Text>
                 <Text style={detailRow}><span style={detailLabel}>Duration:</span> 30 Days / 1 Month</Text>
                 <Text style={detailRow}><span style={detailLabel}>Expiry Date:</span> {formatDate(expiryStr)}</Text>
@@ -105,8 +106,9 @@ const WelcomeMemberEmail = ({ email, joinDate, planName, isUsdt }: WelcomeMember
               <Hr style={detailsDivider} />
               <Text style={detailRow}><span style={detailLabel}>Join Date:</span> {formatDate(jd)}</Text>
               <Text style={detailRow}><span style={detailLabel}>Email:</span> {email || '—'}</Text>
-              <Text style={detailRow}><span style={detailLabel}>Plan Name:</span> {plan}</Text>
-              <Text style={detailRow}><span style={detailLabel}>মেয়াদ / Duration:</span> 30 Days / 1 Month</Text>
+              {teamName && <Text style={detailRow}><span style={detailLabel}>Team Name:</span> {teamName}</Text>}
+                <Text style={detailRow}><span style={detailLabel}>Plan Name:</span> {plan}</Text>
+                <Text style={detailRow}><span style={detailLabel}>মেয়াদ / Duration:</span> 30 Days / 1 Month</Text>
               <Text style={detailRow}><span style={detailLabel}>Expiry Date:</span> {formatDate(expiryStr)}</Text>
             </Section>
 

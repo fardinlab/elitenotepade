@@ -11,9 +11,10 @@ interface DueReminderProps {
   dueAmount?: number
   isUsdt?: boolean
   planName?: string
+  teamName?: string
 }
 
-const DueReminderEmail = ({ email, dueAmount, isUsdt, planName }: DueReminderProps) => {
+const DueReminderEmail = ({ email, dueAmount, isUsdt, planName, teamName }: DueReminderProps) => {
   const amount = dueAmount || 0
   const plan = planName || 'Subscription'
   const displayAmount = isUsdt ? `$${(amount / 125).toFixed(2)}` : `৳${amount}`
@@ -40,6 +41,7 @@ const DueReminderEmail = ({ email, dueAmount, isUsdt, planName }: DueReminderPro
               <Section style={amountBox}>
                 <Text style={amountLabel}>Amount Due</Text>
                 <Text style={amountValue}>{displayAmount}</Text>
+                {teamName && <Text style={amountPlan}>Team: {teamName}</Text>}
                 {planName && <Text style={amountPlan}>{plan}</Text>}
               </Section>
 
@@ -88,6 +90,7 @@ const DueReminderEmail = ({ email, dueAmount, isUsdt, planName }: DueReminderPro
             <Section style={amountBox}>
               <Text style={amountLabel}>বকেয়া পরিমাণ</Text>
               <Text style={amountValue}>{displayAmount}</Text>
+              {teamName && <Text style={amountPlan}>Team: {teamName}</Text>}
               {planName && <Text style={amountPlan}>{plan}</Text>}
             </Section>
 

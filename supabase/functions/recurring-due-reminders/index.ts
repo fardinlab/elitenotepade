@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
   const teamIds = [...new Set(members.map((m) => m.team_id))]
   const { data: teams, error: teamsError } = await supabase
     .from('teams')
-    .select('id, is_yearly')
+    .select('id, is_yearly, team_name')
     .in('id', teamIds)
 
   if (teamsError) {
@@ -61,6 +61,7 @@ Deno.serve(async (req) => {
   }
 
   const yearlyTeamIds = new Set((teams || []).filter((t) => t.is_yearly).map((t) => t.id))
+  const teamNameMap = new Map((teams || []).map((t) => [t.id, t.team_name]))
 
   // Filter: exclude pushed members and yearly team members
   const eligibleMembers = members.filter(
@@ -116,6 +117,7 @@ Deno.serve(async (req) => {
               email: member.email,
               dueAmount: member.pending_amount,
               isUsdt: member.is_usdt || false,
+              teamName: teamNameMap.get(member.team_id) || '',
             },
           },
         }

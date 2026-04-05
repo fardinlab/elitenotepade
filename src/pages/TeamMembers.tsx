@@ -192,6 +192,7 @@ const TeamMembers = () => {
                       isHighlighted={highlightedMemberId === member.id || highlightedMemberIds.includes(member.id)}
                       highlightColor={highlightColor}
                       allTeams={sortedTeams}
+                      teamName={team.teamName}
                       onRemove={() => handleRemoveMember(member.id, member.email)}
                       onDateChange={updateMemberDate}
                       onEmailChange={updateMemberEmail}
