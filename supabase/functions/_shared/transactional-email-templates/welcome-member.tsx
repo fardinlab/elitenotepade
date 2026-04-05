@@ -138,10 +138,12 @@ const WelcomeMemberEmail = ({ email, joinDate, planName, isUsdt, teamName }: Wel
 
 export const template = {
   component: WelcomeMemberEmail,
-  subject: (data: Record<string, any>) =>
-    data.isUsdt
-      ? `Welcome to Tech Subx BD — ${data.planName || 'Subscription'} Activated!`
-      : `স্বাগতম | ${data.planName || 'Subscription'} সক্রিয় — Tech Subx BD`,
+  subject: (data: Record<string, any>) => {
+    const name = data.teamName || data.planName || 'Subscription'
+    return data.isUsdt
+      ? `✅ ${name} Subscription Active - Welcome to Tech Subx BD`
+      : `✅ ${name} Subscription সক্রিয় — Tech Subx BD তে স্বাগতম`
+  },
   displayName: 'Welcome Member',
   previewData: {
     email: 'customer@example.com',
