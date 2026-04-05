@@ -8,7 +8,7 @@ interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onExport: () => void;
-  onImport: (json: string) => boolean;
+  onImport: (json: string) => boolean | Promise<boolean>;
   getBackupData: () => object;
   onRestoreData: (data: object) => void;
 }
