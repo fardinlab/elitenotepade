@@ -15,6 +15,7 @@ interface MemberCardProps {
   highlightColor?: 'blue' | 'green' | 'rainbow' | 'yellow';
   allTeams?: Team[];
   hideActiveControl?: boolean;
+  teamName?: string;
   onRemove: () => void;
   onDateChange: (id: string, date: string) => void;
   onEmailChange: (id: string, email: string) => void;
@@ -36,6 +37,7 @@ export function MemberCard({
   highlightColor = 'blue',
   allTeams = [],
   hideActiveControl = false,
+  teamName,
   onRemove, 
   onDateChange,
   onEmailChange,
@@ -241,6 +243,7 @@ export function MemberCard({
             email: member.email,
             dueAmount: amount,
             isUsdt: member.isUsdt || false,
+            teamName: teamName || '',
           },
         },
       }).catch((e) => console.error('[Email] Due reminder failed:', e));

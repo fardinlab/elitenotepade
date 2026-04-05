@@ -11,6 +11,7 @@ interface PlusMemberCardProps {
   isRemoveMode: boolean;
   isHighlighted?: boolean;
   highlightColor?: 'blue' | 'green' | 'rainbow' | 'yellow';
+  teamName?: string;
   onRemove: () => void;
   onDateChange: (id: string, date: string) => void;
   onEmailChange: (id: string, email: string) => void;
@@ -30,6 +31,7 @@ export function PlusMemberCard({
   isRemoveMode,
   isHighlighted = false,
   highlightColor = 'blue',
+  teamName,
   onRemove, 
   onDateChange,
   onEmailChange,
@@ -170,6 +172,7 @@ export function PlusMemberCard({
               email: member.email,
               dueAmount: amount,
               isUsdt: member.isUsdt || false,
+              teamName: teamName || '',
             },
           },
         }).catch((e) => console.error('[Email] Due reminder failed:', e));
