@@ -46,8 +46,8 @@ const Index = () => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showNotepads, setShowNotepads] = useState(false);
 
-  const handleImport = (json: string) => {
-    const success = importData(json);
+  const handleImport = async (json: string) => {
+    const success = await importData(json);
     if (success) {
       toast.success('Data imported successfully!');
     } else {
@@ -64,10 +64,10 @@ const Index = () => {
     };
   };
 
-  const handleRestoreData = (data: any) => {
+  const handleRestoreData = async (data: any) => {
     if (data && typeof data === 'object') {
       const jsonString = JSON.stringify(data);
-      const success = importData(jsonString);
+      const success = await importData(jsonString);
       if (success) {
         toast.success('Data restored from Google Drive!');
       } else {
