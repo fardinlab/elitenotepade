@@ -545,10 +545,47 @@ export function useSupabaseData() {
         supabase.from('notepads').select('*').eq('user_id', user.id),
       ]);
 
+      const allTeams = teamsRes.data || [];
+      const allMembers = membersRes.data || [];
+      const allPayments = paymentsRes.data || [];
+
+      // Build EMT summary so it's clear how earnings are calculated
+      const regularTeamIds = allTeams.filter((t: any) => !t.is_yearly && !t.is_plus).map((t: any) => t.id);
+      const plusTeamIds = allTeams.filter((t: any) => t.is_plus).map((t: any) => t.id);
+      const yearlyTeamIds = allTeams.filter((t: any) => t.is_yearly).map((t: any) => t.id);
+
+      // Regular + Plus: sum paid_amount from members table
+      const regularPlusPaid = allMembers
+        .filter((m: any) => regularTeamIds.includes(m.team_id) || plusTeamIds.includes(m.team_id))
+        .reduce((sum: number, m: any) => sum + (Number(m.paid_amount) || 0), 0);
+
+      // Yearly: sum amount from member_payments where status=paid
+      const yearlyMemberIds = allMembers.filter((m: any) => yearlyTeamIds.includes(m.team_id)).map((m: any) => m.id);
+      const yearlyPaid = allPayments
+        .filter((p: any) => p.status === 'paid' && yearlyMemberIds.includes(p.member_id))
+        .reduce((sum: number, p: any) => sum + (Number(p.amount) || 0), 0);
+
+      // Total due
+      const regularPlusDue = allMembers
+        .filter((m: any) => regularTeamIds.includes(m.team_id) || plusTeamIds.includes(m.team_id))
+        .reduce((sum: number, m: any) => sum + (Number(m.pending_amount) || 0), 0);
+
+      const summary = {
+        emt_total_earnings: regularPlusPaid + yearlyPaid,
+        regular_plus_paid_from_members: regularPlusPaid,
+        yearly_paid_from_member_payments: yearlyPaid,
+        total_due: regularPlusDue,
+        total_teams: allTeams.length,
+        total_members: allMembers.length,
+        total_payment_records: allPayments.length,
+        note: "EMT = regular/plus members' paid_amount + yearly members' member_payments (status=paid). USDT members: multiply by 125 for BDT."
+      };
+
       const exportObj = {
-        teams: teamsRes.data || [],
-        members: membersRes.data || [],
-        member_payments: paymentsRes.data || [],
+        summary,
+        teams: allTeams,
+        members: allMembers,
+        member_payments: allPayments,
         notepads: notepadsRes.data || [],
         exportedAt: new Date().toISOString()
       };
