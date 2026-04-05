@@ -208,7 +208,10 @@ export function MemberCard({
   };
 
   const handleSavePayment = (isPaid: boolean) => {
-    const amount = parseFloat(editPaidAmount) || 0;
+    let amount = parseFloat(editPaidAmount) || 0;
+    if (member.isUsdt && amount > 0) {
+      amount = amount * USDT_RATE;
+    }
     onPaymentChange(member.id, isPaid, isPaid ? amount : undefined);
     setIsEditingPayment(false);
   };
@@ -219,7 +222,10 @@ export function MemberCard({
   };
 
   const handleSavePending = () => {
-    const amount = parseFloat(editPendingAmount) || 0;
+    let amount = parseFloat(editPendingAmount) || 0;
+    if (member.isUsdt && amount > 0) {
+      amount = amount * USDT_RATE;
+    }
     onPendingAmountChange(member.id, amount > 0 ? amount : undefined);
     setIsEditingPending(false);
   };
