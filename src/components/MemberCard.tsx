@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Phone, Trash2, Calendar, Pencil, Check, X, Send, DollarSign, AlertCircle, Copy, Pause, Play } from 'lucide-react';
 import { differenceInDays } from 'date-fns';
-import { Member, SubscriptionType, Team } from '@/types/member';
+import { Member, SubscriptionType, Team, USDT_RATE } from '@/types/member';
 import { SubscriptionBadges } from './SubscriptionBadges';
 
 interface MemberCardProps {
@@ -24,6 +24,7 @@ interface MemberCardProps {
   onPendingAmountChange: (id: string, pendingAmount?: number) => void;
   onPushedChange?: (id: string, isPushed: boolean) => void;
   onActiveTeamChange?: (id: string, activeTeamId?: string) => void;
+  onUsdtChange?: (id: string, isUsdt: boolean) => void;
 }
 
 export function MemberCard({ 
@@ -43,7 +44,8 @@ export function MemberCard({
   onSubscriptionsChange,
   onPendingAmountChange,
   onPushedChange,
-  onActiveTeamChange
+  onActiveTeamChange,
+  onUsdtChange
 }: MemberCardProps) {
   const navigate = useNavigate();
   const [isEditingDate, setIsEditingDate] = useState(false);
