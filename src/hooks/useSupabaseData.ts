@@ -468,6 +468,7 @@ export function useSupabaseData() {
   const updateMemberPendingAmount = useCallback((id: string, pendingAmount?: number) => updateMemberField(id, 'pendingAmount', 'pending_amount', pendingAmount || null), [updateMemberField]);
   const updateMemberPushed = useCallback((id: string, isPushed: boolean) => updateMemberField(id, 'isPushed', 'is_pushed', isPushed, true), [updateMemberField]);
   const updateMemberActiveTeam = useCallback((id: string, activeTeamIdVal?: string) => updateMemberField(id, 'activeTeamId', 'active_team_id', activeTeamIdVal || null, true), [updateMemberField]);
+  const updateMemberUsdt = useCallback((id: string, isUsdt: boolean) => updateMemberField(id, 'isUsdt', 'is_usdt', isUsdt), [updateMemberField]);
 
   const updateMemberPayment = useCallback(
     async (id: string, isPaid: boolean, paidAmount?: number) => {
@@ -650,6 +651,7 @@ export function useSupabaseData() {
     updateMemberPendingAmount,
     updateMemberPushed,
     updateMemberActiveTeam,
+    updateMemberUsdt,
     updateTeamLogo,
     canAddMember,
     isTeamFull,
