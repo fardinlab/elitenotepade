@@ -533,17 +533,35 @@ export function useSupabaseData() {
   const canAddMember = activeTeam ? activeTeam.members.length + 1 < MAX_MEMBERS : false;
   const isTeamFull = activeTeam ? activeTeam.members.length + 1 >= MAX_MEMBERS : false;
 
-  const exportData = useCallback(() => {
-    const exportObj = { teams, exportedAt: new Date().toISOString() };
-    const json = JSON.stringify(exportObj, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `elite-notepade-backup-${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [teams]);
+  const exportData = useCallback(async () => {
+    try {
+      // Fetch member_payments from Supabase for complete backup
+      let memberPayments: any[] = [];
+      if (user && isOnline()) {
+        const { data: payments } = await supabase
+          .from('member_payments')
+          .select('*')
+          .eq('user_id', user.id);
+        if (payments) memberPayments = payments;
+      }
+
+      const exportObj = {
+        teams,
+        member_payments: memberPayments,
+        exportedAt: new Date().toISOString()
+      };
+      const json = JSON.stringify(exportObj, null, 2);
+      const blob = new Blob([json], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `elite-notepade-backup-${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error('Export error:', err);
+    }
+  }, [teams, user]);
 
   const importData = useCallback((jsonString: string) => {
     console.log('Import data is available for reference only:', jsonString);
