@@ -540,7 +540,7 @@ export function MemberCard({
               {member.isPaid ? (
                 <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-success/20 text-success">
                   <DollarSign className="w-3 h-3" />
-                  Paid {member.paidAmount ? `৳${member.paidAmount}` : ''}
+                  Paid {member.paidAmount ? (member.isUsdt ? `$${(member.paidAmount / USDT_RATE).toFixed(1)} (৳${member.paidAmount})` : `৳${member.paidAmount}`) : ''}
                 </span>
               ) : (
               <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-400">
@@ -568,7 +568,7 @@ export function MemberCard({
                 type="number"
                 value={editPendingAmount}
                 onChange={(e) => setEditPendingAmount(e.target.value)}
-                placeholder="Due amount"
+                placeholder={member.isUsdt ? 'USD amount' : 'Due amount'}
                 className="w-20 bg-input rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
                 autoFocus
                 min="0"
@@ -596,7 +596,7 @@ export function MemberCard({
               {member.pendingAmount && member.pendingAmount > 0 ? (
                 <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-full bg-orange-500/20 text-orange-400">
                   <AlertCircle className="w-3 h-3" />
-                  Due ৳{member.pendingAmount}
+                  Due {member.isUsdt ? `$${(member.pendingAmount / USDT_RATE).toFixed(1)} (৳${member.pendingAmount})` : `৳${member.pendingAmount}`}
                 </span>
               ) : (
                 <button
