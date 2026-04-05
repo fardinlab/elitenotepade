@@ -211,6 +211,7 @@ const PlusTeamMembers = () => {
                       isRemoveMode={isRemoveMode}
                       isHighlighted={highlightedMemberId === member.id || highlightedMemberIds.includes(member.id)}
                       highlightColor={highlightColor}
+                      teamName={team.teamName}
                       onRemove={() => handleRemoveMember(member.id, member.email)}
                       onDateChange={updateMemberDate}
                       onEmailChange={updateMemberEmail}
