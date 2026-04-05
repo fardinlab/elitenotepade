@@ -525,12 +525,12 @@ export function PlusMemberCard({
           <div className="flex items-center gap-2">
             {member.paidAmount && member.paidAmount > 0 && (
               <span className="px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-medium">
-                Paid: ৳{member.paidAmount}
+                Paid: {member.isUsdt ? `$${(member.paidAmount / USDT_RATE).toFixed(1)} (৳${member.paidAmount})` : `৳${member.paidAmount}`}
               </span>
             )}
             {member.pendingAmount && member.pendingAmount > 0 && (
               <span className="px-2 py-1 rounded-full bg-orange-500/20 text-orange-400 text-[10px] font-medium">
-                Due: ৳{member.pendingAmount}
+                Due: {member.isUsdt ? `$${(member.pendingAmount / USDT_RATE).toFixed(1)} (৳${member.pendingAmount})` : `৳${member.pendingAmount}`}
               </span>
             )}
           </div>
