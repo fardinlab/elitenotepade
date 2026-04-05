@@ -7,9 +7,9 @@ import { toast } from 'sonner';
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onExport: () => void;
+  onExport: () => void | Promise<void>;
   onImport: (json: string) => boolean;
-  getBackupData: () => object;
+  getBackupData: () => object | Promise<object>;
   onRestoreData: (data: object) => void;
 }
 
