@@ -388,6 +388,7 @@ export function useSupabaseData() {
         subscriptions: (member.subscriptions as string[]) || null,
         is_pushed: member.isPushed || false,
         active_team_id: member.activeTeamId || null,
+        is_usdt: member.isUsdt || false,
         created_at: now,
       };
 
