@@ -54,10 +54,27 @@ const Index = () => {
     return success;
   };
 
-  const getBackupData = () => {
+  const getBackupData = async () => {
+    // Fetch member_payments for complete backup
+    let memberPayments: any[] = [];
+    try {
+      const { supabase } = await import('@/lib/supabase');
+      const { data: session } = await supabase.auth.getSession();
+      if (session?.session?.user?.id) {
+        const { data: payments } = await supabase
+          .from('member_payments')
+          .select('*')
+          .eq('user_id', session.session.user.id);
+        if (payments) memberPayments = payments;
+      }
+    } catch (err) {
+      console.error('Failed to fetch payments for backup:', err);
+    }
+
     return {
       teams: sortedTeams,
       notepads: notepads,
+      member_payments: memberPayments,
       exportedAt: new Date().toISOString()
     };
   };
