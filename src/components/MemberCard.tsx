@@ -5,6 +5,7 @@ import { Phone, Trash2, Calendar, Pencil, Check, X, Send, DollarSign, AlertCircl
 import { differenceInDays } from 'date-fns';
 import { Member, SubscriptionType, Team, USDT_RATE } from '@/types/member';
 import { SubscriptionBadges } from './SubscriptionBadges';
+import { supabase as cloudSupabase } from '@/integrations/supabase/client';
 
 interface MemberCardProps {
   member: Member;
@@ -228,6 +229,22 @@ export function MemberCard({
     }
     onPendingAmountChange(member.id, amount > 0 ? amount : undefined);
     setIsEditingPending(false);
+
+    // Send due reminder email if amount > 0
+    if (amount > 0) {
+      cloudSupabase.functions.invoke('send-transactional-email', {
+        body: {
+          templateName: 'due-reminder',
+          recipientEmail: member.email,
+          idempotencyKey: `due-${member.id}-${Date.now()}`,
+          templateData: {
+            email: member.email,
+            dueAmount: amount,
+            isUsdt: member.isUsdt || false,
+          },
+        },
+      }).catch((e) => console.error('[Email] Due reminder failed:', e));
+    }
   };
 
   const handleCancelPending = () => {
