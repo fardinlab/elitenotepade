@@ -54,6 +54,7 @@ interface DbMember {
   created_at: string;
   is_pushed?: boolean | null;
   active_team_id?: string | null;
+  is_usdt?: boolean | null;
 }
 
 const mapDbTeamToTeam = (dbTeam: DbTeam, members: Member[]): Team => ({
@@ -84,6 +85,7 @@ const mapDbMemberToMember = (dbMember: DbMember): Member => ({
   subscriptions: (dbMember.subscriptions as SubscriptionType[]) || undefined,
   isPushed: dbMember.is_pushed || false,
   activeTeamId: dbMember.active_team_id || undefined,
+  isUsdt: dbMember.is_usdt || false,
 });
 
 // ─── Helper: build teams from local DB ──────────────────────────

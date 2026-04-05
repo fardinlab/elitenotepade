@@ -11,6 +11,8 @@ export const SUBSCRIPTION_CONFIG: Record<SubscriptionType, { name: string; color
   netflix: { name: 'Netflix', color: '#E50914' },
 };
 
+export const USDT_RATE = 125;
+
 export interface Member {
   id: string;
   email: string;
@@ -28,6 +30,7 @@ export interface Member {
   isPushed?: boolean;
   activeTeamId?: string;
   activeTeamName?: string;
+  isUsdt?: boolean;
 }
 
 export interface Team {
