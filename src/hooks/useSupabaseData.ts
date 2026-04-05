@@ -635,8 +635,14 @@ export function useSupabaseData() {
   const canAddMember = activeTeam ? activeTeam.members.length + 1 < MAX_MEMBERS : false;
   const isTeamFull = activeTeam ? activeTeam.members.length + 1 >= MAX_MEMBERS : false;
 
-  const exportData = useCallback(() => {
-    const exportObj = { teams, exportedAt: new Date().toISOString() };
+  const exportData = useCallback(async () => {
+    // Also export member_payments
+    let payments: any[] = [];
+    if (user) {
+      const { data } = await supabase.from('member_payments').select('*').eq('user_id', user.id);
+      payments = data || [];
+    }
+    const exportObj = { teams, payments, exportedAt: new Date().toISOString() };
     const json = JSON.stringify(exportObj, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -645,7 +651,7 @@ export function useSupabaseData() {
     a.download = `elite-notepade-backup-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [teams]);
+  }, [teams, user]);
 
   const importData = useCallback(async (jsonString: string) => {
     if (!user) return false;
