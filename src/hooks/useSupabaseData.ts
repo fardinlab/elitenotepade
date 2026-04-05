@@ -635,8 +635,14 @@ export function useSupabaseData() {
   const canAddMember = activeTeam ? activeTeam.members.length + 1 < MAX_MEMBERS : false;
   const isTeamFull = activeTeam ? activeTeam.members.length + 1 >= MAX_MEMBERS : false;
 
-  const exportData = useCallback(() => {
-    const exportObj = { teams, exportedAt: new Date().toISOString() };
+  const exportData = useCallback(async () => {
+    // Also export member_payments
+    let payments: any[] = [];
+    if (user) {
+      const { data } = await supabase.from('member_payments').select('*').eq('user_id', user.id);
+      payments = data || [];
+    }
+    const exportObj = { teams, payments, exportedAt: new Date().toISOString() };
     const json = JSON.stringify(exportObj, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -645,7 +651,7 @@ export function useSupabaseData() {
     a.download = `elite-notepade-backup-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [teams]);
+  }, [teams, user]);
 
   const importData = useCallback(async (jsonString: string) => {
     if (!user) return false;
@@ -709,6 +715,68 @@ export function useSupabaseData() {
 
           await putLocalMember(memberPayload);
           await queueAndSync(user.id, 'members', 'insert', memberId, memberPayload);
+        }
+      }
+
+      // Import payments if present
+      const payments = parsed.payments || [];
+      if (payments.length > 0) {
+        console.log(`[Import] Importing ${payments.length} payment records…`);
+        // Insert payments directly to Supabase in batches
+        const paymentBatchSize = 50;
+        for (let i = 0; i < payments.length; i += paymentBatchSize) {
+          const batch = payments.slice(i, i + paymentBatchSize).map((p: any) => ({
+            id: p.id || crypto.randomUUID(),
+            member_id: p.member_id,
+            user_id: user.id,
+            month: p.month,
+            year: p.year,
+            amount: p.amount || 0,
+            status: p.status || 'paid',
+            note: p.note || null,
+          }));
+          const { error } = await supabase.from('member_payments').upsert(batch);
+          if (error) {
+            console.error('[Import] Payment batch error:', error);
+          }
+        }
+      }
+
+      // Also generate payments from member isPaid/paidAmount for current month if no payments exist
+      if (payments.length === 0) {
+        const now = new Date();
+        const currentMonth = now.getMonth() + 1;
+        const currentYear = now.getFullYear();
+        const paymentRecords: any[] = [];
+
+        for (const teamData of teamsToImport) {
+          const teamId = teamData.id || '';
+          const members = teamData.members || [];
+          for (const m of members) {
+            const isPaid = m.isPaid ?? m.is_paid ?? false;
+            const paidAmount = m.paidAmount ?? m.paid_amount ?? 0;
+            if (isPaid && paidAmount > 0) {
+              paymentRecords.push({
+                id: crypto.randomUUID(),
+                member_id: m.id,
+                user_id: user.id,
+                month: currentMonth,
+                year: currentYear,
+                amount: paidAmount,
+                status: 'paid',
+                note: null,
+              });
+            }
+          }
+        }
+
+        if (paymentRecords.length > 0) {
+          console.log(`[Import] Creating ${paymentRecords.length} payment records from member data…`);
+          for (let i = 0; i < paymentRecords.length; i += 50) {
+            const batch = paymentRecords.slice(i, i + 50);
+            const { error } = await supabase.from('member_payments').upsert(batch);
+            if (error) console.error('[Import] Payment generation error:', error);
+          }
         }
       }
 
