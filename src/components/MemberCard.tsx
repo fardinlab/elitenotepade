@@ -516,7 +516,7 @@ export function MemberCard({
                 type="number"
                 value={editPaidAmount}
                 onChange={(e) => setEditPaidAmount(e.target.value)}
-                placeholder="Amount"
+                placeholder={member.isUsdt ? 'USD amount' : 'Amount'}
                 className="w-20 bg-input rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-2 focus:ring-primary"
                 autoFocus
                 min="0"
