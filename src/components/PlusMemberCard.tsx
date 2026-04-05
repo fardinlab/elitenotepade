@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Phone, Trash2, Calendar, Pencil, Check, X, Send, Copy, Pause, Play, DollarSign } from 'lucide-react';
-import { Member } from '@/types/member';
+import { Member, USDT_RATE } from '@/types/member';
 import { toast } from 'sonner';
 
 interface PlusMemberCardProps {
@@ -20,6 +20,7 @@ interface PlusMemberCardProps {
   onPushedChange?: (id: string, isPushed: boolean) => void;
   onPaymentChange?: (id: string, isPaid: boolean, paidAmount?: number) => void;
   onPendingAmountChange?: (id: string, pendingAmount?: number) => void;
+  onUsdtChange?: (id: string, isUsdt: boolean) => void;
 }
 
 export function PlusMemberCard({ 
@@ -37,7 +38,8 @@ export function PlusMemberCard({
   onGPassChange,
   onPushedChange,
   onPaymentChange,
-  onPendingAmountChange
+  onPendingAmountChange,
+  onUsdtChange
 }: PlusMemberCardProps) {
   const [isEditingDate, setIsEditingDate] = useState(false);
   const [editDateValue, setEditDateValue] = useState(member.joinDate);
