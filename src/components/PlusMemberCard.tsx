@@ -543,7 +543,7 @@ export function PlusMemberCard({
                 type="number"
                 value={paidAmountInput}
                 onChange={(e) => setPaidAmountInput(e.target.value)}
-                placeholder="Enter paid amount"
+                placeholder={member.isUsdt ? 'USD amount' : 'Enter paid amount'}
                 className="flex-1 bg-white/10 backdrop-blur-sm rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/50 border border-white/10"
                 autoFocus
                 onKeyDown={(e) => {
