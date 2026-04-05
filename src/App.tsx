@@ -18,7 +18,6 @@ import RenewSubscription from "./pages/RenewSubscription";
 import MonthlyEarnings from "./pages/MonthlyEarnings";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
-import Unsubscribe from "./pages/Unsubscribe";
 
 const queryClient = new QueryClient();
 
@@ -117,7 +116,6 @@ const App = () => (
                 </ProtectedRoute>
               }
             />
-            <Route path="/unsubscribe" element={<Unsubscribe />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

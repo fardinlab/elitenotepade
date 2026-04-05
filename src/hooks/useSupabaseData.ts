@@ -1,9 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { supabase as cloudSupabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Team, Member, MAX_MEMBERS, SubscriptionType, SUBSCRIPTION_CONFIG } from '@/types/member';
-import { isValidEmailAddress, normalizeEmail } from '@/lib/emailValidation';
+import { Team, Member, MAX_MEMBERS, SubscriptionType } from '@/types/member';
 import {
   getLocalTeams,
   getLocalMembers,
@@ -86,7 +84,6 @@ const mapDbMemberToMember = (dbMember: DbMember): Member => ({
   subscriptions: (dbMember.subscriptions as SubscriptionType[]) || undefined,
   isPushed: dbMember.is_pushed || false,
   activeTeamId: dbMember.active_team_id || undefined,
-  isUsdt: (dbMember as any).is_usdt || false,
 });
 
 // ─── Helper: build teams from local DB ──────────────────────────
@@ -369,18 +366,13 @@ export function useSupabaseData() {
         return { ok: false, error: `Maximum ${MAX_MEMBERS} members allowed` };
       }
 
-      const normalizedEmail = normalizeEmail(member.email);
-      if (!isValidEmailAddress(normalizedEmail)) {
-        return { ok: false, error: 'Please enter a valid email address' };
-      }
-
       const id = crypto.randomUUID();
       const now = new Date().toISOString();
       const localMember = {
         id,
         team_id: teamIdToUse,
         user_id: user.id,
-        email: normalizedEmail,
+        email: member.email,
         phone: member.phone || '',
         telegram: member.telegram || null,
         twofa_secret: member.twoFA || null,
@@ -394,7 +386,6 @@ export function useSupabaseData() {
         subscriptions: (member.subscriptions as string[]) || null,
         is_pushed: member.isPushed || false,
         active_team_id: member.activeTeamId || null,
-        is_usdt: member.isUsdt || false,
         created_at: now,
       };
 
@@ -407,33 +398,6 @@ export function useSupabaseData() {
       );
 
       await queueAndSync(user.id, 'members', 'insert', id, localMember);
-
-      if (!team.isYearlyTeam && normalizedEmail && !member.isPushed) {
-        const subscriptionName = team.logo ? SUBSCRIPTION_CONFIG[team.logo]?.name : undefined;
-        cloudSupabase.functions.invoke('send-transactional-email', {
-          body: {
-            templateName: 'welcome-member',
-            recipientEmail: normalizedEmail,
-            idempotencyKey: `welcome-${id}`,
-            templateData: {
-              teamName: team.teamName,
-              subscriptionName,
-              joinDate: member.joinDate,
-              expiryDate: (() => {
-                const d = new Date(member.joinDate);
-                d.setDate(d.getDate() + 30);
-                return d.toISOString().split('T')[0];
-              })(),
-              memberEmail: normalizedEmail,
-            },
-          },
-        }).then(() => {
-          console.log('[Email] Welcome email queued for', normalizedEmail);
-        }).catch((e) => {
-          console.error('[Email] Failed to send welcome email:', e);
-        });
-      }
-
       return { ok: true };
     },
     [user, activeTeamId, teams]
@@ -499,73 +463,7 @@ export function useSupabaseData() {
   const updateMemberEPass = useCallback((id: string, ePass: string) => updateMemberField(id, 'ePass', 'e_pass', ePass || null), [updateMemberField]);
   const updateMemberGPass = useCallback((id: string, gPass: string) => updateMemberField(id, 'gPass', 'g_pass', gPass || null), [updateMemberField]);
   const updateMemberSubscriptions = useCallback((id: string, subscriptions: SubscriptionType[]) => updateMemberField(id, 'subscriptions', 'subscriptions', subscriptions), [updateMemberField]);
-  const updateMemberPendingAmount = useCallback(
-    async (id: string, pendingAmount?: number) => {
-      console.log(`[DueReminder] updateMemberPendingAmount called: id=${id}, amount=${pendingAmount}`);
-      await updateMemberField(id, 'pendingAmount', 'pending_amount', pendingAmount || null);
-
-      // Send due reminder email immediately when amount > 0
-      if (pendingAmount && pendingAmount > 0 && user) {
-        try {
-          // Fetch fresh data from local DB to avoid stale closure issues
-          const localMembers = await getLocalMembers(user.id);
-          const localTeams = await getLocalTeams(user.id);
-          const memberRecord = localMembers.find(m => m.id === id);
-          
-          if (!memberRecord || !memberRecord.email) {
-            console.log(`[DueReminder] Skipped: member not found or no email`);
-            return;
-          }
-
-          const teamRecord = localTeams.find(t => t.id === memberRecord.team_id);
-          if (!teamRecord) {
-            console.log(`[DueReminder] Skipped: team not found`);
-            return;
-          }
-
-          const isYearly = teamRecord.is_yearly === true;
-          if (isYearly) {
-            console.log(`[DueReminder] Skipped: yearly team`);
-            return;
-          }
-
-          const logo = teamRecord.logo as SubscriptionType | null;
-          const subName = logo ? SUBSCRIPTION_CONFIG[logo]?.name : undefined;
-          const todayStr = new Date().toISOString().split('T')[0];
-          
-          console.log(`[DueReminder] Sending email to ${memberRecord.email} (team: ${teamRecord.team_name})...`);
-          const isUsdtMember = (memberRecord as any).is_usdt === true;
-          const result = await cloudSupabase.functions.invoke('send-transactional-email', {
-            body: {
-              templateName: 'due-reminder',
-              recipientEmail: memberRecord.email,
-              idempotencyKey: `due-reminder-${id}-${todayStr}`,
-              templateData: {
-                teamName: teamRecord.team_name,
-                subscriptionName: subName,
-                memberEmail: memberRecord.email,
-                pendingAmount: String(pendingAmount),
-                joinDate: memberRecord.join_date,
-                isUsdt: isUsdtMember ? 'true' : 'false',
-              },
-            },
-          });
-          console.log(`[DueReminder] Response:`, result);
-          // Update local tracking for 3-day interval
-          try {
-            const records = JSON.parse(localStorage.getItem('dueRemindersSent') || '{}');
-            records[memberRecord.email] = todayStr;
-            localStorage.setItem('dueRemindersSent', JSON.stringify(records));
-          } catch {}
-          console.log(`[DueReminder] Sent immediately to ${memberRecord.email}`);
-        } catch (e) {
-          console.error('[DueReminder] Failed:', e);
-        }
-      }
-    },
-    [updateMemberField, user]
-  );
-  const updateMemberUsdt = useCallback((id: string, isUsdt: boolean) => updateMemberField(id, 'isUsdt', 'is_usdt', isUsdt, true), [updateMemberField]);
+  const updateMemberPendingAmount = useCallback((id: string, pendingAmount?: number) => updateMemberField(id, 'pendingAmount', 'pending_amount', pendingAmount || null), [updateMemberField]);
   const updateMemberPushed = useCallback((id: string, isPushed: boolean) => updateMemberField(id, 'isPushed', 'is_pushed', isPushed, true), [updateMemberField]);
   const updateMemberActiveTeam = useCallback((id: string, activeTeamIdVal?: string) => updateMemberField(id, 'activeTeamId', 'active_team_id', activeTeamIdVal || null, true), [updateMemberField]);
 
@@ -635,14 +533,8 @@ export function useSupabaseData() {
   const canAddMember = activeTeam ? activeTeam.members.length + 1 < MAX_MEMBERS : false;
   const isTeamFull = activeTeam ? activeTeam.members.length + 1 >= MAX_MEMBERS : false;
 
-  const exportData = useCallback(async () => {
-    // Also export member_payments
-    let payments: any[] = [];
-    if (user) {
-      const { data } = await supabase.from('member_payments').select('*').eq('user_id', user.id);
-      payments = data || [];
-    }
-    const exportObj = { teams, payments, exportedAt: new Date().toISOString() };
+  const exportData = useCallback(() => {
+    const exportObj = { teams, exportedAt: new Date().toISOString() };
     const json = JSON.stringify(exportObj, null, 2);
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -651,149 +543,12 @@ export function useSupabaseData() {
     a.download = `elite-notepade-backup-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
-  }, [teams, user]);
+  }, [teams]);
 
-  const importData = useCallback(async (jsonString: string) => {
-    if (!user) return false;
-    try {
-      const parsed = JSON.parse(jsonString);
-      let teamsToImport: any[] = [];
-
-      // Handle multi-team format
-      if (parsed.teams && Array.isArray(parsed.teams)) {
-        teamsToImport = parsed.teams;
-      }
-      // Handle old single-team format
-      else if (parsed.teamName && parsed.adminEmail && Array.isArray(parsed.members)) {
-        teamsToImport = [parsed];
-      } else {
-        console.error('[Import] Unrecognized JSON format');
-        return false;
-      }
-
-      for (const teamData of teamsToImport) {
-        const teamId = teamData.id || crypto.randomUUID();
-        const teamPayload = {
-          id: teamId,
-          user_id: user.id,
-          team_name: teamData.teamName || teamData.team_name || 'Imported Team',
-          admin_email: teamData.adminEmail || teamData.admin_email || user.email || '',
-          logo: teamData.logo || null,
-          created_at: teamData.createdAt || teamData.created_at || new Date().toISOString(),
-          last_backup: teamData.lastBackup || teamData.last_backup || null,
-          is_yearly: teamData.isYearlyTeam || teamData.is_yearly || false,
-          is_plus: teamData.isPlusTeam || teamData.is_plus || false,
-        };
-
-        await putLocalTeam(teamPayload);
-        await queueAndSync(user.id, 'teams', 'insert', teamId, teamPayload);
-
-        const members = teamData.members || [];
-        for (const m of members) {
-          const memberId = m.id || crypto.randomUUID();
-          const memberPayload = {
-            id: memberId,
-            team_id: teamId,
-            user_id: user.id,
-            email: m.email || '',
-            phone: m.phone || '',
-            telegram: m.telegram || null,
-            twofa_secret: m.twoFA || m.twofa_secret || m.twofa || m.two_fa || null,
-            password: m.password || null,
-            e_pass: m.ePass || m.e_pass || null,
-            g_pass: m.gPass || m.g_pass || null,
-            join_date: m.joinDate || m.join_date || new Date().toISOString(),
-            is_paid: m.isPaid ?? m.is_paid ?? false,
-            paid_amount: m.paidAmount ?? m.paid_amount ?? null,
-            pending_amount: m.pendingAmount ?? m.pending_amount ?? null,
-            subscriptions: m.subscriptions || null,
-            is_pushed: m.isPushed ?? m.is_pushed ?? false,
-            active_team_id: m.activeTeamId || m.active_team_id || null,
-            is_usdt: m.isUsdt ?? m.is_usdt ?? false,
-            created_at: m.createdAt || m.created_at || new Date().toISOString(),
-          };
-
-          await putLocalMember(memberPayload);
-          await queueAndSync(user.id, 'members', 'insert', memberId, memberPayload);
-        }
-      }
-
-      // Import payments if present
-      const payments = parsed.payments || [];
-      if (payments.length > 0) {
-        console.log(`[Import] Importing ${payments.length} payment records…`);
-        // Insert payments directly to Supabase in batches
-        const paymentBatchSize = 50;
-        for (let i = 0; i < payments.length; i += paymentBatchSize) {
-          const batch = payments.slice(i, i + paymentBatchSize).map((p: any) => ({
-            id: p.id || crypto.randomUUID(),
-            member_id: p.member_id,
-            user_id: user.id,
-            month: p.month,
-            year: p.year,
-            amount: p.amount || 0,
-            status: p.status || 'paid',
-            note: p.note || null,
-          }));
-          const { error } = await supabase.from('member_payments').upsert(batch);
-          if (error) {
-            console.error('[Import] Payment batch error:', error);
-          }
-        }
-      }
-
-      // Also generate payments from member isPaid/paidAmount for current month if no payments exist
-      if (payments.length === 0) {
-        const now = new Date();
-        const currentMonth = now.getMonth() + 1;
-        const currentYear = now.getFullYear();
-        const paymentRecords: any[] = [];
-
-        for (const teamData of teamsToImport) {
-          const teamId = teamData.id || '';
-          const members = teamData.members || [];
-          for (const m of members) {
-            const isPaid = m.isPaid ?? m.is_paid ?? false;
-            const paidAmount = m.paidAmount ?? m.paid_amount ?? 0;
-            if (isPaid && paidAmount > 0) {
-              paymentRecords.push({
-                id: crypto.randomUUID(),
-                member_id: m.id,
-                user_id: user.id,
-                month: currentMonth,
-                year: currentYear,
-                amount: paidAmount,
-                status: 'paid',
-                note: null,
-              });
-            }
-          }
-        }
-
-        if (paymentRecords.length > 0) {
-          console.log(`[Import] Creating ${paymentRecords.length} payment records from member data…`);
-          for (let i = 0; i < paymentRecords.length; i += 50) {
-            const batch = paymentRecords.slice(i, i + 50);
-            const { error } = await supabase.from('member_payments').upsert(batch);
-            if (error) console.error('[Import] Payment generation error:', error);
-          }
-        }
-      }
-
-      // Rebuild UI state from local DB
-      const rebuilt = await buildTeamsFromLocal(user.id);
-      setTeams(rebuilt);
-      if (rebuilt.length > 0 && !activeTeamId) {
-        setActiveTeamId(rebuilt[0].id);
-      }
-
-      console.log(`[Import] Successfully imported ${teamsToImport.length} team(s)`);
-      return true;
-    } catch (err) {
-      console.error('[Import] Failed:', err);
-      return false;
-    }
-  }, [user, activeTeamId]);
+  const importData = useCallback((jsonString: string) => {
+    console.log('Import data is available for reference only:', jsonString);
+    return true;
+  }, []);
 
   const setLastBackup = useCallback(
     async (date: string) => {
@@ -836,7 +591,6 @@ export function useSupabaseData() {
     updateMemberPendingAmount,
     updateMemberPushed,
     updateMemberActiveTeam,
-    updateMemberUsdt,
     updateTeamLogo,
     canAddMember,
     isTeamFull,

@@ -5,7 +5,6 @@ import { FileText, User } from 'lucide-react';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useNotepads } from '@/hooks/useNotepads';
 import { useNotificationScheduler } from '@/hooks/useNotificationScheduler';
-import { useDueReminders } from '@/hooks/useDueReminders';
 import { SubscriptionType } from '@/types/member';
 import { AppHeader } from '@/components/AppHeader';
 import { SettingsModal } from '@/components/SettingsModal';
@@ -41,13 +40,12 @@ const Index = () => {
 
   // Initialize local push notifications for member expiry alerts (native only)
   useNotificationScheduler(sortedTeams, isLoaded);
-  useDueReminders(sortedTeams, isLoaded);
 
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showNotepads, setShowNotepads] = useState(false);
 
-  const handleImport = async (json: string) => {
-    const success = await importData(json);
+  const handleImport = (json: string) => {
+    const success = importData(json);
     if (success) {
       toast.success('Data imported successfully!');
     } else {
@@ -64,10 +62,10 @@ const Index = () => {
     };
   };
 
-  const handleRestoreData = async (data: any) => {
+  const handleRestoreData = (data: any) => {
     if (data && typeof data === 'object') {
       const jsonString = JSON.stringify(data);
-      const success = await importData(jsonString);
+      const success = importData(jsonString);
       if (success) {
         toast.success('Data restored from Google Drive!');
       } else {

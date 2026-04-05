@@ -6,7 +6,6 @@ import YearlyMemberCard from '@/components/YearlyMemberCard';
 import { useSupabaseData } from '@/hooks/useSupabaseData';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
-import { isValidEmailAddress, normalizeEmail } from '@/lib/emailValidation';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -235,6 +234,11 @@ const YearlyTeamMembers = () => {
     }
   }, [highlightMemberIds, highlightColorParam, team]);
 
+  const validateEmail = (email: string) => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+
   const validatePhone = (phone: string) => {
     const re = /^[+]?[\d\s\-()]{7,}$/;
     return re.test(phone);
@@ -242,10 +246,9 @@ const YearlyTeamMembers = () => {
 
   const handleAddMember = async (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmedEmail = normalizeEmail(email);
     const newErrors: { email?: string; phone?: string } = {};
 
-    if (!isValidEmailAddress(trimmedEmail)) {
+    if (!validateEmail(email)) {
       newErrors.email = 'Please enter a valid email address';
     }
     if (phone && !validatePhone(phone)) {
@@ -259,7 +262,7 @@ const YearlyTeamMembers = () => {
 
     const result = await addMember(
       {
-        email: trimmedEmail,
+        email,
         phone: phone.trim() || '',
         telegram: telegram.trim() || undefined,
         twoFA: twoFA.trim() || undefined,

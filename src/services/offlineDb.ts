@@ -39,7 +39,6 @@ interface EliteDB extends DBSchema {
       subscriptions: string[] | null;
       is_pushed: boolean;
       active_team_id: string | null;
-      is_usdt: boolean;
       created_at: string;
     };
     indexes: { 'by-user': string; 'by-team': string };
@@ -231,7 +230,6 @@ export const memberToLocal = (
   subscriptions: dbMember.subscriptions || null,
   is_pushed: dbMember.is_pushed || false,
   active_team_id: dbMember.active_team_id || null,
-  is_usdt: dbMember.is_usdt || false,
   created_at: dbMember.created_at || new Date().toISOString(),
 });
 
@@ -268,5 +266,4 @@ export const localMemberToAppMember = (
   subscriptions: (localMember.subscriptions as SubscriptionType[]) || undefined,
   isPushed: localMember.is_pushed || false,
   activeTeamId: localMember.active_team_id || undefined,
-  isUsdt: localMember.is_usdt || false,
 });

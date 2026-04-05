@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Users, Calendar, ChevronRight, Trash2, X, Check, ImagePlus, Pencil, Bell } from 'lucide-react';
-import { Team, MAX_MEMBERS, SubscriptionType, SUBSCRIPTION_CONFIG, USDT_TO_BDT_RATE } from '@/types/member';
+import { Team, MAX_MEMBERS, SubscriptionType, SUBSCRIPTION_CONFIG } from '@/types/member';
 import { differenceInDays } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/contexts/AuthContext';
@@ -481,9 +481,8 @@ export function TeamList({ teams, activeTeamId, onSelectTeam, onCreateTeam, onDe
                         });
                       } else {
                         team.members.forEach(m => {
-                          const rate = m.isUsdt ? USDT_TO_BDT_RATE : 1;
-                          if (m.isPaid && m.paidAmount) teamPaid += m.paidAmount * rate;
-                          if (m.pendingAmount && m.pendingAmount > 0) teamDue += m.pendingAmount * rate;
+                          if (m.isPaid && m.paidAmount) teamPaid += m.paidAmount;
+                          if (m.pendingAmount && m.pendingAmount > 0) teamDue += m.pendingAmount;
                         });
                       }
                       return (teamPaid > 0 || teamDue > 0) ? (

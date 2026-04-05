@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Phone, Trash2, Calendar, Pencil, Check, X, Send, Copy, Pause, Play, DollarSign } from 'lucide-react';
-import { Member, USDT_TO_BDT_RATE } from '@/types/member';
+import { Member } from '@/types/member';
 import { toast } from 'sonner';
 
 interface PlusMemberCardProps {
@@ -20,7 +20,6 @@ interface PlusMemberCardProps {
   onPushedChange?: (id: string, isPushed: boolean) => void;
   onPaymentChange?: (id: string, isPaid: boolean, paidAmount?: number) => void;
   onPendingAmountChange?: (id: string, pendingAmount?: number) => void;
-  onUsdtChange?: (id: string, isUsdt: boolean) => void;
 }
 
 export function PlusMemberCard({ 
@@ -38,8 +37,7 @@ export function PlusMemberCard({
   onGPassChange,
   onPushedChange,
   onPaymentChange,
-  onPendingAmountChange,
-  onUsdtChange
+  onPendingAmountChange
 }: PlusMemberCardProps) {
   const [isEditingDate, setIsEditingDate] = useState(false);
   const [editDateValue, setEditDateValue] = useState(member.joinDate);
@@ -138,7 +136,7 @@ export function PlusMemberCard({
     const amount = parseFloat(paidAmountInput);
     if (!isNaN(amount) && amount > 0 && onPaymentChange) {
       onPaymentChange(member.id, true, amount);
-      toast.success(`Paid ${member.isUsdt ? '$' : '৳'}${amount} recorded!`);
+      toast.success(`Paid ৳${amount} recorded!`);
     }
     setShowPaidInput(false);
     setPaidAmountInput('');
@@ -148,7 +146,7 @@ export function PlusMemberCard({
     const amount = parseFloat(dueAmountInput);
     if (!isNaN(amount) && amount >= 0 && onPendingAmountChange) {
       onPendingAmountChange(member.id, amount > 0 ? amount : undefined);
-      toast.success(amount > 0 ? `Due ${member.isUsdt ? '$' : '৳'}${amount} recorded!` : 'Due cleared!');
+      toast.success(amount > 0 ? `Due ৳${amount} recorded!` : 'Due cleared!');
     }
     setShowDueInput(false);
     setDueAmountInput('');
@@ -277,38 +275,19 @@ export function PlusMemberCard({
         {/* Top row: Pushed badge */}
         {!isRemoveMode && onPushedChange && (
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleTogglePushed}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${
-                  member.isPushed
-                    ? 'bg-muted/50 text-muted-foreground border border-muted-foreground/20'
-                    : 'bg-purple-500/20 text-purple-300 border border-purple-500/30 hover:bg-purple-500/30'
-                }`}
-              >
-                {member.isPushed ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
-                <span>Pushed</span>
-              </motion.button>
-
-              {/* USDT Toggle */}
-              {onUsdtChange && (
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  onClick={() => onUsdtChange(member.id, !member.isUsdt)}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${
-                    member.isUsdt
-                      ? 'bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30'
-                      : 'bg-muted/50 text-muted-foreground border border-muted-foreground/20 hover:bg-muted/70'
-                  }`}
-                >
-                  <DollarSign className="w-3 h-3" />
-                  <span>USDT</span>
-                </motion.button>
-              )}
-            </div>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleTogglePushed}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-medium transition-all ${
+                member.isPushed
+                  ? 'bg-muted/50 text-muted-foreground border border-muted-foreground/20'
+                  : 'bg-purple-500/20 text-purple-300 border border-purple-500/30 hover:bg-purple-500/30'
+              }`}
+            >
+              {member.isPushed ? <Pause className="w-3 h-3" /> : <Play className="w-3 h-3" />}
+              <span>Pushed</span>
+            </motion.button>
 
             {isRemoveMode && (
               <motion.button
@@ -517,12 +496,12 @@ export function PlusMemberCard({
           <div className="flex items-center gap-2">
             {member.paidAmount && member.paidAmount > 0 && (
               <span className="px-2 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-[10px] font-medium">
-                Paid: {member.isUsdt ? '$' : '৳'}{member.paidAmount}
+                Paid: ৳{member.paidAmount}
               </span>
             )}
             {member.pendingAmount && member.pendingAmount > 0 && (
               <span className="px-2 py-1 rounded-full bg-orange-500/20 text-orange-400 text-[10px] font-medium">
-                Due: {member.isUsdt ? '$' : '৳'}{member.pendingAmount}
+                Due: ৳{member.pendingAmount}
               </span>
             )}
           </div>
