@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Phone, Trash2, Calendar, Pencil, Check, X, Send, Copy, Pause, Play, DollarSign } from 'lucide-react';
 import { Member, USDT_RATE } from '@/types/member';
 import { toast } from 'sonner';
+import { supabase as cloudSupabase } from '@/integrations/supabase/client';
 
 interface PlusMemberCardProps {
   member: Member;
@@ -157,6 +158,22 @@ export function PlusMemberCard({
       toast.success(amount > 0 
         ? (member.isUsdt ? `Due $${dueAmountInput} (৳${amount}) recorded!` : `Due ৳${amount} recorded!`)
         : 'Due cleared!');
+
+      // Send due reminder email if amount > 0
+      if (amount > 0) {
+        cloudSupabase.functions.invoke('send-transactional-email', {
+          body: {
+            templateName: 'due-reminder',
+            recipientEmail: member.email,
+            idempotencyKey: `due-${member.id}-${Date.now()}`,
+            templateData: {
+              email: member.email,
+              dueAmount: amount,
+              isUsdt: member.isUsdt || false,
+            },
+          },
+        }).catch((e) => console.error('[Email] Due reminder failed:', e));
+      }
     }
     setShowDueInput(false);
     setDueAmountInput('');
