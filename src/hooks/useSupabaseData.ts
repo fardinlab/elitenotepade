@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
+import { supabase as cloudSupabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Team, Member, MAX_MEMBERS, SubscriptionType } from '@/types/member';
 import {
@@ -401,6 +402,28 @@ export function useSupabaseData() {
       );
 
       await queueAndSync(user.id, 'members', 'insert', id, localMember);
+
+      // Send welcome email (fire-and-forget, don't block addMember)
+      try {
+        const planName = getPlanName(team.logo);
+        cloudSupabase.functions.invoke('send-transactional-email', {
+          body: {
+            templateName: 'welcome-member',
+            recipientEmail: member.email,
+            idempotencyKey: `welcome-${id}`,
+            templateData: {
+              email: member.email,
+              joinDate: member.joinDate,
+              planName,
+              isUsdt: member.isUsdt || false,
+              teamName: team.teamName,
+            },
+          },
+        }).catch((e) => console.error('[Email] Welcome email failed:', e));
+      } catch (e) {
+        console.error('[Email] Welcome email error:', e);
+      }
+
       return { ok: true };
     },
     [user, activeTeamId, teams]
