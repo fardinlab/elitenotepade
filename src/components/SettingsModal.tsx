@@ -8,7 +8,7 @@ interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   onExport: () => void;
-  onImport: (json: string) => boolean;
+  onImport: (json: string) => boolean | Promise<boolean>;
   getBackupData: () => object;
   onRestoreData: (data: object) => void;
 }
@@ -28,9 +28,9 @@ export function SettingsModal({
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
-      reader.onload = (event) => {
+      reader.onload = async (event) => {
         const result = event.target?.result as string;
-        const success = onImport(result);
+        const success = await onImport(result);
         if (success) {
           toast.success('Import successful!');
         } else {

@@ -647,10 +647,85 @@ export function useSupabaseData() {
     URL.revokeObjectURL(url);
   }, [teams]);
 
-  const importData = useCallback((jsonString: string) => {
-    console.log('Import data is available for reference only:', jsonString);
-    return true;
-  }, []);
+  const importData = useCallback(async (jsonString: string) => {
+    if (!user) return false;
+    try {
+      const parsed = JSON.parse(jsonString);
+      let teamsToImport: any[] = [];
+
+      // Handle multi-team format
+      if (parsed.teams && Array.isArray(parsed.teams)) {
+        teamsToImport = parsed.teams;
+      }
+      // Handle old single-team format
+      else if (parsed.teamName && parsed.adminEmail && Array.isArray(parsed.members)) {
+        teamsToImport = [parsed];
+      } else {
+        console.error('[Import] Unrecognized JSON format');
+        return false;
+      }
+
+      for (const teamData of teamsToImport) {
+        const teamId = teamData.id || crypto.randomUUID();
+        const teamPayload = {
+          id: teamId,
+          user_id: user.id,
+          team_name: teamData.teamName || teamData.team_name || 'Imported Team',
+          admin_email: teamData.adminEmail || teamData.admin_email || user.email || '',
+          logo: teamData.logo || null,
+          created_at: teamData.createdAt || teamData.created_at || new Date().toISOString(),
+          last_backup: teamData.lastBackup || teamData.last_backup || null,
+          is_yearly: teamData.isYearlyTeam || teamData.is_yearly || false,
+          is_plus: teamData.isPlusTeam || teamData.is_plus || false,
+        };
+
+        await putLocalTeam(teamPayload);
+        await queueAndSync(user.id, 'teams', 'insert', teamId, teamPayload);
+
+        const members = teamData.members || [];
+        for (const m of members) {
+          const memberId = m.id || crypto.randomUUID();
+          const memberPayload = {
+            id: memberId,
+            team_id: teamId,
+            user_id: user.id,
+            email: m.email || '',
+            phone: m.phone || '',
+            telegram: m.telegram || null,
+            twofa_secret: m.twoFA || m.twofa_secret || m.twofa || m.two_fa || null,
+            password: m.password || null,
+            e_pass: m.ePass || m.e_pass || null,
+            g_pass: m.gPass || m.g_pass || null,
+            join_date: m.joinDate || m.join_date || new Date().toISOString(),
+            is_paid: m.isPaid ?? m.is_paid ?? false,
+            paid_amount: m.paidAmount ?? m.paid_amount ?? null,
+            pending_amount: m.pendingAmount ?? m.pending_amount ?? null,
+            subscriptions: m.subscriptions || null,
+            is_pushed: m.isPushed ?? m.is_pushed ?? false,
+            active_team_id: m.activeTeamId || m.active_team_id || null,
+            is_usdt: m.isUsdt ?? m.is_usdt ?? false,
+            created_at: m.createdAt || m.created_at || new Date().toISOString(),
+          };
+
+          await putLocalMember(memberPayload);
+          await queueAndSync(user.id, 'members', 'insert', memberId, memberPayload);
+        }
+      }
+
+      // Rebuild UI state from local DB
+      const rebuilt = await buildTeamsFromLocal(user.id);
+      setTeams(rebuilt);
+      if (rebuilt.length > 0 && !activeTeamId) {
+        setActiveTeamId(rebuilt[0].id);
+      }
+
+      console.log(`[Import] Successfully imported ${teamsToImport.length} team(s)`);
+      return true;
+    } catch (err) {
+      console.error('[Import] Failed:', err);
+      return false;
+    }
+  }, [user, activeTeamId]);
 
   const setLastBackup = useCallback(
     async (date: string) => {
