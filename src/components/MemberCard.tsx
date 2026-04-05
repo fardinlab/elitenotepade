@@ -279,9 +279,23 @@ export function MemberCard({
       transition={{ delay: index * 0.05 }}
       className={`rounded-xl p-4 card-shadow transition-all duration-300 touch-manipulation ${getCardClasses()}`}
     >
-      {/* Pushed and Active Controls */}
-      {!isRemoveMode && (onPushedChange || (onActiveTeamChange && !hideActiveControl)) && (
+      {/* Pushed, Active, and USDT Controls */}
+      {!isRemoveMode && (onPushedChange || (onActiveTeamChange && !hideActiveControl) || onUsdtChange) && (
         <div className="flex items-center gap-3 mb-3 pb-2 border-b border-border/50">
+          {/* USDT Toggle */}
+          {onUsdtChange && (
+            <button
+              onClick={() => onUsdtChange(member.id, !member.isUsdt)}
+              className={`flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold transition-all ${
+                member.isUsdt
+                  ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                  : 'bg-muted/30 text-muted-foreground hover:bg-muted/50'
+              }`}
+              title={member.isUsdt ? `USDT ON (1$ = ${USDT_RATE}৳)` : 'Enable USDT mode'}
+            >
+              <DollarSign className="w-3 h-3" />
+            </button>
+          )}
           {/* Pushed Toggle */}
           {onPushedChange && (
             <button
